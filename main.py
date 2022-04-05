@@ -23,15 +23,15 @@ def get_honor_entities(honor: List[Entity], android: List[Entity]):
             return -1
         else:
             for android_entity in entity_map[entity.__str__()]:
-                if android[android_entity].accessibility == entity.accessibility:
+                if android[android_entity].modifiers == entity.modifiers:
                     return android_entity
             return -1
 
     for item in honor:
         if item.isHonor == -1:
-            start_index = item.id
-            end_index = start_index
-            is_honor = 0
+            # start_index = item.id
+            # end_index = start_index
+            # is_honor = 0
             if find_same(item) != -1:
                 item.set_honor(0)
                 # temp = item
@@ -77,35 +77,44 @@ def get_dependency_section(entitiesHonor, cellsHonor, entitiesAndroid, cellsAndr
     get_honor_entities(honors, androids)
     relations_android = set()
     diff: List[Relation] = []
+
+    def get_relation(source, rel_dict: dict):
+        src_entity = source[rel_dict['src']].__str__()
+        dest_entity = source[rel_dict['dest']].__str__()
+        bind_entity = -1
+        relation_type = ""
+        for key in rel_dict['values']:
+            if key == 'bindVar':
+                bind_entity = rel_dict['values'][key]
+            else:
+                relation_type = key
+        return src_entity, dest_entity, bind_entity, relation_type
+
     for item in cellsAndroid:
-        src = androids[item['src']].__str__()
-        dest = androids[item['dest']].__str__()
-        relation = ""
-        for rel in item['values']:
-            relation = rel
-        relations_android.add(src + relation + dest)
+        src, dest, bind_var, relation = get_relation(androids, item)
+        bind_var_entity = androids[bind_var].__str__() if bind_var != -1 else ""
+        hash_rel = src + bind_var_entity + relation + dest
+        relations_android.add(hash_rel)
+
     android_contain_set = []
     for item in cellsHonor:
-        src = honors[item['src']].__str__()
-        dest = honors[item['dest']].__str__()
-        relation = ""
-        for rel in item['values']:
-            relation = rel
-
+        src, dest, bind_var, relation = get_relation(honors, item)
+        bind_var_entity = honors[bind_var].__str__() if bind_var != -1 else ""
+        hash_rel = src + bind_var_entity + relation + dest
         if honors[item['src']].isHonor == 0 and honors[item['dest']].isHonor == 0:
-            # 切面中可能会使用AOSP中原生的Contain依赖
-            if relation == 'Contain':
+            # 切面中可能会使用AOSP中原生的Define依赖
+            if relation == 'Define':
                 android_contain_set.append(
-                    Relation(src={"id": item['src'], "isHonor": 0}, rel=relation,
+                    Relation(src={"id": item['src'], "isHonor": 0}, bind_var=bind_var, rel=relation,
                              dest={"id": item['dest'], "isHonor": 0}))
             # relations_honor.add(src + '->' + dest)
-            if src + relation + dest not in relations_android:
+            if hash_rel not in relations_android:
                 diff.append(
-                    Relation(src={"id": item['src'], "isHonor": honors[item['src']].isHonor}, rel=relation,
-                             dest={"id": item['dest'], "isHonor": honors[item['dest']].isHonor}))
+                    Relation(src={"id": item['src'], "isHonor": honors[item['src']].isHonor}, bind_var=bind_var,
+                             rel=relation, dest={"id": item['dest'], "isHonor": honors[item['dest']].isHonor}))
         else:
-            diff.append(Relation(src={"id": item['src'], "isHonor": honors[item['src']].isHonor}, rel=relation,
-                                 dest={"id": item['dest'], "isHonor": honors[item['dest']].isHonor}))
+            diff.append(Relation(src={"id": item['src'], "isHonor": honors[item['src']].isHonor}, bind_var=bind_var,
+                                 rel=relation, dest={"id": item['dest'], "isHonor": honors[item['dest']].isHonor}))
 
     # FileReader().write_to_json(outPath, section, 0)
     return honors, diff, android_contain_set

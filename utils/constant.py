@@ -3,11 +3,15 @@ class Constant:
     E_method: str = "Method"
     E_variable: str = "Variable"
     E_class: str = "Class"
+    E_file: str = "File"
+    E_package: str = "Package"
+    E_interface: str = "Interface"
 
     # relation type
-    contain: str = "contain"
+    contain: str = "Contain"
+    define: str = "Define"
     call: str = "Call"
-    para: str = "Para"
+    param: str = "Parameter"
     use: str = "Use"
     implement: str = "Implement"
     inherit: str = "Inherit"

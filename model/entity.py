@@ -1,3 +1,6 @@
+from typing import List
+
+
 class Entity:
     qualifiedName: str
     name: str
@@ -6,7 +9,7 @@ class Entity:
     parentId: int
     var_type: str
     isHonor: int
-    accessibility: str
+    modifiers: List[str]
     access_change: str
     static: int
     is_global: int
@@ -15,6 +18,7 @@ class Entity:
     start_column: int
     end_line: int
     end_column: int
+    aosp_hidden: dict
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -23,6 +27,7 @@ class Entity:
         self.category = args['category']
         self.parentId = args['parentId']
         self.isHonor = -1
+        self.aosp_hidden = args['aosp_hidden']
         self.access_change = ''
         try:
             self.start_line = args['startLine']
@@ -35,9 +40,11 @@ class Entity:
             self.end_line = -1
             self.end_column = -1
         try:
-            self.accessibility = args['accessibility']
+            self.modifiers = []
+            for item in args['modifiers'].split(" "):
+                self.modifiers.append(item)
         except:
-            self.accessibility = ''
+            self.modifiers = []
         try:
             self.var_type = args['type']
         except:
@@ -68,8 +75,8 @@ class Entity:
             temp['endColumn'] = self.end_column
         if self.var_type != '':
             temp['type'] = self.var_type
-        if self.accessibility != '':
-            temp['accessibility'] = self.accessibility
+        if self.modifiers:
+            temp['modifiers'] = " ".join(self.modifiers)
         if self.access_change != '':
             temp['accessChange'] = self.access_change
         if self.static != 2:

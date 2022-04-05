@@ -4,6 +4,7 @@ from collections import defaultdict
 from functools import partial
 from model.relation import Relation
 from model.entity import Entity
+from utils.constant import Constant
 
 
 class ModeMatch:
@@ -47,33 +48,31 @@ class ModeMatch:
     def findModeICCD1(self):
         print("matching mode <Inheritance class coupling dependency (1)>")
         mode_set = []
-        for item in self.findSection('Inherit', '01', 'Class', 'Class'):
+        for item in self.findSection(Constant.inherit, '01', Constant.E_class, Constant.E_class):
             mode_set.append([item])
         self.match_set.append({'Android2Honor/InheritClassCouplingDep': mode_set})
         mode_set = []
-        for item in self.findSection('Implement', '01', 'Class', 'Interface'):
+        for item in self.findSection(Constant.implement, '01', Constant.E_class, Constant.E_interface):
             mode_set.append([item])
         self.match_set.append({'Android2Honor/ImplementClassCouplingDep': mode_set})
 
     def findModeIUP(self):
-        print("matching mode <Inheritance class coupling dependency (2)>")
+        print("matching mode <Inheritance Use Parent Protected Dep>")
         mode_set = []
-        for item in self.findSection('Inherit', '10', 'Class', 'Class'):
+        for item in self.findSection(Constant.inherit, '10', Constant.E_class, Constant.E_class):
             temp = [item]
-            for item2 in self.findSection('Contain', '11', item.src['id'], 'Method'):
+            for item2 in self.findSection(Constant.define, '11', item.src['id'], Constant.E_method):
                 flag = 1
                 temp.append(item2)
-                for item3 in self.findSection('Call', '10', item2.dest['id'], 'Method') + \
-                             self.findSection('Use', '10', item2.dest['id'], 'Variable'):
-                    if self.honors[item3.dest['id']].accessibility != 'Public':
-                        pid = self.honors[item3.dest['id']].parentId
-                        if pid == item.dest['id']:
-                            temp.append(item3)
-                            temp.append(Relation({'id': item.dest['id'], 'isHonor': 0}, 'Contain',
-                                                 {'id': item3.dest['id'], 'isHonor': 0}))
-                            flag = 2
-                        elif self.honors[pid].name in [self.honors[i.dest['id']].var_type for i in
-                                                       self.findSection('Use', '10', item2.dest['id'], 'Variable')]:
+                for item3 in self.findSection(Constant.call, '10', item2.dest['id'], Constant.E_method) + \
+                             self.findSection(Constant.use, '10', item2.dest['id'], Constant.E_variable):
+                    if 'protected' in self.honors[item3.dest['id']].modifiers:
+                        if item3.bind_var != -1:
+                            item4 = self.findSection(Constant.define, '00', item.dest['id'], item3.bind_var)
+                        else:
+                            item4 = self.findSection(Constant.define, '00', item.dest['id'], item3.dest['id'])
+                        if len(item4):
+                            temp.append(item4[0])
                             temp.append(item3)
                             flag = 2
                 if flag == 1:
@@ -82,7 +81,7 @@ class ModeMatch:
                     mode_set.append(temp)
         self.match_set.append({'Honor2Android/InheritanceUseParentProtected': mode_set})
 
-    def findMode2(self):
+    def findModeRUD(self):
         print("matching mode 2......")
         mode_set = []
         for item in self.findSection('Reflect', '10', -1, -1):
@@ -109,123 +108,119 @@ class ModeMatch:
 
     def findModeAOSPUA(self):
         print("matching mode <AOSP Use Aggregation extension class Dependency>")
-        mode3_set = []
+        # mode3_set = []
         mode4_set = []
-        for item in self.findSection('Contain', '01', 'Class', 'Variable'):
+        for item in self.findSection(Constant.define, '01', Constant.E_class, Constant.E_variable):
             temp = [item]
-            for item1 in self.findSection('Implement', '11', 'Class', 'Interface'):
+            for item1 in self.findSection(Constant.implement, '11', Constant.E_class, Constant.E_interface):
                 if self.honors[item1.dest['id']].name == self.honors[item.dest['id']].var_type:
                     temp1 = temp[:]
                     temp1.append(item1)
-                    for item2 in self.findSection('Contain', '11', item1.src['id'], 'Method'):
+                    for item2 in self.findSection(Constant.define, '11', item1.src['id'], Constant.E_method):
                         flag = 1
-                        temp33 = temp1[:]
-                        temp33.append(item2)
+                        # temp33 = temp1[:]
+                        # temp33.append(item2)
                         temp44 = temp1[:]
                         temp44.append(item2)
-                        for item3 in self.findSection('Call', '10', item2.dest['id'], 'Method'):
-                            item4 = self.findSection('Contain', '00', item.src['id'], item3.dest['id'])
-                            if len(item4) == 1:
-                                temp33.append(item4[0])
-                                temp33.append(item3)
-                                flag = 2
-                        if flag == 2:
-                            mode3_set.append(temp33)
-                            flag = 1
-                        for item3 in self.findSection('Call', '01', 'Method', item2.dest['id']):
-                            item4 = self.findSection('Contain', '00', item.src['id'], item3.src['id'])
-                            if len(item4) == 1:
-                                temp44.append(item4[0])
-                                temp44.append(item3)
-                                flag = 2
+                        # for item3 in self.findSection('Call', '10', item2.dest['id'], 'Method'):
+                        #     item4 = self.findSection('Define', '00', item.src['id'], item3.dest['id'])
+                        #     if len(item4) == 1:
+                        #         temp33.append(item4[0])
+                        #         temp33.append(item3)
+                        #         flag = 2
+                        # if flag == 2:
+                        #     mode3_set.append(temp33)
+                        #     flag = 1
+                        for item3 in self.findSection(Constant.call, '01', Constant.E_method, item2.dest['id']):
+                            if item3.bind_var == item.dest['id']:
+                                item4 = self.findSection(Constant.define, '00', item.src['id'], item3.src['id'])
+                                if item4:
+                                    temp44.append(item4[0])
+                                    temp44.append(item3)
+                                    flag = 2
                         if flag == 2:
                             mode4_set.append(temp44)
-        self.match_set.append({'Honor2Android/AggregationExtensionClassDep': mode3_set})
+        # self.match_set.append({'Honor2Android/AggregationExtensionClassDep': mode3_set})
         self.match_set.append({'Android2Honor/AggregationExtensionClassDep': mode4_set})
 
     def findModeAUAOSP(self):
         print("matching mode <Aggregation Use AOSP Dependency>")
         mode_set = []
-        for item in self.findSection('Contain', '10', 'Class', 'Variable'):
+        for item in self.findSection(Constant.define, '11', Constant.E_class, Constant.E_variable):
             temp = [item]
-            for item1 in self.findSection('Contain', '11', item.src['id'], 'Method'):
+            for item1 in self.findSection(Constant.define, '11', item.src['id'], Constant.E_method):
                 flag = 1
                 temp1 = temp[:]
                 temp1.append(item1)
-                for item2 in self.findSection('Call', '10', item1.dest['id'], 'Method'):
-                    par_entity = self.honors[item2.dest[id]].parentId
-                    if self.honors[par_entity].name == self.honors[item.dest['id']].var_type:
-                        flag = 2
-                        temp1.append(Relation({'id': par_entity, 'isHonor': 0}, 'Contain',
-                                              {'id': item2.dest['id'], 'isHonor': 0}))
-                        temp1.append(item2)
+                for item2 in self.findSection(Constant.call, '10', item1.dest['id'], Constant.E_method):
+                    if item2.bind_var == item.dest['id']:
+                        item3 = self.findSection(Constant.define, '00', self.honors[item2.bind_var].var_type,
+                                                 item2.dest['id'])
+                        if item3:
+                            flag = 2
+                            temp1.append(item3[0])
+                            temp1.append(item2)
                 if flag == 2:
                     mode_set.append(temp1)
 
         self.match_set.append({'Honor2Android/AggregationUseAOSpDep': mode_set})
 
-    def findMode5(self):
-        pass
-
     def findModeIECUS(self):
-        print("matching mode <Extension class use dependency>")
+        print("matching mode <Inner Extension class use dependency>")
         mode_set = []
-        for item in self.findSection('Contain', '01', 'Class', 'Class'):
-            if item.src['id'] == self.honors[item.dest['id']].parentId:
-                temp = [item]
-                for item2 in self.findSection('Contain', '11', item.dest['id'], 'Method'):
+        for item in self.findSection(Constant.define, '01', Constant.E_class, Constant.E_class):
+            temp = [item]
+            for item2 in self.findSection(Constant.define, '11', item.dest['id'], Constant.E_method):
+                flag = 1
+                temp.append(item2)
+                for item3 in self.findSection(Constant.call, '10', item2.dest['id'], Constant.E_method):
+                    item4 = self.findSection(Constant.define, '00', item.src['id'], item3.dest['id'])
+                    if item4:
+                        temp.append(item4[0])
+                        temp.append(item3)
+                        flag = 2
+                if flag == 1:
+                    temp.pop()
+                elif flag == 2:
+                    mode_set.append(temp)
+
+        self.match_set.append({'Honor2Android/InnerExtensionClassUseDep': mode_set})
+
+    def findModeEAED(self):
+        print("matching mode Encapsulation of AOSP exposes dep")
+        mode_set = []
+        for item in self.findSection(Constant.define, '11', Constant.E_class, Constant.E_variable):
+            temp = [item]
+            for item2 in self.findSection(Constant.define, '00', self.honors[item.dest['id']].var_type,
+                                          Constant.E_method):
+                if self.honors[item2.src['id']].category == 'Interface':
                     flag = 1
                     temp.append(item2)
-                    for item3 in self.findSection('Call', '10', item2.dest['id'], 'Method'):
-                        if self.honors[item3.dest['id']].parentId == item.src['id']:
-                            temp.append(Relation({'id': item.src['id'], 'isHonor': 0}, 'Contain',
-                                                 {'id': item3.dest['id'], 'isHonor': 0}))
+                    for item3 in self.findSection(Constant.define, '11', item.src['id'], Constant.E_method):
+                        item4 = self.findSection(Constant.call, '10', item3.dest['id'], item2.dest['id'])
+                        if item4:
+                            temp.append(item4[0])
                             temp.append(item3)
                             flag = 2
                     if flag == 1:
                         temp.pop()
                     elif flag == 2:
                         mode_set.append(temp)
-
-        self.match_set.append({'Honor2Android/InnerExtensionClassUseDep': mode_set})
-
-    def findMode7(self):
-        print("matching mode7......")
-        mode_set = []
-        for item in self.findSection('Contain', '10', -1, -1):
-            if self.honors[item.src['id']].category == 'Class' and self.honors[item.dest['id']].category == 'Variable':
-                temp = [item]
-                for item2 in self.findSection('Contain', '11', -1, -1):
-                    if self.honors[item2.src['id']].name == self.honors[item.dest['id']].var_type and \
-                            item2.src['id'] == item.src['id'] and self.honors[item2.dest['id']].category == 'Method':
-                        flag = 1
-                        temp.append(item2)
-                        for item3 in self.findSection('Call', '10', -1, -1):
-                            if item3.src['id'] == item2.dest['id'] and \
-                                    self.honors[item3.dest['id']].parentId == item.dest['id']:
-                                temp.append(item3)
-                                temp.append(Relation({'id': item.dest['id'], 'isHonor': 0}, 'Contain',
-                                                     {'id': item3.dest['id'], 'isHonor': 0}))
-                                flag = 2
-                        if flag == 1:
-                            temp.pop()
-                        elif flag == 2:
-                            mode_set.append(temp)
         self.match_set.append({'mode7': mode_set})
 
     def findModePLCD(self):
         print("matching mode <Parameter list change dependency>")
         mode_set = []
-        for item in self.findSection('Parameter', '01', 'Method', 'Variable'):
+        for item in self.findSection(Constant.param, '01', Constant.E_method, Constant.E_variable):
             mode_set.append([item])
         self.match_set.append({'Android2Honor/ParameterListChangeDep': mode_set})
 
     def findModePIUD(self):
         print("matching mode <Public Interface Use Dependency>")
         mode_set = []
-        for item in self.findSection('Call', '10', 'Method', 'Method'):
-            if self.honors[item.dest['id']].accessibility == 'Public' or \
-                    self.honors[item.dest['id']].accessibility == '':
+        for item in self.findSection(Constant.call, '10', Constant.E_method, Constant.E_method):
+            if 'private' not in self.honors[item.dest['id']].modifiers and \
+                    'protected' not in self.honors[item.dest['id']].modifiers:
                 mode_set.append([item])
         self.match_set.append({'Honor2Android/PublicInterfaceUseDep': mode_set})
 
@@ -249,18 +244,17 @@ class ModeMatch:
 
         # 命令中实体属性解析
         def entity_rule(entity_stack: list, entity: dict):
-            if entity['type'][0] == -1:
-                entity_type = -1
-            else:
-                entity_type = entity_stack[entity['type'][0]].dest['id'] if entity['type'][1] == 1 else \
-                    entity_stack[entity['type'][0]].src['id']
             entity_access = entity['access']
+
             if entity['id'][0] != -1:
                 entity_base = entity_stack[entity['id'][0]].dest['id'] if entity['id'][1] == 1 else \
                     entity_stack[entity['id'][0]].src['id']
+            elif entity['type'][0] != -1:
+                entity_base = entity_stack[entity['type'][0]].dest['id'] if entity['type'][1] == 1 else \
+                    entity_stack[entity['type'][0]].src['id']
             else:
                 entity_base = entity['category']
-            return entity_base, entity_type, entity_access
+            return entity_base, entity_access
 
         # 匹配函数
         def my_find(result_set: list, example_stack: list, graph, current):
@@ -268,13 +262,11 @@ class ModeMatch:
             rel = graph[current][1]
             dest = graph[current][2]
             isHonor = graph[current][3]
-            src_base, src_type, src_access = entity_rule(example_stack, src)
-            dest_base, dest_type, dest_access = entity_rule(example_stack, dest)
+            src_base, src_access = entity_rule(example_stack, src)
+            dest_base, dest_access = entity_rule(example_stack, dest)
             for item in self.findSection(rel, isHonor, src_base, dest_base):
-                if (src_type == -1 or src_type == item.src['id']) and (
-                        dest_type == -1 or dest_type == item.dest['id']) and (
-                        src_access == '' or src_access == self.honors[item.src['id']].accessibility) and (
-                        dest_access == '' or dest_access == self.honors[item.dest['id']].accessibility):
+                if (src_access == '' or src_access in self.honors[item.src['id']].modifiers) and (
+                        dest_access == '' or dest_access in self.honors[item.dest['id']].modifiers):
                     next_stack = example_stack[:]
                     next_stack.append(item)
                     if current < len(graph) - 1:
