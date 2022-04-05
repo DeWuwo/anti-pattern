@@ -41,7 +41,7 @@ class ModeMatch:
         for item in android_contain_set:
             self.find_map[item.rel]['00'][item.src['id']][item.dest['id']].append(item)
 
-    def findSection(self, rel: str, isHonor: str, src, dest) -> list:
+    def findSection(self, rel: str, isHonor: str, src, dest) -> List[Relation]:
         return self.find_map[rel][isHonor][src][dest]
 
     def findModeICCD1(self):
@@ -230,32 +230,66 @@ class ModeMatch:
         self.match_set.append({'Honor2Android/PublicInterfaceUseDep': mode_set})
 
     def test_find(self):
+        """
+        通用的模式匹配
+        :return:
+        """
         tt = [[[-1, 'Class'], 'Contain', [-1, 'Class'], '01'], [[0, 1], 'Contain', [-1, 'Method'], '11'],
               [[1, 1], 'Call', [-1, 'Method'], '10'], [[0, 0], 'Contain', [2, 1], '00']]
-        mode_set = []
-        stack: List[Relation] = []
-        state = 0
+        tt1 = [[{'id': [-1], 'category': 'Class', 'type': [-1], 'access': ''}, 'Contain',
+                {'id': [-1], 'category': 'Class', 'type': [-1], 'access': ''}, '01'],
+               [{'id': [0, 1], 'category': '', 'type': [-1], 'access': ''}, 'Contain',
+                {'id': [-1], 'category': 'Method', 'type': [-1], 'access': ''}, '11'],
+               [{'id': [1, 1], 'category': '', 'type': [-1], 'access': ''}, 'Call',
+                {'id': [-1], 'category': 'Method', 'type': [-1], 'access': ''}, '10'],
+               [{'id': [0, 0], 'category': '', 'type': [-1], 'access': ''}, 'Contain',
+                {'id': [2, 1], 'category': '', 'type': [-1], 'access': ''}, '00']]
+        tt2 = [[{'id': [-1], 'category': 'Class', 'type': [-1], 'access': ''}, 'Implement',
+                {'id': [-1], 'category': 'Interface', 'type': [-1], 'access': ''}, '01']]
 
-        def my_find(temp: list, graph, current):
-            nonlocal mode_set
+        # 命令中实体属性解析
+        def entity_rule(entity_stack: list, entity: dict):
+            if entity['type'][0] == -1:
+                entity_type = -1
+            else:
+                entity_type = entity_stack[entity['type'][0]].dest['id'] if entity['type'][1] == 1 else \
+                    entity_stack[entity['type'][0]].src['id']
+            entity_access = entity['access']
+            if entity['id'][0] != -1:
+                entity_base = entity_stack[entity['id'][0]].dest['id'] if entity['id'][1] == 1 else \
+                    entity_stack[entity['id'][0]].src['id']
+            else:
+                entity_base = entity['category']
+            return entity_base, entity_type, entity_access
+
+        # 匹配函数
+        def my_find(result_set: list, example_stack: list, graph, current):
             src = graph[current][0]
             rel = graph[current][1]
             dest = graph[current][2]
             isHonor = graph[current][3]
-            s = src[1] if src[0] == -1 else (temp[src[0]].dest['id'] if src[1] == 1 else temp[src[0]].src['id'])
-            d = dest[1] if dest[0] == -1 else (temp[dest[0]].dest['id'] if dest[1] == 1 else temp[dest[0]].src['id'])
-            for item in self.findSection(rel, isHonor, s, d):
-                new_temp = temp[:]
-                new_temp.append(item)
-                if current < len(graph) - 1:
-                    current += 1
-                    my_find(new_temp, graph, current)
-                    current -= 1
-                else:
-                    mode_set.append(new_temp)
+            src_base, src_type, src_access = entity_rule(example_stack, src)
+            dest_base, dest_type, dest_access = entity_rule(example_stack, dest)
+            for item in self.findSection(rel, isHonor, src_base, dest_base):
+                if (src_type == -1 or src_type == item.src['id']) and (
+                        dest_type == -1 or dest_type == item.dest['id']) and (
+                        src_access == '' or src_access == self.honors[item.src['id']].accessibility) and (
+                        dest_access == '' or dest_access == self.honors[item.dest['id']].accessibility):
+                    next_stack = example_stack[:]
+                    next_stack.append(item)
+                    if current < len(graph) - 1:
+                        current += 1
+                        my_find(result_set, next_stack, graph, current)
+                        current -= 1
+                    else:
+                        result_set.append(next_stack)
 
-        my_find(stack, tt, state)
-        self.match_set.append({'users': mode_set})
+        mode_set = []
+        my_find(mode_set, [], tt1, 0)
+        self.match_set.append({'users/tt1': mode_set})
+        mode_set = []
+        my_find(mode_set, [], tt2, 0)
+        self.match_set.append({'users/tt2': mode_set})
 
     def matchMode(self):
         threads = []
@@ -285,11 +319,11 @@ class ModeMatch:
             th.start()
         for th in threads:
             th.join()
-        match_set_stat = self.get_static()
+        match_set_stat = self.get_statistics()
         match_set, union_temp, anti_patterns = self.ready_for_write()
         return match_set_stat, match_set, union_temp, anti_patterns
 
-    def get_static(self):
+    def get_statistics(self):
         def get_root_file(entityId: int) -> Entity:
             temp = self.honors[entityId]
             while temp.category != 'File':

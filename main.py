@@ -1,5 +1,4 @@
 import argparse
-from functools import partial
 from typing import List
 from collections import defaultdict
 from utils import FileReader
@@ -64,6 +63,7 @@ def get_honor_entities(honor: List[Entity], android: List[Entity]):
 
 def get_dependency_section(entitiesHonor, cellsHonor, entitiesAndroid, cellsAndroid, outPath):
     print('get relation diff set')
+    # 生成实体和依赖集
     honors: List[Entity] = []
     androids: List[Entity] = []
     for item in entitiesHonor:
@@ -73,6 +73,7 @@ def get_dependency_section(entitiesHonor, cellsHonor, entitiesAndroid, cellsAndr
         if not item['external']:
             androids.append(Entity(**item))
 
+    # 生成依赖diff集
     get_honor_entities(honors, androids)
     relations_android = set()
     diff: List[Relation] = []
