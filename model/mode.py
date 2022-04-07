@@ -39,6 +39,9 @@ class ModeMatch:
 
             self.find_map[item.rel][str(item.src['isHonor']) + str(item.dest['isHonor'])][item.src['id']][
                 item.dest['id']].append(item)
+            if item.bind_var != -1:
+                self.find_map[item.bind_var][str(item.src['isHonor']) + str(item.dest['isHonor'])][
+                    self.honors[item.src['id']].category][self.honors[item.dest['id']].category].append(item)
         for item in android_contain_set:
             self.find_map[item.rel]['00'][item.src['id']][item.dest['id']].append(item)
 
@@ -224,63 +227,75 @@ class ModeMatch:
                 mode_set.append([item])
         self.match_set.append({'Honor2Android/PublicInterfaceUseDep': mode_set})
 
-    def test_find(self):
+    def general_rule_matching(self):
         """
         通用的模式匹配
         :return:
         """
-        tt = [[[-1, 'Class'], 'Contain', [-1, 'Class'], '01'], [[0, 1], 'Contain', [-1, 'Method'], '11'],
-              [[1, 1], 'Call', [-1, 'Method'], '10'], [[0, 0], 'Contain', [2, 1], '00']]
-        tt1 = [[{'id': [-1], 'category': 'Class', 'type': [-1], 'access': ''}, 'Contain',
-                {'id': [-1], 'category': 'Class', 'type': [-1], 'access': ''}, '01'],
-               [{'id': [0, 1], 'category': '', 'type': [-1], 'access': ''}, 'Contain',
-                {'id': [-1], 'category': 'Method', 'type': [-1], 'access': ''}, '11'],
-               [{'id': [1, 1], 'category': '', 'type': [-1], 'access': ''}, 'Call',
-                {'id': [-1], 'category': 'Method', 'type': [-1], 'access': ''}, '10'],
-               [{'id': [0, 0], 'category': '', 'type': [-1], 'access': ''}, 'Contain',
-                {'id': [2, 1], 'category': '', 'type': [-1], 'access': ''}, '00']]
-        tt2 = [[{'id': [-1], 'category': 'Class', 'type': [-1], 'access': ''}, 'Implement',
-                {'id': [-1], 'category': 'Interface', 'type': [-1], 'access': ''}, '01']]
+        tt1 = [[{'id': [-1], 'category': 'Class', 'accessible': []}, 'Contain',
+                {'id': ['bindType', 0, 1], 'category': 'Class', 'accessible': []}, '01'],
+               [{'id': ['id', 0, 1], 'category': '', 'accessible': ['private']}, 'Contain',
+                {'id': ['type', 0, 1], 'category': 'Method', 'accessible': []}, '11'],
+               [{'id': [1, 1], 'category': '', 'accessible': []}, 'Call',
+                {'id': [-1], 'category': 'Method', 'accessible': []}, '10'],
+               [{'id': [0, 0], 'category': '', 'accessible': []}, 'Contain',
+                {'id': [2, 1], 'category': '', 'accessible': []}, '00']]
+        tt2 = [[{'id': [-1], 'category': 'Class', 'accessible': []}, 'Inherit',
+                {'id': [-1], 'category': 'Class', 'accessible': []}, '10'],
+               [{'id': ['id', 0, 0], 'category': 'Class', 'accessible': []}, 'Define',
+                {'id': [-1], 'category': 'Method', 'accessible': []}, '11'],
+               [{'id': ['id', 1, 1], 'category': 'Method', 'accessible': []}, 'Call',
+                {'id': [-1], 'category': 'Method', 'accessible': ['protected']}, '10'],
+               [{'id': ['id', 0, 1], 'category': 'Class', 'accessible': []}, 'Define',
+                {'id': ['bindType', 2], 'category': 'Variable', 'accessible': ['protected']}, '00']]
 
         # 命令中实体属性解析
-        def entity_rule(entity_stack: list, entity: dict):
-            entity_access = entity['access']
-
-            if entity['id'][0] != -1:
-                entity_base = entity_stack[entity['id'][0]].dest['id'] if entity['id'][1] == 1 else \
-                    entity_stack[entity['id'][0]].src['id']
-            elif entity['type'][0] != -1:
-                entity_base = entity_stack[entity['type'][0]].dest['id'] if entity['type'][1] == 1 else \
-                    entity_stack[entity['type'][0]].src['id']
+        def entity_rule(entity_stack: List[Relation], entity: dict):
+            entity_base = -1
+            entity_accessible = entity['accessible']
+            entity_category = entity['category']
+            if entity['id'][0] == 'id':
+                pre_edge = entity_stack[entity['id'][1]]
+                if entity['id'][2] == 0:
+                    entity_base = pre_edge.src['id']
+                else:
+                    entity_base = pre_edge.dest['id']
+            elif entity['id'][0] == 'type':
+                pre_edge = entity_stack[entity['id'][1]]
+                if entity['id'][2] == 0:
+                    entity_base = self.honors[pre_edge.src['id']].var_type
+                else:
+                    entity_base = self.honors[pre_edge.dest['id']].var_type
+            elif entity['id'][0] == 'bindType':
+                entity_base = entity_stack[entity['id'][1]].bind_var
             else:
-                entity_base = entity['category']
-            return entity_base, entity_access
+                entity_base = entity_category
+            return entity_base, entity_category, entity_accessible
 
         # 匹配函数
-        def my_find(result_set: list, example_stack: list, graph, current):
+        def handle_matching(result_set: list, example_stack: list, graph, current):
             src = graph[current][0]
             rel = graph[current][1]
             dest = graph[current][2]
             isHonor = graph[current][3]
-            src_base, src_access = entity_rule(example_stack, src)
-            dest_base, dest_access = entity_rule(example_stack, dest)
+            src_base, src_category, src_access = entity_rule(example_stack, src)
+            dest_base, dest_category, dest_access = entity_rule(example_stack, dest)
             for item in self.findSection(rel, isHonor, src_base, dest_base):
-                if (src_access == '' or src_access in self.honors[item.src['id']].modifiers) and (
-                        dest_access == '' or dest_access in self.honors[item.dest['id']].modifiers):
+                if (src_category == '' or src_category == self.honors[item.src['id']].category) and (
+                        dest_category == '' or dest_category == self.honors[item.dest['id']].category) and (
+                        not src_access or set(src_access) & set(self.honors[item.src['id']].modifiers)) and (
+                        not dest_access or set(dest_access) & set(self.honors[item.dest['id']].modifiers)):
                     next_stack = example_stack[:]
                     next_stack.append(item)
                     if current < len(graph) - 1:
                         current += 1
-                        my_find(result_set, next_stack, graph, current)
+                        handle_matching(result_set, next_stack, graph, current)
                         current -= 1
                     else:
                         result_set.append(next_stack)
 
         mode_set = []
-        my_find(mode_set, [], tt1, 0)
-        self.match_set.append({'users/tt1': mode_set})
-        mode_set = []
-        my_find(mode_set, [], tt2, 0)
+        handle_matching(mode_set, [], tt2, 0)
         self.match_set.append({'users/tt2': mode_set})
 
     def matchMode(self):
@@ -303,7 +318,7 @@ class ModeMatch:
         threads.append(t9)
         # a1 = threading.Thread(target=self.findACM())
         # threads.append(a1)
-        test = threading.Thread(target=self.test_find())
+        test = threading.Thread(target=self.general_rule_matching())
         threads.append(test)
 
         for th in threads:
