@@ -5,43 +5,45 @@ from functools import partial
 from model.relation import Relation
 from model.entity import Entity
 from utils.constant import Constant
+from model.build_model import BuildModel
 
 
 class ModeMatch:
-    honors: List[Entity]
     entity_stat_honor: Dict
+    # base model
+    base_model: BuildModel
     # find set
     find_map: defaultdict
-    android_contain_map: defaultdict
     # out set
     match_set: List[Dict[str, List[List[Relation]]]]
     match_set_stat: Dict[str, Dict[str, int]]
     anti_patterns: List[Dict[str, List[list]]]
 
-    def __init__(self, honors, entity_stat_honor, diff, android_contain_set):
-        self.honors = honors
+    def __init__(self, base_model: BuildModel, entity_stat_honor, android_contain_set):
         self.entity_stat_honor = entity_stat_honor
         self.find_map = defaultdict(partial(defaultdict, partial(defaultdict, partial(defaultdict, list))))
         self.match_set = []
         self.match_set_stat = {}
-        self._init(diff, android_contain_set)
+        self._init(base_model.diff_relations, android_contain_set)
 
     def _init(self, section: List[Relation], android_contain_set: List[Relation]):
         for item in section:
             self.find_map[item.rel][str(item.src['isHonor']) + str(item.dest['isHonor'])][
-                self.honors[item.src['id']].category][self.honors[item.dest['id']].category].append(item)
+                self.base_model.entity_assi[item.src['id']].category][
+                self.base_model.entity_assi[item.dest['id']].category].append(item)
 
             self.find_map[item.rel][str(item.src['isHonor']) + str(item.dest['isHonor'])][
-                self.honors[item.src['id']].category][item.dest['id']].append(item)
+                self.base_model.entity_assi[item.src['id']].category][item.dest['id']].append(item)
 
             self.find_map[item.rel][str(item.src['isHonor']) + str(item.dest['isHonor'])][item.src['id']][
-                self.honors[item.dest['id']].category].append(item)
+                self.base_model.entity_assi[item.dest['id']].category].append(item)
 
             self.find_map[item.rel][str(item.src['isHonor']) + str(item.dest['isHonor'])][item.src['id']][
                 item.dest['id']].append(item)
             if item.bind_var != -1:
                 self.find_map[item.bind_var][str(item.src['isHonor']) + str(item.dest['isHonor'])][
-                    self.honors[item.src['id']].category][self.honors[item.dest['id']].category].append(item)
+                    self.base_model.entity_assi[item.src['id']].category][
+                    self.base_model.entity_assi[item.dest['id']].category].append(item)
         for item in android_contain_set:
             self.find_map[item.rel]['00'][item.src['id']][item.dest['id']].append(item)
 
@@ -69,7 +71,7 @@ class ModeMatch:
                 temp.append(item2)
                 for item3 in self.findSection(Constant.call, '10', item2.dest['id'], Constant.E_method) + \
                              self.findSection(Constant.use, '10', item2.dest['id'], Constant.E_variable):
-                    if 'protected' in self.honors[item3.dest['id']].modifiers:
+                    if 'protected' in self.base_model.entity_assi[item3.dest['id']].modifiers:
                         if item3.bind_var != -1:
                             item4 = self.findSection(Constant.define, '00', item.dest['id'], item3.bind_var)
                         else:
@@ -89,12 +91,12 @@ class ModeMatch:
         mode_set = []
         for item in self.findSection('Reflect', '10', -1, -1):
             if item.rel == 'Reflect':
-                temp = [item, self.honors[self.honors[item.src['id']].parentId]]
+                temp = [item, self.base_model.entity_assi[self.base_model.entity_assi[item.src['id']].parentId]]
                 flag = 0
                 for item2 in self.findSection('Reflect', '10', -1, -1):
                     flag = 0
                     if item.dest['id'] == item2.src['id'] and item2.rel == 'Contain' and \
-                            self.honors[item2.dest['id']].category == 'Method':
+                            self.base_model.entity_assi[item2.dest['id']].category == 'Method':
                         flag = 1
                         temp.append(item2)
                         for item3 in self.findSection('Call', '10', -1, -1):
@@ -116,7 +118,8 @@ class ModeMatch:
         for item in self.findSection(Constant.define, '01', Constant.E_class, Constant.E_variable):
             temp = [item]
             for item1 in self.findSection(Constant.implement, '11', Constant.E_class, Constant.E_interface):
-                if self.honors[item1.dest['id']].name == self.honors[item.dest['id']].var_type:
+                if self.base_model.entity_assi[item1.dest['id']].name == \
+                        self.base_model.entity_assi[item.dest['id']].var_type:
                     temp1 = temp[:]
                     temp1.append(item1)
                     for item2 in self.findSection(Constant.define, '11', item1.src['id'], Constant.E_method):
@@ -157,7 +160,8 @@ class ModeMatch:
                 temp1.append(item1)
                 for item2 in self.findSection(Constant.call, '10', item1.dest['id'], Constant.E_method):
                     if item2.bind_var == item.dest['id']:
-                        item3 = self.findSection(Constant.define, '00', self.honors[item2.bind_var].var_type,
+                        item3 = self.findSection(Constant.define, '00',
+                                                 self.base_model.entity_assi[item2.bind_var].var_type,
                                                  item2.dest['id'])
                         if item3:
                             flag = 2
@@ -194,9 +198,9 @@ class ModeMatch:
         mode_set = []
         for item in self.findSection(Constant.define, '11', Constant.E_class, Constant.E_variable):
             temp = [item]
-            for item2 in self.findSection(Constant.define, '00', self.honors[item.dest['id']].var_type,
+            for item2 in self.findSection(Constant.define, '00', self.base_model.entity_assi[item.dest['id']].var_type,
                                           Constant.E_method):
-                if self.honors[item2.src['id']].category == 'Interface':
+                if self.base_model.entity_assi[item2.src['id']].category == 'Interface':
                     flag = 1
                     temp.append(item2)
                     for item3 in self.findSection(Constant.define, '11', item.src['id'], Constant.E_method):
@@ -222,36 +226,29 @@ class ModeMatch:
         print("matching mode <Public Interface Use Dependency>")
         mode_set = []
         for item in self.findSection(Constant.call, '10', Constant.E_method, Constant.E_method):
-            if 'private' not in self.honors[item.dest['id']].modifiers and \
-                    'protected' not in self.honors[item.dest['id']].modifiers:
+            if 'private' not in self.base_model.entity_assi[item.dest['id']].modifiers and \
+                    'protected' not in self.base_model.entity_assi[item.dest['id']].modifiers:
                 mode_set.append([item])
         self.match_set.append({'Honor2Android/PublicInterfaceUseDep': mode_set})
 
-    def general_rule_matching(self):
+    def general_rule_matching(self, rules):
         """
         通用的模式匹配
         :return:
         """
-        tt1 = [[{'id': [-1], 'category': 'Class', 'accessible': []}, 'Contain',
-                {'id': ['bindType', 0, 1], 'category': 'Class', 'accessible': []}, '01'],
-               [{'id': ['id', 0, 1], 'category': '', 'accessible': ['private']}, 'Contain',
-                {'id': ['type', 0, 1], 'category': 'Method', 'accessible': []}, '11'],
-               [{'id': [1, 1], 'category': '', 'accessible': []}, 'Call',
-                {'id': [-1], 'category': 'Method', 'accessible': []}, '10'],
-               [{'id': [0, 0], 'category': '', 'accessible': []}, 'Contain',
-                {'id': [2, 1], 'category': '', 'accessible': []}, '00']]
-        tt2 = [[{'id': [-1], 'category': 'Class', 'accessible': []}, 'Inherit',
-                {'id': [-1], 'category': 'Class', 'accessible': []}, '10'],
-               [{'id': ['id', 0, 0], 'category': 'Class', 'accessible': []}, 'Define',
-                {'id': [-1], 'category': 'Method', 'accessible': []}, '11'],
-               [{'id': ['id', 1, 1], 'category': 'Method', 'accessible': []}, 'Call',
-                {'id': [-1], 'category': 'Method', 'accessible': ['protected']}, '10'],
-               [{'id': ['id', 0, 1], 'category': 'Class', 'accessible': []}, 'Define',
-                {'id': ['bindType', 2], 'category': 'Variable', 'accessible': ['protected']}, '00']]
+        rules = [
+            [{'id': [-1], 'category': 'Class', 'accessible': []}, 'Inherit',
+             {'id': [-1], 'category': 'Class', 'accessible': []}, '10'],
+            [{'id': ['id', 0, 0], 'category': 'Class', 'accessible': []}, 'Define',
+             {'id': [-1], 'category': 'Method', 'accessible': []}, '11'],
+            [{'id': ['id', 1, 1], 'category': 'Method', 'accessible': []}, 'Call',
+             {'id': [-1], 'category': 'Method', 'accessible': ['protected']}, '10'],
+            [{'id': ['id', 0, 1], 'category': 'Class', 'accessible': []}, 'Define',
+             {'id': ['bindType', 2], 'category': 'Variable', 'accessible': ['protected']}, '00']
+        ]
 
         # 命令中实体属性解析
         def entity_rule(entity_stack: List[Relation], entity: dict):
-            entity_base = -1
             entity_accessible = entity['accessible']
             entity_category = entity['category']
             if entity['id'][0] == 'id':
@@ -263,9 +260,9 @@ class ModeMatch:
             elif entity['id'][0] == 'type':
                 pre_edge = entity_stack[entity['id'][1]]
                 if entity['id'][2] == 0:
-                    entity_base = self.honors[pre_edge.src['id']].var_type
+                    entity_base = self.base_model.entity_assi[pre_edge.src['id']].var_type
                 else:
-                    entity_base = self.honors[pre_edge.dest['id']].var_type
+                    entity_base = self.base_model.entity_assi[pre_edge.dest['id']].var_type
             elif entity['id'][0] == 'bindType':
                 entity_base = entity_stack[entity['id'][1]].bind_var
             else:
@@ -273,7 +270,7 @@ class ModeMatch:
             return entity_base, entity_category, entity_accessible
 
         # 匹配函数
-        def handle_matching(result_set: list, example_stack: list, graph, current):
+        def handle_matching(result_set: list, example_stack: list, flag: list, graph, current):
             src = graph[current][0]
             rel = graph[current][1]
             dest = graph[current][2]
@@ -281,21 +278,25 @@ class ModeMatch:
             src_base, src_category, src_access = entity_rule(example_stack, src)
             dest_base, dest_category, dest_access = entity_rule(example_stack, dest)
             for item in self.findSection(rel, isHonor, src_base, dest_base):
-                if (src_category == '' or src_category == self.honors[item.src['id']].category) and (
-                        dest_category == '' or dest_category == self.honors[item.dest['id']].category) and (
-                        not src_access or set(src_access) & set(self.honors[item.src['id']].modifiers)) and (
-                        not dest_access or set(dest_access) & set(self.honors[item.dest['id']].modifiers)):
+                if (src_category == '' or src_category == self.base_model.entity_assi[item.src['id']].category) and \
+                        (dest_category == '' or dest_category == self.base_model.entity_assi[
+                            item.dest['id']].category) and \
+                        (not src_access or self.base_model.entity_assi[item.src['id']].accessible in src_access) and \
+                        (not dest_access or self.base_model.entity_assi[item.dest['id']].accessible in dest_access) and \
+                        str(item.src['id']) + str(item.dest['id']) not in flag:
                     next_stack = example_stack[:]
                     next_stack.append(item)
+                    flag_update = flag[:]
+                    flag_update.append(str(item.src['id']) + str(item.dest['id']))
                     if current < len(graph) - 1:
                         current += 1
-                        handle_matching(result_set, next_stack, graph, current)
+                        handle_matching(result_set, next_stack, flag_update, graph, current)
                         current -= 1
                     else:
                         result_set.append(next_stack)
 
         mode_set = []
-        handle_matching(mode_set, [], tt2, 0)
+        handle_matching(mode_set, [], [], rules, 0)
         self.match_set.append({'users/tt2': mode_set})
 
     def matchMode(self):
@@ -318,8 +319,6 @@ class ModeMatch:
         threads.append(t9)
         # a1 = threading.Thread(target=self.findACM())
         # threads.append(a1)
-        test = threading.Thread(target=self.general_rule_matching())
-        threads.append(test)
 
         for th in threads:
             th.setDaemon(False)
@@ -332,9 +331,9 @@ class ModeMatch:
 
     def get_statistics(self):
         def get_root_file(entityId: int) -> Entity:
-            temp = self.honors[entityId]
+            temp = self.base_model.entity_assi[entityId]
             while temp.category != 'File':
-                temp = self.honors[temp.parentId]
+                temp = self.base_model.entity_assi[temp.parentId]
             return temp
 
         self.match_set_stat['Total'] = {'files_count': self.entity_stat_honor['File']}
@@ -381,19 +380,11 @@ class ModeMatch:
         return match_set, union_temp, anti_patterns
 
     def toDetailJson(self, relation: Relation):
-        return {"src": self.honors[relation.src['id']].toJson(), "values": {relation.rel: 1},
-                "dest": self.honors[relation.dest['id']].toJson()}
+        return {"src": self.base_model.entity_assi[relation.src['id']].toJson(), "values": {relation.rel: 1},
+                "dest": self.base_model.entity_assi[relation.dest['id']].toJson()}
 
     def show_details(self, section: List[Relation]):
         temp = []
         for index, item in enumerate(section):
             temp.append(self.toDetailJson(item))
         return temp
-
-    def findACM(self):
-        print('find acm')
-        acm_set = []
-        for item in self.honors:
-            if item.access_change != '' and item.access_change[0] != \
-                    item.access_change[1]:
-                acm_set.append(item)

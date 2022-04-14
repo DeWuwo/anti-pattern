@@ -1,3 +1,6 @@
+from typing import List
+
+
 class Constant:
     # entity type
     E_method: str = "Method"
@@ -22,3 +25,8 @@ class Constant:
     AAM: str = "AOSPAnnotationModify"
     ACAPC: str = "AOSPClassADDParentClass"
     AFD: str = "AOSPFinalDelete"
+
+    # modifier
+    accessible_list: List[str] = ['private', 'protected', 'public']
+    M_final: str = 'final'
+    M_static: str = 'static'

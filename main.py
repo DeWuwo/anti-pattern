@@ -5,6 +5,7 @@ from utils import FileReader
 from model.entity import Entity
 from model.relation import Relation
 from model.mode import ModeMatch
+from model.build_model import BuildModel
 
 access_map = {'': '0', 'Private': '1', 'Protected': '2', 'Public': '3'}
 
@@ -144,9 +145,10 @@ def dispatch(args):
         raise ValueError("root directory of project must supply")
     entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp, entities_stat_aosp = \
         FileReader().read_from_json(args.android, args.honor)
+    base_model = BuildModel(entities_honor, cells_honor, entities_aosp, cells_aosp, [])
     honors, diff, android_contain_set = get_dependency_section(entities_honor, cells_honor, entities_aosp, cells_aosp,
                                                                args.output)
-    match_set_stat, match_set, union_temp, anti_patterns = ModeMatch(honors, entities_stat_honor, diff,
+    match_set_stat, match_set, union_temp, anti_patterns = ModeMatch(base_model, entities_stat_honor,
                                                                      android_contain_set).matchMode()
 
     FileReader().write_match_mode(args.output, match_set)

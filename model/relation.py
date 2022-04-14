@@ -6,6 +6,7 @@ class Relation:
     dest: Dict
     rel: str
     bind_var: int
+    not_aosp: int
 
     def __init__(self, src, bind_var, rel, dest):
         self.src = src
@@ -21,3 +22,6 @@ class Relation:
 
     def __str__(self):
         return str(self.src['id']) + self.rel + str(self.dest['id'])
+
+    def set_not_aosp(self, not_aosp):
+        self.not_aosp = not_aosp
