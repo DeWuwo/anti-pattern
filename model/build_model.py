@@ -3,7 +3,7 @@ from collections import defaultdict
 from functools import partial
 from model.entity import Entity
 from model.relation import Relation
-from utils import Constant
+from utils import Constant, FileReader
 
 
 class BuildModel:
@@ -24,7 +24,7 @@ class BuildModel:
     query_map: defaultdict
 
     def __init__(self, entities_assi, cells_assi, statistics_assi: Dict, entities_android, cells_android,
-                 statistics_android: Dict, git_blame):
+                 statistics_android: Dict, intrusive_entities: List[int], assi_entities: List[int]):
         # first init
         self.entity_android = []
         self.entity_assi = []
@@ -46,30 +46,35 @@ class BuildModel:
                 entity = Entity(**item)
                 self.entity_android.append(entity)
                 entity_set[entity.category][entity.qualifiedName].append(entity.id)
+        compare1 = []
+        compare2 = []
         for item in entities_assi:
             if not item['external']:
                 entity = Entity(**item)
-                # if entity.id in git_blame:
-                #     entity.set_honor(1)
-                # else:
-                #     if entity.id in git_blame:
-                #         entity.set_intrusive(1)
-                #     self.get_entity_map(entity, entity_set)
-                if self.blame_stub(entity, entity_set):
-                    entity.set_honor(0)
-                else:
+                if entity.id in assi_entities:
                     entity.set_honor(1)
-
+                    if self.blame_stub(entity, entity_set):
+                        print(entity.id, self.blame_stub(entity, entity_set))
+                        compare1.append(entity.toJson())
+                else:
+                    if entity.id in intrusive_entities:
+                        entity.set_intrusive(1)
+                    self.get_entity_map(entity, entity_set)
+                    if not self.blame_stub(entity, entity_set):
+                        compare2.append(entity.toJson())
+                    # storage special entities
+                    if entity.aosp_hidden:
+                        self.hidden_entities.append(entity)
+                    temp = self.entity_android[entity.entity_mapping]
+                    if entity.modifiers != temp.modifiers:
+                        if entity.accessible != temp.accessible:
+                            self.access_modify_entities.append(entity)
+                        if not entity.final and temp.final:
+                            self.final_modify_entities.append(entity)
                 self.entity_assi.append(entity)
-                # storage special entities
-                if entity.aosp_hidden:
-                    self.hidden_entities.append(entity)
-                temp = self.entity_android[entity.entity_mapping]
-                if entity.modifiers != temp.modifiers:
-                    if entity.accessible != temp.accessible:
-                        self.access_modify_entities.append(entity)
-                    if not entity.final and temp.final:
-                        self.final_modify_entities.append(entity)
+        FileReader.write_to_json('D:/Honor/experiment/lineage/4-16/base', {'b1': compare1, 'b2': compare2}, 0)
+        print(len(compare2))
+
         # init dep
         print("start init model deps")
         bind_var = -1
@@ -148,10 +153,8 @@ class BuildModel:
             self.query_map[item.rel]['00'][item.src['id']][item.dest['id']].append(item)
 
     # query method
-    def query_relation(self, rel: str, isHonor: str, src, dest) -> List[Relation]:
-        return self.query_map[rel][isHonor][src][dest]
+    def query_relation(self, rel: str, not_aosp: str, src, dest) -> List[Relation]:
+        return self.query_map[rel][not_aosp][src][dest]
 
     def blame_stub(self, entity: Entity, android_entity_set: defaultdict):
-        if android_entity_set[entity.category][entity.qualifiedName]:
-            return True
-        return False
+        return android_entity_set[entity.category][entity.qualifiedName]

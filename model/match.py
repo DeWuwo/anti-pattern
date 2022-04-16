@@ -58,13 +58,10 @@ class Match:
         not_aosp = graph[current][3]
         src_base, src_attr = self.entity_rule(example_stack, src)
         dest_base, dest_attr = self.entity_rule(example_stack, dest)
-        print('rule', current, '--', src_base, rel, dest_base, src_attr, dest_attr)
         for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
-            print('match', current, '--', item.src['id'], item.rel, item.dest['id'])
             if self.handle_attr_match(self.base_model.entity_assi[item.src['id']], **src_attr) and \
                     self.handle_attr_match(self.base_model.entity_assi[item.dest['id']], **dest_attr) and \
                     str(item.src['id']) + str(item.dest['id']) not in flag:
-                print('match', current, '--', item.src['id'], item.rel, item.dest['id'])
                 next_stack = example_stack[:]
                 next_stack.append(item)
                 flag_update = flag[:]
@@ -93,9 +90,11 @@ class Match:
              {'id': ['bindType', 2], 'category': 'Variable', 'attr': {'accessible': ['protected']}}, '00']
         ]
         '''
+        print('start run Pattern: ', pattern)
         mode_set = []
-        self.handle_matching(mode_set, [], [], rules, 0)
-        self.match_result.append({pattern: mode_set})
+        if rules:
+            self.handle_matching(mode_set, [], [], rules, 0)
+            self.match_result.append({pattern: mode_set})
 
     def pre_del(self):
         self.match_result = []

@@ -9,6 +9,7 @@ class Entity:
     category: str
     parentId: int
     var_type: str
+    file_path: str
     isHonor: int
     is_intrusive: int
     entity_mapping: int
@@ -30,7 +31,8 @@ class Entity:
         self.id = args['id']
         self.category = args['category']
         self.parentId = args['parentId']
-        self.isHonor = -1
+        self.file_path = ""
+        self.isHonor = 0
         self.is_intrusive = 0
         self.entity_mapping = -1
         self.modifiers = []
@@ -47,6 +49,10 @@ class Entity:
             self.start_column = -1
             self.end_line = -1
             self.end_column = -1
+        try:
+            self.file_path = args['File']
+        except:
+            self.file_path = ""
         try:
             self.modifiers = []
             for item in args['modifiers'].split(" "):
@@ -82,6 +88,8 @@ class Entity:
     def toJson(self):
         temp = {'id': self.id, 'isHonor': self.isHonor, 'category': self.category, 'qualifiedName': self.qualifiedName,
                 'name': self.name, 'isIntrusive': self.is_intrusive}
+        if self.file_path != "":
+            temp['File'] = self.file_path
         if self.start_line != -1:
             temp['startLine'] = self.start_line
             temp['startColumn'] = self.start_column

@@ -5,12 +5,13 @@ from utils import Constant
 
 class AntiPattern(Pattern):
     anti_patterns = [
+        {},
         {
             'Android2Honor/InheritClassCouplingDep': [
                 [{'id': [-1], 'category': Constant.E_class, 'attrs': {'accessible': []}}, Constant.inherit,
                  {'id': [-1], 'category': Constant.E_class, 'attrs': {'accessible': []}}, '01'],
             ]
-        },
+            },
         {
             'Android2Honor/ImplementClassCouplingDep': [
                 [{'id': [-1], 'category': Constant.E_class, 'attrs': {'accessible': []}}, Constant.implement,
@@ -18,7 +19,9 @@ class AntiPattern(Pattern):
             ]
         },
         {
-            'Android2Honor/AggregationExtensionInterfaceClassDep': []
+            'Android2Honor/AggregationExtensionInterfaceClassDep': [
+
+            ]
         },
         {
             'Android2Honor/ParameterListModifyDep': []

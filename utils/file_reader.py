@@ -1,5 +1,6 @@
 import json
 import os
+import csv
 from typing import List, Dict
 
 
@@ -27,7 +28,18 @@ class FileReader:
             raise e
 
     @classmethod
-    def write_to_json(cls, out_path: str, section: list, mode):
+    def read_from_csv(cls, file_path: str):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            try:
+                reader = csv.reader(f)
+                next(reader)
+                entities = [int(entity[2]) for entity in reader]
+                return entities
+            except Exception as e:
+                raise e
+
+    @classmethod
+    def write_to_json(cls, out_path: str, section, mode):
         os.makedirs(out_path, exist_ok=True)
         with open(out_path + cls.outFile[mode], 'w+', encoding='utf-8') as o:
             json.dump({cls.outTitle[mode]: section}, o, ensure_ascii=False, indent=4)
