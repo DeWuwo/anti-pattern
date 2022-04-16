@@ -15,9 +15,10 @@ class Pattern:
     def matchPattern(self, patterns: list):
         threads = []
         self.match.pre_del()
-        for item in patterns:
-            th = threading.Thread(target=self.match.general_rule_matching(item))
-            threads.append(th)
+        for pattern in patterns:
+            for key, val in pattern.items():
+                th = threading.Thread(target=self.match.general_rule_matching(key, val))
+                threads.append(th)
 
         for th in threads:
             th.setDaemon(False)

@@ -12,7 +12,7 @@ class Match:
     def __init__(self, model: BuildModel):
         self.base_model = model
         self.match_result = []
-        self.match_result_statistic = []
+        self.match_result_statistic = {}
 
     # 命令中实体属性解析
     def entity_rule(self, entity_stack: List[Relation], entity: dict):
@@ -44,6 +44,12 @@ class Match:
     def handle_accessible(self, entity: Entity, accessible: List[str]):
         return (not accessible) or entity.accessible in accessible
 
+    def handle_hidden(self, entity: Entity, hidden: bool):
+        return (not hidden) or entity.id in self.base_model.hidden_entities
+
+    def handle_final(self, entity: Entity, final: bool):
+        return (not final) or entity.id in self.base_model.final_modify_entities
+
     # 匹配函数
     def handle_matching(self, result_set: list, example_stack: list, flag: list, graph, current):
         src = graph[current][0]
@@ -52,10 +58,13 @@ class Match:
         not_aosp = graph[current][3]
         src_base, src_attr = self.entity_rule(example_stack, src)
         dest_base, dest_attr = self.entity_rule(example_stack, dest)
+        print('rule', current, '--', src_base, rel, dest_base, src_attr, dest_attr)
         for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
+            print('match', current, '--', item.src['id'], item.rel, item.dest['id'])
             if self.handle_attr_match(self.base_model.entity_assi[item.src['id']], **src_attr) and \
                     self.handle_attr_match(self.base_model.entity_assi[item.dest['id']], **dest_attr) and \
                     str(item.src['id']) + str(item.dest['id']) not in flag:
+                print('match', current, '--', item.src['id'], item.rel, item.dest['id'])
                 next_stack = example_stack[:]
                 next_stack.append(item)
                 flag_update = flag[:]
@@ -67,7 +76,7 @@ class Match:
                 else:
                     result_set.append(next_stack)
 
-    def general_rule_matching(self, rules):
+    def general_rule_matching(self, pattern: str, rules: list):
         """
         通用的模式匹配
         :return:
@@ -86,8 +95,8 @@ class Match:
         '''
         mode_set = []
         self.handle_matching(mode_set, [], [], rules, 0)
-        self.match_result.append({'users/tt2': mode_set})
+        self.match_result.append({pattern: mode_set})
 
     def pre_del(self):
         self.match_result = []
-        self.match_result_statistic = []
+        self.match_result_statistic = {}

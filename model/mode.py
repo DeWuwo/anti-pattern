@@ -220,7 +220,7 @@ class ModeMatch:
         mode_set = []
         for item in self.findSection(Constant.param, '01', Constant.E_method, Constant.E_variable):
             mode_set.append([item])
-        self.match_set.append({'Android2Honor/ParameterListChangeDep': mode_set})
+        self.match_set.append({'Android2Honor/ParameterListModifyDep': mode_set})
 
     def findModePIUD(self):
         print("matching mode <Public Interface Use Dependency>")

@@ -3,7 +3,7 @@ from collections import defaultdict
 from functools import partial
 from model.entity import Entity
 from model.relation import Relation
-from utils.constant import Constant
+from utils import Constant
 
 
 class BuildModel:
@@ -23,28 +23,42 @@ class BuildModel:
     # query set
     query_map: defaultdict
 
-    def __init__(self, entitiesAssi, cellsAssi, entitiesAndroid, cellsAndroid, statistics_android: Dict,
-                 statistics_assi: Dict, git_blame):
-        # init statistic
+    def __init__(self, entities_assi, cells_assi, statistics_assi: Dict, entities_android, cells_android,
+                 statistics_android: Dict, git_blame):
+        # first init
+        self.entity_android = []
+        self.entity_assi = []
+        self.relation_android = []
+        self.relation_assi = []
         self.statistics_android = statistics_android
         self.statistics_assi = statistics_assi
+        self.hidden_entities = []
+        self.access_modify_entities = []
+        self.final_modify_entities = []
+        self.diff_relations = []
+        self.define_relations = []
         # init entity
+        print("start init model entities")
         entity: Entity
-        entity_set = defaultdict()
-        for item in entitiesAndroid:
+        entity_set = defaultdict(partial(defaultdict, list))
+        for item in entities_android:
             if not item['external']:
                 entity = Entity(**item)
                 self.entity_android.append(entity)
                 entity_set[entity.category][entity.qualifiedName].append(entity.id)
-        for item in entitiesAssi:
+        for item in entities_assi:
             if not item['external']:
                 entity = Entity(**item)
-                if entity.id in git_blame:
-                    entity.set_honor(1)
+                # if entity.id in git_blame:
+                #     entity.set_honor(1)
+                # else:
+                #     if entity.id in git_blame:
+                #         entity.set_intrusive(1)
+                #     self.get_entity_map(entity, entity_set)
+                if self.blame_stub(entity, entity_set):
+                    entity.set_honor(0)
                 else:
-                    if entity.id in git_blame:
-                        entity.set_intrusive(1)
-                    self.get_entity_map(entity, entity_set)
+                    entity.set_honor(1)
 
                 self.entity_assi.append(entity)
                 # storage special entities
@@ -57,10 +71,11 @@ class BuildModel:
                     if not entity.final and temp.final:
                         self.final_modify_entities.append(entity)
         # init dep
+        print("start init model deps")
         bind_var = -1
         relation_type = ''
-        relation_set = defaultdict()
-        for item in cellsAndroid:
+        relation_set = defaultdict(partial(defaultdict, partial(defaultdict, int)))
+        for item in cells_android:
             for key in item['values']:
                 if key == 'bindVar':
                     bind_var = item['values'][key]
@@ -69,7 +84,7 @@ class BuildModel:
             relation = Relation({'id': item['src']}, bind_var, relation_type, {'id': item['dest']})
             self.relation_android.append(relation)
             relation_set[item['src']][relation.rel][item['dest']] = 1
-        for item in cellsAssi:
+        for item in cells_assi:
             for key in item['values']:
                 if key == 'bindVar':
                     bind_var = item['values'][key]
@@ -82,7 +97,7 @@ class BuildModel:
         self.query_map_build(self.diff_relations, self.define_relations)
 
     # Get entity mapping relationship
-    def get_entity_map(self, entity: Entity, android_entity_set: defaultdict) -> id:
+    def get_entity_map(self, entity: Entity, android_entity_set: defaultdict):
         map_list = android_entity_set[entity.category][entity.qualifiedName]
         if len(map_list) == 1:
             entity_id = map_list[0]
@@ -135,3 +150,8 @@ class BuildModel:
     # query method
     def query_relation(self, rel: str, isHonor: str, src, dest) -> List[Relation]:
         return self.query_map[rel][isHonor][src][dest]
+
+    def blame_stub(self, entity: Entity, android_entity_set: defaultdict):
+        if android_entity_set[entity.category][entity.qualifiedName]:
+            return True
+        return False
