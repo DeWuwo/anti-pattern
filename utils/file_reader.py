@@ -31,9 +31,12 @@ class FileReader:
     def read_from_csv(cls, file_path: str):
         with open(file_path, 'r', encoding='utf-8') as f:
             try:
+                entities = []
                 reader = csv.reader(f)
                 next(reader)
-                entities = [int(entity[2]) for entity in reader]
+                for entity in reader:
+                    if entity[4] != '[]':
+                        entities.append(int(entity[2]))
                 return entities
             except Exception as e:
                 raise e

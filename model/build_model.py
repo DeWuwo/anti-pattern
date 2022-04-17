@@ -24,7 +24,8 @@ class BuildModel:
     query_map: defaultdict
 
     def __init__(self, entities_assi, cells_assi, statistics_assi: Dict, entities_android, cells_android,
-                 statistics_android: Dict, intrusive_entities: List[int], assi_entities: List[int]):
+                 statistics_android: Dict, intrusive_entities: List[int], assi_entities: List[int],
+                 blame_null_entities: List[int]):
         # first init
         self.entity_android = []
         self.entity_assi = []
@@ -48,6 +49,7 @@ class BuildModel:
                 entity_set[entity.category][entity.qualifiedName].append(entity.id)
         compare1 = []
         compare2 = []
+        compare3 = []
         for item in entities_assi:
             if not item['external']:
                 entity = Entity(**item)
@@ -61,7 +63,10 @@ class BuildModel:
                         entity.set_intrusive(1)
                     self.get_entity_map(entity, entity_set)
                     if not self.blame_stub(entity, entity_set):
-                        compare2.append(entity.toJson())
+                        if entity.id in blame_null_entities:
+                            compare2.append(entity.toJson())
+                        else:
+                            compare3.append(entity.toJson())
                     # storage special entities
                     if entity.aosp_hidden:
                         self.hidden_entities.append(entity)
@@ -72,7 +77,8 @@ class BuildModel:
                         if not entity.final and temp.final:
                             self.final_modify_entities.append(entity)
                 self.entity_assi.append(entity)
-        FileReader.write_to_json('D:/Honor/experiment/lineage/4-16/base', {'b1': compare1, 'b2': compare2}, 0)
+        FileReader.write_to_json('D:/Honor/experiment/lineage/4-17/base/compare',
+                                 {'b1': compare1, 'b2': compare2, 'b3': compare3}, 0)
         print(len(compare2))
 
         # init dep
@@ -103,6 +109,8 @@ class BuildModel:
 
     # Get entity mapping relationship
     def get_entity_map(self, entity: Entity, android_entity_set: defaultdict):
+        if entity.id == 41786:
+            print(entity)
         map_list = android_entity_set[entity.category][entity.qualifiedName]
         if len(map_list) == 1:
             entity_id = map_list[0]

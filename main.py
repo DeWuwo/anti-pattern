@@ -147,12 +147,14 @@ def dispatch(args):
         raise ValueError("root directory of project must supply")
     entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp, entities_stat_aosp = \
         FileReader().read_from_json(args.android, args.honor)
-    intrusive_entities = FileReader().read_from_csv(
-        'D:/Honor/experiment/lineage/4-16/base/blame/lineageos_mixed_entities.csv')
-    assi_entities = FileReader().read_from_csv(
-        'D:/Honor/experiment/lineage/4-16/base/blame/lineageos_pure_third_party_entities.csv')
+    intrusive_entities = FileReader.read_from_csv(
+        'D:/Honor/experiment/lineage/4-17/base/blame/lineageos_mixed_entities.csv')
+    assi_entities = FileReader.read_from_csv(
+        'D:/Honor/experiment/lineage/4-17/base/blame/lineageos_pure_third_party_entities.csv')
+    commit_null_entities = FileReader.read_from_csv(
+        'D:/Honor/experiment/lineage/4-17/base/blame/lineageos_all_entities.csv')
     base_model = BuildModel(entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp,
-                            entities_stat_aosp, intrusive_entities, assi_entities)
+                            entities_stat_aosp, intrusive_entities, assi_entities, commit_null_entities)
     match_set_stat, match_set, union_temp, anti_patterns = AntiPattern(Match(base_model)).start_detect()
 
     # honors, diff, android_contain_set = get_dependency_section(entities_honor, cells_honor, entities_aosp, cells_aosp,

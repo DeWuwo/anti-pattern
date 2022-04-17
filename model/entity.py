@@ -8,7 +8,7 @@ class Entity:
     id: int
     category: str
     parentId: int
-    var_type: str
+    raw_type: str
     file_path: str
     isHonor: int
     is_intrusive: int
@@ -66,9 +66,9 @@ class Entity:
         except:
             self.modifiers = []
         try:
-            self.var_type = args['type']
+            self.raw_type = args['rawType']
         except:
-            self.var_type = ''
+            self.raw_type = ''
         try:
             self.is_global = 1 if args['global'] else 0
         except:
@@ -95,8 +95,8 @@ class Entity:
             temp['startColumn'] = self.start_column
             temp['endLine'] = self.end_line
             temp['endColumn'] = self.end_column
-        if self.var_type != '':
-            temp['type'] = self.var_type
+        if self.raw_type != '':
+            temp['rawType'] = self.raw_type
         if self.modifiers:
             temp['modifiers'] = " ".join(self.modifiers)
         if self.is_global != 2:
