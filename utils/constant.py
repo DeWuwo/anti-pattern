@@ -18,6 +18,8 @@ class Constant:
     use: str = "Use"
     implement: str = "Implement"
     inherit: str = "Inherit"
+    override: str = 'Override'
+    typed: str = 'Typed'
 
     # anti-pattern name
     ACM: str = "AOSPAccessModify"

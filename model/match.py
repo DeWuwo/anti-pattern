@@ -50,6 +50,12 @@ class Match:
     def handle_final(self, entity: Entity, final: bool):
         return (not final) or entity.id in self.base_model.final_modify_entities
 
+    def handle_accessible_modify(self, entity: Entity, accessible_modify: bool):
+        return (not accessible_modify) or entity.id in self.base_model.access_modify_entities
+
+    def handle_intrusive(self, entity: Entity, intrusive: bool):
+        return (not intrusive) or entity.is_intrusive
+
     # 匹配函数
     def handle_matching(self, result_set: list, example_stack: list, flag: list, graph, current):
         src = graph[current][0]
