@@ -58,10 +58,10 @@ class Match:
 
     # 匹配函数
     def handle_matching(self, result_set: list, example_stack: list, flag: list, graph, current):
-        src = graph[current][0]
-        rel = graph[current][1]
-        dest = graph[current][2]
-        not_aosp = graph[current][3]
+        src = graph[current]['src']
+        rel = graph[current]['rel']
+        dest = graph[current]['dest']
+        not_aosp = graph[current]['direction']
         src_base, src_attr = self.entity_rule(example_stack, src)
         dest_base, dest_attr = self.entity_rule(example_stack, dest)
         for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
@@ -98,9 +98,11 @@ class Match:
         '''
         print('start run Pattern: ', pattern)
         mode_set = []
-        if rules:
-            self.handle_matching(mode_set, [], [], rules, 0)
-            self.match_result.append({pattern: mode_set})
+        res = []
+        for item in rules:
+            self.handle_matching(mode_set, [], [], item, 0)
+        res.extend(mode_set)
+        self.match_result.append({pattern: res})
 
     def pre_del(self):
         self.match_result = []

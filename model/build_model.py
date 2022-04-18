@@ -66,7 +66,8 @@ class BuildModel:
                         if entity.id in blame_null_entities:
                             compare2.append(entity.toJson())
                         else:
-                            compare3.append(entity.toJson())
+                            if entity.category != 'Variable':
+                                compare3.append(entity.toJson())
                     # storage special entities
                     if entity.aosp_hidden:
                         self.hidden_entities.append(entity)
@@ -77,7 +78,7 @@ class BuildModel:
                         if not entity.final and temp.final:
                             self.final_modify_entities.append(entity)
                 self.entity_assi.append(entity)
-        FileReader.write_to_json('D:/Honor/experiment/lineage/4-17/base/compare',
+        FileReader.write_to_json('D:/Honor/experiment/lineage/4-18/base/compare',
                                  {'b1': compare1, 'b2': compare2, 'b3': compare3}, 0)
         print(len(compare2))
 

@@ -4,7 +4,6 @@ from collections import defaultdict
 from utils import FileReader
 from model.entity import Entity
 from model.relation import Relation
-from model.mode import ModeMatch
 from model.build_model import BuildModel
 from model.anti_pattern import AntiPattern
 from model.match import Match
@@ -148,11 +147,11 @@ def dispatch(args):
     entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp, entities_stat_aosp = \
         FileReader().read_from_json(args.android, args.honor)
     intrusive_entities = FileReader.read_from_csv(
-        'D:/Honor/experiment/lineage/4-17/base/blame/lineageos_mixed_entities.csv')
+        'D:/Honor/experiment/lineage/4-18/base/blame/lineageos_mixed_entities.csv')
     assi_entities = FileReader.read_from_csv(
-        'D:/Honor/experiment/lineage/4-17/base/blame/lineageos_pure_third_party_entities.csv')
+        'D:/Honor/experiment/lineage/4-18/base/blame/lineageos_pure_third_party_entities.csv')
     commit_null_entities = FileReader.read_from_csv(
-        'D:/Honor/experiment/lineage/4-17/base/blame/lineageos_all_entities.csv')
+        'D:/Honor/experiment/lineage/4-18/base/blame/lineageos_all_entities.csv')
     base_model = BuildModel(entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp,
                             entities_stat_aosp, intrusive_entities, assi_entities, commit_null_entities)
     match_set_stat, match_set, union_temp, anti_patterns = AntiPattern(Match(base_model)).start_detect()
