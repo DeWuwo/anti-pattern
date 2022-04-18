@@ -5,5 +5,8 @@ class Test:
     def test3(self, a: int, b: int):
         return a * b
 
-    def test2(self, a: int, b: int, c: int):
-        return a + b + c
+    def test2(self, a: int, b: int, d: int):
+        return a + b + d
+
+    def test4(self):
+        pass
