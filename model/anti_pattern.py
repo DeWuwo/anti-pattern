@@ -237,10 +237,9 @@ class AntiPattern(Pattern):
                     {
                         'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                         'rel': Constant.inherit,
-                        'dest': {'id': [-1], 'category': Constant.E_class,
-                                 'attrs': {'intrusive': True, 'final': True}},
+                        'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {'intrusive': True, 'final': True}},
                         'direction': '10'
-                    },
+                    }
                 ],
                 [
                     {
