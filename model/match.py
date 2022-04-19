@@ -42,7 +42,7 @@ class Match:
         return category == '' or entity.category == category
 
     def handle_accessible(self, entity: Entity, accessible: List[str]):
-        return (not accessible) or entity.accessible in accessible
+        return (not accessible) or entity.accessible in accessible or (entity.accessible == '' and '' in accessible)
 
     def handle_hidden(self, entity: Entity, hidden: bool):
         return (not hidden) or entity.id in self.base_model.hidden_entities
@@ -65,6 +65,7 @@ class Match:
         src_base, src_attr = self.entity_rule(example_stack, src)
         dest_base, dest_attr = self.entity_rule(example_stack, dest)
         for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
+            print(item.src['id'], item.rel, item.dest['id'])
             if self.handle_attr_match(self.base_model.entity_assi[item.src['id']], **src_attr) and \
                     self.handle_attr_match(self.base_model.entity_assi[item.dest['id']], **dest_attr) and \
                     str(item.src['id']) + str(item.dest['id']) not in flag:
@@ -101,7 +102,7 @@ class Match:
         res = []
         for item in rules:
             self.handle_matching(mode_set, [], [], item, 0)
-        res.extend(mode_set)
+            res.extend(mode_set)
         self.match_result.append({pattern: res})
 
     def pre_del(self):

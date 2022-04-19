@@ -53,21 +53,25 @@ class BuildModel:
         for item in entities_assi:
             if not item['external']:
                 entity = Entity(**item)
-                if entity.id in assi_entities:
-                    entity.set_honor(1)
-                    if self.blame_stub(entity, entity_set):
-                        print(entity.id, self.blame_stub(entity, entity_set))
-                        compare1.append(entity.toJson())
-                else:
-                    if entity.id in intrusive_entities:
-                        entity.set_intrusive(1)
+                if self.blame_stub(entity, entity_set):
+                    entity.set_honor(0)
                     self.get_entity_map(entity, entity_set)
-                    if not self.blame_stub(entity, entity_set):
-                        if entity.id in blame_null_entities:
-                            compare2.append(entity.toJson())
-                        else:
-                            if entity.category != 'Variable':
-                                compare3.append(entity.toJson())
+                else:
+                    entity.set_honor(1)
+                # if entity.id in assi_entities:
+                #     entity.set_honor(1)
+                #     if self.blame_stub(entity, entity_set):
+                #         compare1.append(entity.toJson())
+                # else:
+                #     if entity.id in intrusive_entities:
+                #         entity.set_intrusive(1)
+                #     self.get_entity_map(entity, entity_set)
+                #     if not self.blame_stub(entity, entity_set):
+                #         if entity.id in blame_null_entities:
+                #             compare2.append(entity.toJson())
+                #         else:
+                #             if entity.category != 'Variable':
+                #                 compare3.append(entity.toJson())
                     # storage special entities
                     if entity.aosp_hidden:
                         self.hidden_entities.append(entity)
@@ -78,8 +82,8 @@ class BuildModel:
                         if not entity.final and temp.final:
                             self.final_modify_entities.append(entity)
                 self.entity_assi.append(entity)
-        FileReader.write_to_json('D:/Honor/experiment/lineage/4-18/base/compare',
-                                 {'b1': compare1, 'b2': compare2, 'b3': compare3}, 0)
+        # FileReader.write_to_json('D:/Honor/experiment/lineage/4-19/base/compare',
+        #                          {'b1': compare1, 'b2': compare2, 'b3': compare3}, 0)
         print(len(compare2))
 
         # init dep
@@ -110,10 +114,8 @@ class BuildModel:
 
     # Get entity mapping relationship
     def get_entity_map(self, entity: Entity, android_entity_set: defaultdict):
-        if entity.id == 41786:
-            print(entity)
         map_list = android_entity_set[entity.category][entity.qualifiedName]
-        if len(map_list) == 1:
+        if len(map_list) >= 1:
             entity_id = map_list[0]
             entity.set_entity_mapping(entity_id)
             self.entity_android[entity_id].set_entity_mapping(entity.id)

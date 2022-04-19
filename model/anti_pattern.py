@@ -5,7 +5,6 @@ from utils import Constant
 
 class AntiPattern(Pattern):
     anti_patterns = [
-        {},
         {
             'Android2Honor/InheritClassCouplingDep': [
                 [
@@ -24,7 +23,7 @@ class AntiPattern(Pattern):
                         'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {'accessible': []}},
                         'rel': Constant.implement,
                         'dest': {'id': [-1], 'category': Constant.E_interface, 'attrs': {'accessible': []}},
-                        'direction': '10'
+                        'direction': '01'
                     }]
             ]
         },
@@ -171,9 +170,9 @@ class AntiPattern(Pattern):
                         'direction': '10'
                     },
                     {
-                        'src': {'id': ['id', 2, 1], 'category': Constant.E_class, 'attrs': {}},
+                        'src': {'id': ['id', 0, 0], 'category': Constant.E_class, 'attrs': {}},
                         'rel': Constant.define,
-                        'dest': {'id': ['id', 0, 0], 'category': Constant.E_method, 'attrs': {}},
+                        'dest': {'id': ['id', 2, 1], 'category': Constant.E_method, 'attrs': {}},
                         'direction': '00'
                     },
                 ]
@@ -198,7 +197,7 @@ class AntiPattern(Pattern):
                     {
                         'src': {'id': [-1], 'category': Constant.E_interface, 'attrs': {}},
                         'rel': Constant.typed,
-                        'dest': {'id': ['id', 2, 1], 'category': Constant.E_variable, 'attrs': {}},
+                        'dest': {'id': ['id', 1, 1], 'category': Constant.E_variable, 'attrs': {}},
                         'direction': '01'
                     },
                     {
@@ -222,7 +221,7 @@ class AntiPattern(Pattern):
                     {
                         'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
                         'rel': Constant.call,
-                        'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {'accessible': ['public']}},
+                        'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {'accessible': ['public', '']}},
                         'direction': '10'
                     },
                 ]
