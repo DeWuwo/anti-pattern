@@ -15,7 +15,7 @@ class Constant:
     define: str = "Define"
     call: str = "Call"
     param: str = "Parameter"
-    use: str = "Use"
+    use: str = "UseVar"
     implement: str = "Implement"
     inherit: str = "Inherit"
     override: str = 'Override'

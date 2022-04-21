@@ -9,6 +9,7 @@ class Entity:
     category: str
     parentId: int
     raw_type: str
+    parameter_types: str
     file_path: str
     isHonor: int
     is_intrusive: int
@@ -23,7 +24,7 @@ class Entity:
     start_column: int
     end_line: int
     end_column: int
-    aosp_hidden: bool
+    aosp_hidden: int
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -57,11 +58,13 @@ class Entity:
             self.modifiers = []
             for item in args['modifiers'].split(" "):
                 self.modifiers.append(item)
-            if self.modifiers[0] in Constant.accessible_list:
-                self.accessible = self.modifiers[0]
-            if Constant.M_final in self.modifiers:
+            for item in Constant.accessible_list:
+                if item in args['modifiers']:
+                    self.accessible = item
+                    break
+            if Constant.M_final in args['modifiers']:
                 self.final = True
-            if Constant.M_static in self.modifiers:
+            if Constant.M_static in args['modifiers']:
                 self.static = True
         except:
             self.modifiers = []
@@ -69,6 +72,10 @@ class Entity:
             self.raw_type = args['rawType']
         except:
             self.raw_type = ''
+        try:
+            self.parameter_types = args['parameterTypes']
+        except:
+            self.parameter_types = ""
         try:
             self.is_global = 1 if args['global'] else 0
         except:
@@ -78,9 +85,9 @@ class Entity:
         except:
             self.innerType = []
         try:
-            self.aosp_hidden = args['aosp_hidden']['hidden']
+            self.aosp_hidden = 1 if args['aosp_hidden']['hidden'] else 0
         except:
-            self.aosp_hidden = False
+            self.aosp_hidden = -1
 
     def __str__(self):
         return self.category + "#" + self.qualifiedName
@@ -95,12 +102,16 @@ class Entity:
             temp['startColumn'] = self.start_column
             temp['endLine'] = self.end_line
             temp['endColumn'] = self.end_column
+        if self.parameter_types != '':
+            temp['parameterTypes'] = self.parameter_types
         if self.raw_type != '':
             temp['rawType'] = self.raw_type
         if self.modifiers:
             temp['modifiers'] = " ".join(self.modifiers)
         if self.is_global != 2:
             temp['global'] = True if self.is_global else False
+        if self.aosp_hidden != -1:
+            temp['hidden'] = True if self.aosp_hidden == 1 else False
         return temp
 
     def set_honor(self, isHonor: int):

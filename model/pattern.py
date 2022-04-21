@@ -19,7 +19,6 @@ class Pattern:
             for key, val in pattern.items():
                 th = threading.Thread(target=self.match.general_rule_matching(key, val))
                 threads.append(th)
-
         for th in threads:
             th.setDaemon(False)
             th.start()
@@ -30,8 +29,8 @@ class Pattern:
         return match_set_stat, match_set, union_temp, anti_patterns
 
     def get_statistics(self):
-        def get_root_file(entityId: int) -> Entity:
-            temp = self.match.base_model.entity_assi[entityId]
+        def get_root_file(entity_id: int) -> Entity:
+            temp = self.match.base_model.entity_assi[entity_id]
             while temp.category != 'File':
                 temp = self.match.base_model.entity_assi[temp.parentId]
             return temp
@@ -41,14 +40,22 @@ class Pattern:
             for mode in item:
                 self.match.match_result_statistic[mode] = {}
                 files_set = defaultdict(int)
+                entities_set = defaultdict(int)
                 for exa in item[mode]:
-                    temp_set = set()
+                    temp_file_set = set()
+                    temp_entity_set = set()
                     for rel in exa:
-                        temp_set.add(get_root_file(rel.src['id']).qualifiedName)
-                        temp_set.add(get_root_file(rel.dest['id']).qualifiedName)
-                    for file_name in temp_set:
+                        temp_entity_set.add(rel.src['id'])
+                        temp_entity_set.add(rel.dest['id'])
+                        temp_file_set.add(get_root_file(rel.src['id']).qualifiedName)
+                        temp_file_set.add(get_root_file(rel.dest['id']).qualifiedName)
+                    for file_name in temp_file_set:
                         files_set[file_name] += 1
+                    for entity_id in temp_entity_set:
+                        entities_set[entity_id] += 1
                 self.match.match_result_statistic[mode] = {'example_count': len(item[mode]),
+                                                           'entities_count': len(entities_set),
+                                                           'entities': entities_set,
                                                            'files_count': len(files_set),
                                                            'files': files_set}
         return self.match.match_result_statistic

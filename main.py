@@ -1,4 +1,6 @@
 import argparse
+import os
+from datetime import date
 from typing import List
 from collections import defaultdict
 from utils import FileReader
@@ -144,6 +146,7 @@ def dispatch(args):
         raise ValueError("root directory of project must supply")
     if args.output is None:
         raise ValueError("root directory of project must supply")
+    # read files
     entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp, entities_stat_aosp = \
         FileReader().read_from_json(args.android, args.honor)
     intrusive_entities = FileReader.read_from_csv(
@@ -152,19 +155,28 @@ def dispatch(args):
         'D:/Honor/experiment/lineage/4-18/base/blame/lineageos_pure_third_party_entities.csv')
     commit_null_entities = FileReader.read_from_csv(
         'D:/Honor/experiment/lineage/4-18/base/blame/lineageos_all_entities.csv')
+    # build base model
     base_model = BuildModel(entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp,
                             entities_stat_aosp, intrusive_entities, assi_entities, commit_null_entities)
-    match_set_stat, match_set, union_temp, anti_patterns = AntiPattern(Match(base_model)).start_detect()
+    pattern_match = AntiPattern(Match(base_model))
+    # match and output
+    match_set_stat, match_set, union_temp, anti_patterns = pattern_match.start_detect_coupling()
+    # match coupling pattern
+    coupling_path = os.path.join(args.output + 'coupling')
+    FileReader.write_match_mode(coupling_path, match_set)
+    FileReader.write_to_json(coupling_path, union_temp, 1)
+    FileReader.write_to_json(coupling_path, anti_patterns, 3)
+    FileReader.write_to_json(coupling_path, match_set_stat, 4)
+    FileReader.write_to_csv(coupling_path, date.today(), args.honor, args.android, match_set_stat)
 
-    # honors, diff, android_contain_set = get_dependency_section(entities_honor, cells_honor, entities_aosp, cells_aosp,
-    #                                                            args.output)
-    # match_set_stat, match_set, union_temp, anti_patterns = ModeMatch(base_model, entities_stat_honor,
-    #                                                                  android_contain_set).matchMode()
-
-    FileReader().write_match_mode(args.output, match_set)
-    FileReader().write_to_json(args.output, union_temp, 1)
-    FileReader().write_to_json(args.output, anti_patterns, 3)
-    FileReader().write_to_json(args.output, match_set_stat, 4)
+    # match anti pattern
+    anti_path = os.path.join(args.output + 'anti-pattern')
+    match_set_stat, match_set, union_temp, anti_patterns = pattern_match.start_detect_anti_patterns()
+    FileReader.write_match_mode(anti_path, match_set)
+    FileReader.write_to_json(anti_path, union_temp, 1)
+    FileReader.write_to_json(anti_path, anti_patterns, 3)
+    FileReader.write_to_json(anti_path, match_set_stat, 4)
+    FileReader.write_to_csv(anti_path, date.today(), args.honor, args.android, match_set_stat)
 
 
 if __name__ == '__main__':

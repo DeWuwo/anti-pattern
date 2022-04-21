@@ -23,7 +23,7 @@ class Match:
                 entity_base = pre_edge.src['id']
             else:
                 entity_base = pre_edge.dest['id']
-        elif entity['id'][0] == 'bindType':
+        elif entity['id'][0] == 'bindVar':
             entity_base = entity_stack[entity['id'][1]].bind_var
         else:
             entity_base = entity_category
@@ -65,7 +65,6 @@ class Match:
         src_base, src_attr = self.entity_rule(example_stack, src)
         dest_base, dest_attr = self.entity_rule(example_stack, dest)
         for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
-            print(item.src['id'], item.rel, item.dest['id'])
             if self.handle_attr_match(self.base_model.entity_assi[item.src['id']], **src_attr) and \
                     self.handle_attr_match(self.base_model.entity_assi[item.dest['id']], **dest_attr) and \
                     str(item.src['id']) + str(item.dest['id']) not in flag:
@@ -98,9 +97,9 @@ class Match:
         ]
         '''
         print('start run Pattern: ', pattern)
-        mode_set = []
         res = []
         for item in rules:
+            mode_set = []
             self.handle_matching(mode_set, [], [], item, 0)
             res.extend(mode_set)
         self.match_result.append({pattern: res})

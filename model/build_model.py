@@ -15,9 +15,9 @@ class BuildModel:
     statistics_android: Dict
     statistics_assi: Dict
     # more info
-    hidden_entities: List[Entity]
-    access_modify_entities: List[Entity]
-    final_modify_entities: List[Entity]
+    hidden_entities: List[int]
+    access_modify_entities: List[int]
+    final_modify_entities: List[int]
     diff_relations: List[Relation]
     define_relations: List[Relation]
     # query set
@@ -56,36 +56,35 @@ class BuildModel:
                 if self.blame_stub(entity, entity_set):
                     entity.set_honor(0)
                     self.get_entity_map(entity, entity_set)
-                else:
-                    entity.set_honor(1)
-                # if entity.id in assi_entities:
-                #     entity.set_honor(1)
-                #     if self.blame_stub(entity, entity_set):
-                #         compare1.append(entity.toJson())
-                # else:
-                #     if entity.id in intrusive_entities:
-                #         entity.set_intrusive(1)
-                #     self.get_entity_map(entity, entity_set)
-                #     if not self.blame_stub(entity, entity_set):
-                #         if entity.id in blame_null_entities:
-                #             compare2.append(entity.toJson())
-                #         else:
-                #             if entity.category != 'Variable':
-                #                 compare3.append(entity.toJson())
                     # storage special entities
-                    if entity.aosp_hidden:
-                        self.hidden_entities.append(entity)
                     temp = self.entity_android[entity.entity_mapping]
+                    if entity.aosp_hidden == 1:
+                        self.hidden_entities.append(entity.id)
                     if entity.modifiers != temp.modifiers:
                         if entity.accessible != temp.accessible:
-                            self.access_modify_entities.append(entity)
+                            self.access_modify_entities.append(entity.id)
                         if not entity.final and temp.final:
-                            self.final_modify_entities.append(entity)
+                            self.final_modify_entities.append(entity.id)
+                else:
+                    entity.set_honor(1)
+                    # if entity.id in assi_entities:
+                    #     entity.set_honor(1)
+                    #     if self.blame_stub(entity, entity_set):
+                    #         compare1.append(entity.toJson())
+                    # else:
+                    #     if entity.id in intrusive_entities:
+                    #         entity.set_intrusive(1)
+                    #     self.get_entity_map(entity, entity_set)
+                    #     if not self.blame_stub(entity, entity_set):
+                    #         if entity.id in blame_null_entities:
+                    #             compare2.append(entity.toJson())
+                    #         else:
+                    #             if entity.category != 'Variable':
+                    #                 compare3.append(entity.toJson())
+
                 self.entity_assi.append(entity)
         # FileReader.write_to_json('D:/Honor/experiment/lineage/4-19/base/compare',
         #                          {'b1': compare1, 'b2': compare2, 'b3': compare3}, 0)
-        print(len(compare2))
-
         # init dep
         print("start init model deps")
         bind_var = -1
@@ -114,8 +113,8 @@ class BuildModel:
 
     # Get entity mapping relationship
     def get_entity_map(self, entity: Entity, android_entity_set: defaultdict):
-        map_list = android_entity_set[entity.category][entity.qualifiedName]
-        if len(map_list) >= 1:
+        map_list: List[entity] = android_entity_set[entity.category][entity.qualifiedName]
+        if len(map_list) == 1:
             entity_id = map_list[0]
             entity.set_entity_mapping(entity_id)
             self.entity_android[entity_id].set_entity_mapping(entity.id)
@@ -125,6 +124,13 @@ class BuildModel:
             else:
                 # 文件路径修改
                 pass
+        else:
+            for item_id in map_list:
+                if self.entity_android[item_id].parameter_types == entity.parameter_types:
+                    entity.set_entity_mapping(item_id)
+                    self.entity_android[item_id].set_entity_mapping(entity.id)
+                    return
+            entity.set_honor(1)
 
     # get diff and extra useful aosp 'define' dep
     def set_dep_assi(self, relation: Relation, rel_set: defaultdict):

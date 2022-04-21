@@ -31,7 +31,7 @@ class AntiPattern(Pattern):
             'Android2Honor/AggregationExtensionInterfaceClassDep': [
                 [
                     {
-                        'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {'intrusive': True}},
+                        'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                         'rel': Constant.define,
                         'dest': {'id': [-1], 'category': Constant.E_variable, 'attrs': {}},
                         'direction': '01'
@@ -130,17 +130,17 @@ class AntiPattern(Pattern):
                     {
                         'src': {'id': ['id', 0, 0], 'category': Constant.E_class, 'attrs': {}},
                         'rel': Constant.define,
-                        'dest': {'id': [-1], 'category': Constant.E_variable, 'attrs': {}},
+                        'dest': {'id': ['bindVar', 1], 'category': Constant.E_variable, 'attrs': {}},
                         'direction': '11'
                     },
                     {
-                        'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
+                        'src': {'id': ['id', 2, 1], 'category': Constant.E_variable, 'attrs': {}},
                         'rel': Constant.typed,
-                        'dest': {'id': ['id', 2, 1], 'category': Constant.E_variable, 'attrs': {}},
+                        'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                         'direction': '10'
                     },
                     {
-                        'src': {'id': ['id', 3, 0], 'category': Constant.E_class, 'attrs': {}},
+                        'src': {'id': ['id', 3, 1], 'category': Constant.E_class, 'attrs': {}},
                         'rel': Constant.define,
                         'dest': {'id': ['id', 1, 1], 'category': Constant.E_method, 'attrs': {}},
                         'direction': '00'
@@ -236,7 +236,7 @@ class AntiPattern(Pattern):
                     {
                         'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                         'rel': Constant.inherit,
-                        'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {'intrusive': True, 'final': True}},
+                        'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {'final': True}},
                         'direction': '10'
                     }
                 ],
@@ -244,8 +244,7 @@ class AntiPattern(Pattern):
                     {
                         'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
                         'rel': Constant.override,
-                        'dest': {'id': [-1], 'category': Constant.E_method,
-                                 'attrs': {'intrusive': True, 'final': True}},
+                        'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {'final': True}},
                         'direction': '10'
                     },
                 ]
@@ -300,9 +299,9 @@ class AntiPattern(Pattern):
             'InheritDestroy': [
                 [
                     {
-                        'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {'intrusive': True}},
+                        'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                         'rel': Constant.inherit,
-                        'dest': {'id': [-1], 'category': Constant.E_variable, 'attrs': {}},
+                        'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                         'direction': '01'
                     }
                 ]
@@ -313,6 +312,10 @@ class AntiPattern(Pattern):
     def __init__(self, match: Match):
         Pattern.__init__(self, match)
 
-    def start_detect(self):
-        print('start detect anti pattern ')
+    def start_detect_coupling(self):
+        print('start detect coupling patterns ')
         return self.matchPattern(self.anti_patterns)
+
+    def start_detect_anti_patterns(self):
+        print('start detect anti patterns ')
+        return self.matchPattern(self.special_anti_patterns)
