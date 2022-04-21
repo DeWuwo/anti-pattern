@@ -1,5 +1,6 @@
 from typing import List
 from utils.constant import Constant
+import traceback
 
 
 class Entity:
@@ -45,14 +46,14 @@ class Entity:
             self.start_column = args['startColumn']
             self.end_line = args['endLine']
             self.end_column = args['endColumn']
-        except:
+        except KeyError:
             self.start_line = -1
             self.start_column = -1
             self.end_line = -1
             self.end_column = -1
         try:
             self.file_path = args['File']
-        except:
+        except KeyError:
             self.file_path = ""
         try:
             self.modifiers = []
@@ -66,27 +67,27 @@ class Entity:
                 self.final = True
             if Constant.M_static in args['modifiers']:
                 self.static = True
-        except:
+        except KeyError:
             self.modifiers = []
         try:
             self.raw_type = args['rawType']
-        except:
+        except KeyError:
             self.raw_type = ''
         try:
             self.parameter_types = args['parameterTypes']
-        except:
+        except KeyError:
             self.parameter_types = ""
         try:
             self.is_global = 1 if args['global'] else 0
-        except:
+        except KeyError:
             self.is_global = 2
         try:
             self.innerType = args['innerType']
-        except:
+        except KeyError:
             self.innerType = []
         try:
             self.aosp_hidden = 1 if args['aosp_hidden']['hidden'] else 0
-        except:
+        except KeyError:
             self.aosp_hidden = -1
 
     def __str__(self):
@@ -122,3 +123,12 @@ class Entity:
 
     def set_entity_mapping(self, entity_id: int):
         self.entity_mapping = entity_id
+
+
+if __name__ == '__main__':
+    a = {1: 2}
+    try:
+        print(a[3])
+        print(a[1])
+    except KeyError as e:
+        traceback.print_exc()
