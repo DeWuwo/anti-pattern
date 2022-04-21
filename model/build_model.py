@@ -147,7 +147,7 @@ class BuildModel:
 
     # get owner string '01', '10', '11' or '00'
     def get_direction(self, relation: Relation):
-        return str(self.entity_assi[relation.src['id']].isHonor) + str(self.entity_assi[relation.dest['id']].isHonor)
+        return str(self.entity_assi[relation.src['id']].not_aosp) + str(self.entity_assi[relation.dest['id']].not_aosp)
 
     # Construction of query map
     def query_map_build(self, diff: List[Relation], android_define_set: List[Relation]):

@@ -28,27 +28,27 @@ class ModeMatch:
 
     def _init(self, section: List[Relation], android_contain_set: List[Relation]):
         for item in section:
-            self.find_map[item.rel][str(item.src['isHonor']) + str(item.dest['isHonor'])][
+            self.find_map[item.rel][str(item.src['not_aosp']) + str(item.dest['not_aosp'])][
                 self.base_model.entity_assi[item.src['id']].category][
                 self.base_model.entity_assi[item.dest['id']].category].append(item)
 
-            self.find_map[item.rel][str(item.src['isHonor']) + str(item.dest['isHonor'])][
+            self.find_map[item.rel][str(item.src['not_aosp']) + str(item.dest['not_aosp'])][
                 self.base_model.entity_assi[item.src['id']].category][item.dest['id']].append(item)
 
-            self.find_map[item.rel][str(item.src['isHonor']) + str(item.dest['isHonor'])][item.src['id']][
+            self.find_map[item.rel][str(item.src['not_aosp']) + str(item.dest['not_aosp'])][item.src['id']][
                 self.base_model.entity_assi[item.dest['id']].category].append(item)
 
-            self.find_map[item.rel][str(item.src['isHonor']) + str(item.dest['isHonor'])][item.src['id']][
+            self.find_map[item.rel][str(item.src['not_aosp']) + str(item.dest['not_aosp'])][item.src['id']][
                 item.dest['id']].append(item)
             if item.bind_var != -1:
-                self.find_map[item.bind_var][str(item.src['isHonor']) + str(item.dest['isHonor'])][
+                self.find_map[item.bind_var][str(item.src['not_aosp']) + str(item.dest['not_aosp'])][
                     self.base_model.entity_assi[item.src['id']].category][
                     self.base_model.entity_assi[item.dest['id']].category].append(item)
         for item in android_contain_set:
             self.find_map[item.rel]['00'][item.src['id']][item.dest['id']].append(item)
 
-    def findSection(self, rel: str, isHonor: str, src, dest) -> List[Relation]:
-        return self.find_map[rel][isHonor][src][dest]
+    def findSection(self, rel: str, not_aosp: str, src, dest) -> List[Relation]:
+        return self.find_map[rel][not_aosp][src][dest]
 
     def findModeICCD1(self):
         print("matching mode <Inheritance class coupling dependency (1)>")
@@ -119,7 +119,7 @@ class ModeMatch:
             temp = [item]
             for item1 in self.findSection(Constant.implement, '11', Constant.E_class, Constant.E_interface):
                 if self.base_model.entity_assi[item1.dest['id']].name == \
-                        self.base_model.entity_assi[item.dest['id']].var_type:
+                        self.base_model.entity_assi[item.dest['id']].raw_type:
                     temp1 = temp[:]
                     temp1.append(item1)
                     for item2 in self.findSection(Constant.define, '11', item1.src['id'], Constant.E_method):
@@ -161,7 +161,7 @@ class ModeMatch:
                 for item2 in self.findSection(Constant.call, '10', item1.dest['id'], Constant.E_method):
                     if item2.bind_var == item.dest['id']:
                         item3 = self.findSection(Constant.define, '00',
-                                                 self.base_model.entity_assi[item2.bind_var].var_type,
+                                                 self.base_model.entity_assi[item2.bind_var].raw_type,
                                                  item2.dest['id'])
                         if item3:
                             flag = 2
@@ -198,7 +198,7 @@ class ModeMatch:
         mode_set = []
         for item in self.findSection(Constant.define, '11', Constant.E_class, Constant.E_variable):
             temp = [item]
-            for item2 in self.findSection(Constant.define, '00', self.base_model.entity_assi[item.dest['id']].var_type,
+            for item2 in self.findSection(Constant.define, '00', self.base_model.entity_assi[item.dest['id']].raw_type,
                                           Constant.E_method):
                 if self.base_model.entity_assi[item2.src['id']].category == 'Interface':
                     flag = 1
@@ -260,9 +260,9 @@ class ModeMatch:
             elif entity['id'][0] == 'type':
                 pre_edge = entity_stack[entity['id'][1]]
                 if entity['id'][2] == 0:
-                    entity_base = self.base_model.entity_assi[pre_edge.src['id']].var_type
+                    entity_base = self.base_model.entity_assi[pre_edge.src['id']].raw_type
                 else:
-                    entity_base = self.base_model.entity_assi[pre_edge.dest['id']].var_type
+                    entity_base = self.base_model.entity_assi[pre_edge.dest['id']].raw_type
             elif entity['id'][0] == 'bindType':
                 entity_base = entity_stack[entity['id'][1]].bind_var
             else:
@@ -274,10 +274,10 @@ class ModeMatch:
             src = graph[current][0]
             rel = graph[current][1]
             dest = graph[current][2]
-            isHonor = graph[current][3]
+            not_aosp = graph[current][3]
             src_base, src_category, src_access = entity_rule(example_stack, src)
             dest_base, dest_category, dest_access = entity_rule(example_stack, dest)
-            for item in self.findSection(rel, isHonor, src_base, dest_base):
+            for item in self.findSection(rel, not_aosp, src_base, dest_base):
                 if (src_category == '' or src_category == self.base_model.entity_assi[item.src['id']].category) and \
                         (dest_category == '' or dest_category == self.base_model.entity_assi[
                             item.dest['id']].category) and \

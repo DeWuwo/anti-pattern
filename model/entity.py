@@ -1,6 +1,5 @@
 from typing import List
 from utils.constant import Constant
-import traceback
 
 
 class Entity:
@@ -12,7 +11,7 @@ class Entity:
     raw_type: str
     parameter_types: str
     file_path: str
-    isHonor: int
+    not_aosp: int
     is_intrusive: int
     entity_mapping: int
     modifiers: List[str]
@@ -34,7 +33,7 @@ class Entity:
         self.category = args['category']
         self.parentId = args['parentId']
         self.file_path = ""
-        self.isHonor = 0
+        self.not_aosp = 0
         self.is_intrusive = 0
         self.entity_mapping = -1
         self.modifiers = []
@@ -94,8 +93,8 @@ class Entity:
         return self.category + "#" + self.qualifiedName
 
     def toJson(self):
-        temp = {'id': self.id, 'isHonor': self.isHonor, 'category': self.category, 'qualifiedName': self.qualifiedName,
-                'name': self.name, 'isIntrusive': self.is_intrusive}
+        temp = {'id': self.id, 'not_aosp': self.not_aosp, 'category': self.category,
+                'qualifiedName': self.qualifiedName, 'name': self.name, 'isIntrusive': self.is_intrusive}
         if self.file_path != "":
             temp['File'] = self.file_path
         if self.start_line != -1:
@@ -115,20 +114,11 @@ class Entity:
             temp['hidden'] = True if self.aosp_hidden == 1 else False
         return temp
 
-    def set_honor(self, isHonor: int):
-        self.isHonor = isHonor
+    def set_honor(self, not_aosp: int):
+        self.not_aosp = not_aosp
 
     def set_intrusive(self, intrusive: int):
         self.is_intrusive = intrusive
 
     def set_entity_mapping(self, entity_id: int):
         self.entity_mapping = entity_id
-
-
-if __name__ == '__main__':
-    a = {1: 2}
-    try:
-        print(a[3])
-        print(a[1])
-    except KeyError as e:
-        traceback.print_exc()
