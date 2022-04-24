@@ -44,6 +44,9 @@ class Match:
     def handle_accessible(self, entity: Entity, accessible: List[str]):
         return (not accessible) or entity.accessible in accessible or (entity.accessible == '' and '' in accessible)
 
+    def handle_intrusive(self, entity: Entity, intrusive: bool):
+        return (not intrusive) or entity.is_intrusive
+
     def handle_hidden(self, entity: Entity, hidden: bool):
         return (not hidden) or entity.id in self.base_model.hidden_entities
 
@@ -53,8 +56,8 @@ class Match:
     def handle_accessible_modify(self, entity: Entity, accessible_modify: bool):
         return (not accessible_modify) or entity.id in self.base_model.access_modify_entities
 
-    def handle_intrusive(self, entity: Entity, intrusive: bool):
-        return (not intrusive) or entity.is_intrusive
+    def handle_hidden_modify(self, entity: Entity, hidden_modify: bool):
+        return (not hidden_modify) or entity.id in self.base_model.hidden_modify_entities
 
     # 匹配函数
     def handle_matching(self, result_set: list, example_stack: list, flag: list, graph, current):

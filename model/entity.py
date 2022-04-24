@@ -12,6 +12,7 @@ class Entity:
     parameter_types: str
     file_path: str
     not_aosp: int
+    max_target_sdk: int
     is_intrusive: int
     entity_mapping: int
     modifiers: List[str]
@@ -34,6 +35,7 @@ class Entity:
         self.parentId = args['parentId']
         self.file_path = ""
         self.not_aosp = 0
+        self.max_target_sdk = -1
         self.is_intrusive = 0
         self.entity_mapping = -1
         self.modifiers = []
@@ -86,6 +88,7 @@ class Entity:
             self.innerType = []
         try:
             self.aosp_hidden = 1 if args['aosp_hidden']['hidden'] else 0
+            self.max_target_sdk = args['aosp_hidden']['maxTargetSdk']
         except KeyError:
             self.aosp_hidden = -1
 
@@ -112,6 +115,7 @@ class Entity:
             temp['global'] = True if self.is_global else False
         if self.aosp_hidden != -1:
             temp['hidden'] = True if self.aosp_hidden == 1 else False
+            temp['maxTargetSdk'] = self.max_target_sdk
         return temp
 
     def set_honor(self, not_aosp: int):

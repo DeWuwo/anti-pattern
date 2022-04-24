@@ -16,6 +16,7 @@ class BuildModel:
     statistics_assi: Dict
     # more info
     hidden_entities: List[int]
+    hidden_modify_entities: List[int]
     access_modify_entities: List[int]
     final_modify_entities: List[int]
     diff_relations: List[Relation]
@@ -60,6 +61,8 @@ class BuildModel:
                     temp = self.entity_android[entity.entity_mapping]
                     if entity.aosp_hidden == 1:
                         self.hidden_entities.append(entity.id)
+                    if not entity.aosp_hidden and temp.aosp_hidden:
+                        self.hidden_modify_entities.append(entity.id)
                     if entity.modifiers != temp.modifiers:
                         if entity.accessible != temp.accessible:
                             self.access_modify_entities.append(entity.id)
@@ -83,6 +86,7 @@ class BuildModel:
                     #                 compare3.append(entity.toJson())
 
                 self.entity_assi.append(entity)
+        print(self.access_modify_entities)
         # FileReader.write_to_json('D:/Honor/experiment/lineage/4-19/base/compare',
         #                          {'b1': compare1, 'b2': compare2, 'b3': compare3}, 0)
         # init dep

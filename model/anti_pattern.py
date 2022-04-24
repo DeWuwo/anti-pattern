@@ -284,6 +284,27 @@ class AntiPattern(Pattern):
             ]
         },
         {
+            'HiddenModify': [
+                [
+                    {
+                        'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
+                        'rel': Constant.call,
+                        'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {'hidden_modify': True}},
+                        'direction': '10'
+                    }
+                ],
+                [
+                    {
+                        'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
+                        'rel': Constant.use,
+                        'dest': {'id': [-1], 'category': Constant.E_variable, 'attrs': {'hidden_modify': True}},
+                        'direction': '10'
+                    }
+
+                ]
+            ]
+        },
+        {
             'ParamListModify': [
                 [
                     {
