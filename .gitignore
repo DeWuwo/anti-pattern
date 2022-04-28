@@ -2,6 +2,7 @@
 /build
 /dist
 venv
+/file_test
 __pycache__
 *.spec
 *.json

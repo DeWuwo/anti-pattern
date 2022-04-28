@@ -1,12 +1,10 @@
 import json
 import os
-import csv
-from datetime import date
 from typing import List, Dict
 
 
-class FileReader:
-    outFile = ['/diff.json', '/section.json', '/example.json', '/anti-patterns.json', '/stat.json']
+class FileJson:
+    outFile = ['/diff.json', '/union.json', '/example.json', '/res.json', '/stat.json']
 
     @classmethod
     def read_from_json(cls, file_android, file_honor: str):
@@ -28,20 +26,6 @@ class FileReader:
             raise e
 
     @classmethod
-    def read_from_csv(cls, file_path: str):
-        with open(file_path, 'r', encoding='utf-8') as f:
-            try:
-                entities = []
-                reader = csv.reader(f)
-                next(reader)
-                for entity in reader:
-                    if entity[4] != '[]':
-                        entities.append(int(entity[2]))
-                return entities
-            except Exception as e:
-                raise e
-
-    @classmethod
     def write_to_json(cls, out_path: str, section, mode):
         os.makedirs(out_path, exist_ok=True)
         with open(out_path + cls.outFile[mode], 'w+', encoding='utf-8') as o:
@@ -57,22 +41,3 @@ class FileReader:
                     exa_path = mode_path + '/' + str(index)
                     os.makedirs(exa_path, exist_ok=True)
                     cls.write_to_json(exa_path, exa, 2)
-
-    @classmethod
-    def write_to_csv(cls, out_path: str, run_time: date, assi: str, aosp: str, res: dict):
-        file_exist = False
-        file_path = os.path.join(out_path, 'res.csv')
-        if os.path.exists(file_path):
-            file_exist = True
-        # get header
-        headers = ['run_time', 'assi', 'aosp']
-        for key in res:
-            headers.append(key)
-        # get res
-        res.update({'run_time': run_time, 'assi': assi, 'aosp': aosp})
-        os.makedirs(out_path, exist_ok=True)
-        with open(os.path.join(out_path, 'res.csv'), 'a', newline='') as f:
-            f_writer = csv.DictWriter(f, headers)
-            if not file_exist:
-                f_writer.writeheader()
-            f_writer.writerow(res)

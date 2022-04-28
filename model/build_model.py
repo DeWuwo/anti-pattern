@@ -3,7 +3,7 @@ from collections import defaultdict
 from functools import partial
 from model.entity import Entity
 from model.relation import Relation
-from utils import Constant, FileReader
+from utils import Constant
 
 
 class BuildModel:
@@ -35,6 +35,7 @@ class BuildModel:
         self.statistics_android = statistics_android
         self.statistics_assi = statistics_assi
         self.hidden_entities = []
+        self.hidden_modify_entities = []
         self.access_modify_entities = []
         self.final_modify_entities = []
         self.diff_relations = []
@@ -48,9 +49,6 @@ class BuildModel:
                 entity = Entity(**item)
                 self.entity_android.append(entity)
                 entity_set[entity.category][entity.qualifiedName].append(entity.id)
-        compare1 = []
-        compare2 = []
-        compare3 = []
         for item in entities_assi:
             if not item['external']:
                 entity = Entity(**item)
@@ -70,25 +68,22 @@ class BuildModel:
                             self.final_modify_entities.append(entity.id)
                 else:
                     entity.set_honor(1)
-                    # if entity.id in assi_entities:
-                    #     entity.set_honor(1)
-                    #     if self.blame_stub(entity, entity_set):
-                    #         compare1.append(entity.toJson())
-                    # else:
-                    #     if entity.id in intrusive_entities:
-                    #         entity.set_intrusive(1)
-                    #     self.get_entity_map(entity, entity_set)
-                    #     if not self.blame_stub(entity, entity_set):
-                    #         if entity.id in blame_null_entities:
-                    #             compare2.append(entity.toJson())
-                    #         else:
-                    #             if entity.category != 'Variable':
-                    #                 compare3.append(entity.toJson())
-
+                # get entity package
+                if entity.category != Constant.E_package:
+                    flag = True
+                    if entity.parentId != -1:
+                        temp = self.entity_assi[entity.parentId]
+                        while temp.category != Constant.E_package:
+                            if temp.package_name != "":
+                                entity.set_package_name(temp.package_name)
+                                flag = False
+                                break
+                            temp = self.entity_assi[temp.parentId]
+                        if flag:
+                            entity.set_package_name(temp.qualifiedName)
+                    else:
+                        entity.set_package_name('null')
                 self.entity_assi.append(entity)
-        print(self.access_modify_entities)
-        # FileReader.write_to_json('D:/Honor/experiment/lineage/4-19/base/compare',
-        #                          {'b1': compare1, 'b2': compare2, 'b3': compare3}, 0)
         # init dep
         print("start init model deps")
         bind_var = -1
@@ -167,9 +162,6 @@ class BuildModel:
                 self.entity_assi[item.dest['id']].category].append(item)
 
             self.query_map[item.rel][self.get_direction(item)][item.src['id']][item.dest['id']].append(item)
-            # if item.bind_var != -1:
-            #     self.query_map[item.bind_var][self.get_direction(item)][self.entity_assi[item.src['id']].category][
-            #         self.entity_assi[item.dest['id']].category].append(item)
         for item in android_define_set:
             self.query_map[item.rel]['00'][item.src['id']][item.dest['id']].append(item)
 

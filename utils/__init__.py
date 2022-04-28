@@ -1,7 +1,9 @@
-from utils.file_reader import FileReader
+from utils.file_json import FileJson
+from utils.file_csv import FileCSV
 from utils.constant import Constant
 
 __all__ = [
-    'FileReader',
+    'FileJson',
+    'FileCSV',
     'Constant'
 ]

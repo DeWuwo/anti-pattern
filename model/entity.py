@@ -11,6 +11,7 @@ class Entity:
     raw_type: str
     parameter_types: str
     file_path: str
+    package_name: str
     not_aosp: int
     max_target_sdk: int
     is_intrusive: int
@@ -34,6 +35,7 @@ class Entity:
         self.category = args['category']
         self.parentId = args['parentId']
         self.file_path = ""
+        self.package_name = ""
         self.not_aosp = 0
         self.max_target_sdk = -1
         self.is_intrusive = 0
@@ -95,11 +97,20 @@ class Entity:
     def __str__(self):
         return self.category + "#" + self.qualifiedName
 
+    def to_csv(self):
+        return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName}
+
+    @classmethod
+    def get_csv_header(cls):
+        return ['id', 'category', 'qualifiedName']
+
     def toJson(self):
         temp = {'id': self.id, 'not_aosp': self.not_aosp, 'category': self.category,
                 'qualifiedName': self.qualifiedName, 'name': self.name, 'isIntrusive': self.is_intrusive}
         if self.file_path != "":
             temp['File'] = self.file_path
+        if self.package_name != "":
+            temp['packageName'] = self.package_name
         if self.start_line != -1:
             temp['startLine'] = self.start_line
             temp['startColumn'] = self.start_column
@@ -126,3 +137,6 @@ class Entity:
 
     def set_entity_mapping(self, entity_id: int):
         self.entity_mapping = entity_id
+
+    def set_package_name(self, package_name: str):
+        self.package_name = package_name
