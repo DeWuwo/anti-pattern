@@ -34,7 +34,7 @@ class BuildModel:
         self.relation_assi = []
         self.statistics_android = statistics_android
         self.statistics_assi = statistics_assi
-        self.hidden_entities = []
+        # self.hidden_entities = []
         self.hidden_modify_entities = []
         self.access_modify_entities = []
         self.final_modify_entities = []
@@ -57,8 +57,8 @@ class BuildModel:
                     self.get_entity_map(entity, entity_set)
                     # storage special entities
                     temp = self.entity_android[entity.entity_mapping]
-                    if entity.aosp_hidden == 1:
-                        self.hidden_entities.append(entity.id)
+                    # if entity.aosp_hidden == 1:
+                    #     self.hidden_entities.append(entity.id)
                     if not entity.aosp_hidden and temp.aosp_hidden:
                         self.hidden_modify_entities.append(entity.id)
                     if entity.modifiers != temp.modifiers:
@@ -86,25 +86,13 @@ class BuildModel:
                 self.entity_assi.append(entity)
         # init dep
         print("start init model deps")
-        bind_var = -1
-        relation_type = ''
         relation_set = defaultdict(partial(defaultdict, partial(defaultdict, int)))
         for item in cells_android:
-            for key in item['values']:
-                if key == 'bindVar':
-                    bind_var = item['values'][key]
-                else:
-                    relation_type = key
-            relation = Relation({'id': item['src']}, bind_var, relation_type, {'id': item['dest']})
+            relation = Relation(**item)
             self.relation_android.append(relation)
             relation_set[item['src']][relation.rel][item['dest']] = 1
         for item in cells_assi:
-            for key in item['values']:
-                if key == 'bindVar':
-                    bind_var = item['values'][key]
-                else:
-                    relation_type = key
-            relation = Relation({'id': item['src']}, bind_var, relation_type, {'id': item['dest']})
+            relation = Relation(**item)
             self.set_dep_assi(relation, relation_set)
 
         # query set build
@@ -135,8 +123,8 @@ class BuildModel:
     def set_dep_assi(self, relation: Relation, rel_set: defaultdict):
         diff_set: List[Relation] = []
         define_set: List[Relation] = []
-        src = self.entity_assi[relation.src['id']].entity_mapping
-        dest = self.entity_assi[relation.dest['id']].entity_mapping
+        src = self.entity_assi[relation.src].entity_mapping
+        dest = self.entity_assi[relation.dest].entity_mapping
         if not rel_set[src][relation.rel][dest]:
             relation.set_not_aosp(1)
             self.diff_relations.append(relation)
@@ -146,24 +134,24 @@ class BuildModel:
 
     # get owner string '01', '10', '11' or '00'
     def get_direction(self, relation: Relation):
-        return str(self.entity_assi[relation.src['id']].not_aosp) + str(self.entity_assi[relation.dest['id']].not_aosp)
+        return str(self.entity_assi[relation.src].not_aosp) + str(self.entity_assi[relation.dest].not_aosp)
 
     # Construction of query map
     def query_map_build(self, diff: List[Relation], android_define_set: List[Relation]):
         self.query_map = defaultdict(partial(defaultdict, partial(defaultdict, partial(defaultdict, list))))
         for item in diff:
-            self.query_map[item.rel][self.get_direction(item)][self.entity_assi[item.src['id']].category][
-                self.entity_assi[item.dest['id']].category].append(item)
+            self.query_map[item.rel][self.get_direction(item)][self.entity_assi[item.src].category][
+                self.entity_assi[item.dest].category].append(item)
 
-            self.query_map[item.rel][self.get_direction(item)][self.entity_assi[item.src['id']].category][
-                item.dest['id']].append(item)
+            self.query_map[item.rel][self.get_direction(item)][self.entity_assi[item.src].category][
+                item.dest].append(item)
 
-            self.query_map[item.rel][self.get_direction(item)][item.src['id']][
-                self.entity_assi[item.dest['id']].category].append(item)
+            self.query_map[item.rel][self.get_direction(item)][item.src][
+                self.entity_assi[item.dest].category].append(item)
 
-            self.query_map[item.rel][self.get_direction(item)][item.src['id']][item.dest['id']].append(item)
+            self.query_map[item.rel][self.get_direction(item)][item.src][item.dest].append(item)
         for item in android_define_set:
-            self.query_map[item.rel]['00'][item.src['id']][item.dest['id']].append(item)
+            self.query_map[item.rel]['00'][item.src][item.dest].append(item)
 
     # query method
     def query_relation(self, rel: str, not_aosp: str, src, dest) -> List[Relation]:

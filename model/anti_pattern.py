@@ -3,294 +3,69 @@ from utils import Constant
 
 
 class AntiPattern(PatternType):
-    ident: str
-    patterns: list
-    rules: list
-
-    coupling_pattern = {
-        'ident': 'coupling-patterns',
-        'patterns': ['InheritClassCouplingDep', 'ImplementClassCouplingDep', 'AggregationExtensionInterfaceClassDep',
-                     'ParameterListModifyDep', 'InheritanceUseParentProtected', 'AggregationAOSPClassDep',
-                     'InnerExtensionClassUseDep', 'EncapsulationAOSPInterface', 'PublicInterfaceUseDep'],
-        'rules': [
+    def __init__(self):
+        ident = 'anti-patterns'
+        patterns = ['FinalDel', 'ClassAccessibility', 'HiddenApi', 'HiddenModify',
+                    'ParamListModify',
+                    'InheritDestroy', 'Reflect']
+        rules = [
             {
-                'Android2Honor/InheritClassCouplingDep': [
+                patterns[0]: [
                     [
                         {
-                            'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {'accessible': []}},
-                            'rel': Constant.inherit,
-                            'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {'accessible': []}},
-                            'direction': '01'
-                        }]
-                ]
-            },
-            {
-                'Android2Honor/ImplementClassCouplingDep': [
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {'accessible': []}},
-                            'rel': Constant.implement,
-                            'dest': {'id': [-1], 'category': Constant.E_interface, 'attrs': {'accessible': []}},
-                            'direction': '01'
-                        }]
-                ]
-            },
-            {
-                'Android2Honor/AggregationExtensionInterfaceClassDep': [
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': [-1], 'category': Constant.E_variable, 'attrs': {}},
-                            'direction': '01'
-                        },
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_interface, 'attrs': {}},
-                            'rel': Constant.typed,
-                            'dest': {'id': ['id', 0, 1], 'category': Constant.E_variable, 'attrs': {}},
-                            'direction': '11'
-                        },
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.implement,
-                            'dest': {'id': ['id', 1, 0], 'category': Constant.E_interface, 'attrs': {}},
-                            'direction': '11'
-                        },
-                        {
-                            'src': {'id': ['id', 2, 0], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '11'
-                        },
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': Constant.call,
-                            'dest': {'id': ['id', 3, 1], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '01'
-                        },
-                        {
-                            'src': {'id': ['id', 0, 0], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': ['id', 4, 0], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '00'
+                            'src': {'id': [-1], 'category': Constant.E_class,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.inherit, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_class,
+                                     'attrs': {'final': True}},
+                            'direction': '10'
                         }
-                    ]
-
-                ]
-            },
-            {
-                'Android2Honor/ParameterListModifyDep': [
+                    ],
                     [
                         {
-                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': Constant.param,
-                            'dest': {'id': [-1], 'category': Constant.E_variable, 'attrs': {}},
-                            'direction': '01'
-                        }
-                    ]
-                ]
-            },
-            {
-                'Honor2Android/InheritanceUseParentProtected': [
-                    [
-                        {
-                            'src': {'id': [-1], 'category': 'Class', 'attrs': {'accessible': []}},
-                            'rel': Constant.inherit,
-                            'dest': {'id': [-1], 'category': 'Class', 'attrs': {'accessible': []}},
-                            'direction': '10'
-                        },
-                        {
-                            'src': {'id': ['id', 0, 0], 'category': 'Class', 'attrs': {'accessible': []}},
-                            'rel': Constant.define,
-                            'dest': {'id': [-1], 'category': 'Method', 'attrs': {'accessible': []}},
-                            'direction': '11'
-                        },
-                        {
-                            'src': {'id': ['id', 1, 1], 'category': 'Method', 'attrs': {'accessible': []}},
-                            'rel': Constant.call,
-                            'dest': {'id': [-1], 'category': 'Method', 'attrs': {'accessible': ['protected']}},
-                            'direction': '10'
-                        },
-                        {
-                            'src': {'id': ['id', 0, 1], 'category': 'Class', 'attrs': {'accessible': []}},
-                            'rel': Constant.define,
-                            'dest': {'id': ['id', 2, 1], 'category': 'Method', 'attrs': {'accessible': ['protected']}},
-                            'direction': '00'
-                        }
-                    ]
-                ]
-            },
-            {
-                'Honor2Android/AggregationAOSPClassDep': [
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '11'
-                        },
-                        {
-                            'src': {'id': ['id', 0, 1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': Constant.call,
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '10'
-                        },
-                        {
-                            'src': {'id': ['id', 0, 0], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': ['bindVar', 1], 'category': Constant.E_variable, 'attrs': {}},
-                            'direction': '11'
-                        },
-                        {
-                            'src': {'id': ['id', 2, 1], 'category': Constant.E_variable, 'attrs': {}},
-                            'rel': Constant.typed,
-                            'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
-                            'direction': '10'
-                        },
-                        {
-                            'src': {'id': ['id', 3, 1], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': ['id', 1, 1], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '00'
-                        },
-                    ]
-                ]
-            },
-            {
-                'Honor2Android/InnerExtensionClassUseDep': [
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
-                            'direction': '01'
-                        },
-                        {
-                            'src': {'id': ['id', 0, 1], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '11'
-                        },
-                        {
-                            'src': {'id': ['id', 1, 1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': Constant.call,
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '10'
-                        },
-                        {
-                            'src': {'id': ['id', 0, 0], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': ['id', 2, 1], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '00'
-                        },
-                    ]
-
-                ]
-            },
-            {
-                'Honor2Android/EncapsulationAOSPInterface': [
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '11'
-                        },
-                        {
-                            'src': {'id': ['id', 0, 0], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': [-1], 'category': Constant.E_variable, 'attrs': {}},
-                            'direction': '11'
-                        },
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_interface, 'attrs': {}},
-                            'rel': Constant.typed,
-                            'dest': {'id': ['id', 1, 1], 'category': Constant.E_variable, 'attrs': {}},
-                            'direction': '01'
-                        },
-                        {
-                            'src': {'id': ['id', 0, 1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': Constant.call,
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '10'
-                        },
-                        {
-                            'src': {'id': ['id', 2, 0], 'category': Constant.E_interface, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': ['id', 3, 1], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '00'
-                        },
-                    ]
-                ]
-            },
-            {
-                'Honor2Android/PublicInterfaceUseDep': [
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': Constant.call,
+                            'src': {'id': [-1], 'category': Constant.E_method,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.override, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
-                                     'attrs': {'accessible': ['public', '']}},
-                            'direction': '10'
-                        },
-                    ]
-                ]
-            }
-        ]
-    }
-
-    special_anti_pattern = {
-        'ident': 'anti-patterns',
-        'patterns': ['FinalDel', 'ClassAccessibility', 'HiddenApi', 'HiddenModify', 'ParamListModify',
-                     'InheritDestroy'],
-        'rules': [
-            {
-                'FinalDel': [
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.inherit,
-                            'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {'final': True}},
-                            'direction': '10'
-                        }
-                    ],
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': Constant.override,
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {'final': True}},
+                                     'attrs': {'final': True}},
                             'direction': '10'
                         },
                     ]
                 ]
             },
             {
-                'ClassAccessibility': [
+                patterns[1]: [
                     [
                         {
-                            'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.define,
-                            'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {'accessible_modify': True}},
+                            'src': {'id': [-1], 'category': Constant.E_class,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.define, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_class,
+                                     'attrs': {'accessible_modify': True}},
                             'direction': '00'
                         }
                     ]
                 ]
             },
             {
-                'HiddenApi': [
+                patterns[2]: [
                     [
                         {
-                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': Constant.call,
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {'hidden': True}},
+                            'src': {'id': [-1], 'category': Constant.E_method,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.call, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_method,
+                                     'attrs': {'hidden': True}},
                             'direction': '10'
                         }
                     ],
                     [
                         {
-                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': Constant.use,
-                            'dest': {'id': [-1], 'category': Constant.E_variable, 'attrs': {'hidden': True}},
+                            'src': {'id': [-1], 'category': Constant.E_method,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.use, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_variable,
+                                     'attrs': {'hidden': True}},
                             'direction': '10'
                         }
 
@@ -298,20 +73,24 @@ class AntiPattern(PatternType):
                 ]
             },
             {
-                'HiddenModify': [
+                patterns[3]: [
                     [
                         {
-                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': Constant.call,
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {'hidden_modify': True}},
+                            'src': {'id': [-1], 'category': Constant.E_method,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.call, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_method,
+                                     'attrs': {'hidden_modify': True}},
                             'direction': '10'
                         }
                     ],
                     [
                         {
-                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': Constant.use,
-                            'dest': {'id': [-1], 'category': Constant.E_variable, 'attrs': {'hidden_modify': True}},
+                            'src': {'id': [-1], 'category': Constant.E_method,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.use, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_variable,
+                                     'attrs': {'hidden_modify': True}},
                             'direction': '10'
                         }
 
@@ -319,31 +98,62 @@ class AntiPattern(PatternType):
                 ]
             },
             {
-                'ParamListModify': [
+                patterns[4]: [
                     [
                         {
-                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {'accessible': ['public']}},
-                            'rel': Constant.param,
-                            'dest': {'id': [-1], 'category': Constant.E_variable, 'attrs': {}},
+                            'src': {'id': [-1], 'category': Constant.E_method,
+                                    'attrs': {'accessible': ['public']}},
+                            'rel': {'type': Constant.param, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_variable,
+                                     'attrs': {}},
                             'direction': '01'
                         }
                     ]
                 ]
             },
             {
-                'InheritDestroy': [
+                patterns[5]: [
                     [
                         {
-                            'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
-                            'rel': Constant.inherit,
-                            'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
+                            'src': {'id': [-1], 'category': Constant.E_class,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.inherit, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_class,
+                                     'attrs': {}},
                             'direction': '01'
+                        }
+                    ]
+                ]
+            },
+            {
+                patterns[6]: [
+                    [
+                        {
+                            'src': {'id': [-1], 'category': Constant.E_method,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.reflect,
+                                    'attrs': {'set_accessible': True,
+                                              'invoke': True}},
+                            'dest': {'id': [-1], 'category': Constant.E_method,
+                                     'attrs': {
+                                         'accessible': [Constant.accessible_list[0], Constant.accessible_list[1]]}},
+                            'direction': '10'
+                        }
+                    ],
+                    [
+                        {
+                            'src': {'id': [-1], 'category': Constant.E_class,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.reflect,
+                                    'attrs': {'set_accessible': True,
+                                              'invoke': True}},
+                            'dest': {'id': [-1], 'category': Constant.E_method,
+                                     'attrs': {
+                                         'accessible': [Constant.accessible_list[0], Constant.accessible_list[1]]}},
+                            'direction': '10'
                         }
                     ]
                 ]
             }
         ]
-    }
-
-    def __init__(self, ident: str, patterns: list, rules: list):
         PatternType.__init__(self, ident, patterns, rules)

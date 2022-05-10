@@ -20,6 +20,7 @@ class Constant:
     inherit: str = "Inherit"
     override: str = 'Override'
     typed: str = 'Typed'
+    reflect: str = 'Reflect'
 
     # anti-pattern name
     ACM: str = "AOSPAccessModify"
@@ -32,3 +33,7 @@ class Constant:
     accessible_list: List[str] = ['private', 'protected', 'public']
     M_final: str = 'final'
     M_static: str = 'static'
+
+    # rule_type
+    sing_rule: int = 0
+    multi_rule: int = 1

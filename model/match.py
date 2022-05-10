@@ -31,9 +31,9 @@ class Match:
         if entity['id'][0] == 'id':
             pre_edge = entity_stack[entity['id'][1]]
             if entity['id'][2] == 0:
-                entity_base = pre_edge.src['id']
+                entity_base = pre_edge.src
             else:
-                entity_base = pre_edge.dest['id']
+                entity_base = pre_edge.dest
         elif entity['id'][0] == 'bindVar':
             entity_base = entity_stack[entity['id'][1]].bind_var
         else:
@@ -42,7 +42,7 @@ class Match:
         entity_attrs.update({'category': entity_category})
         return entity_base, entity_attrs
 
-    def handle_attr_match(self, entity: Entity, **kwargs):
+    def handle_entity_attr_match(self, entity: Entity, **kwargs):
         for key, val in kwargs.items():
             method = getattr(self, f'handle_{key}', None)
             if not method(entity, val):
@@ -59,7 +59,7 @@ class Match:
         return (not intrusive) or entity.is_intrusive
 
     def handle_hidden(self, entity: Entity, hidden: bool):
-        return (not hidden) or entity.id in self.base_model.hidden_entities
+        return (not hidden) or entity.aosp_hidden == 1
 
     def handle_final(self, entity: Entity, final: bool):
         return (not final) or entity.id in self.base_model.final_modify_entities
@@ -70,31 +70,48 @@ class Match:
     def handle_hidden_modify(self, entity: Entity, hidden_modify: bool):
         return (not hidden_modify) or entity.id in self.base_model.hidden_modify_entities
 
+    # 依赖属性匹配
+    def handle_relation_attr_match(self, relation: Relation, **kwargs):
+        for key, val in kwargs.items():
+            method = getattr(self, f'handle_{key}', None)
+            if not method(relation, val):
+                return False
+        return True
+
+    def handle_set_accessible(self, relation: Relation, set_accessible: bool):
+        return (not set_accessible) or relation.setAccessible == 1
+
+    def handle_invoke(self, relation: Relation, invoke: bool):
+        return (not invoke) or relation.invoke == 1
+
     # 匹配函数
     def handle_matching(self, result_set: list, example_stack: list, flag: list, rules: List[dict], current):
         src = rules[current]['src']
-        rel = rules[current]['rel']
+        rel = rules[current]['rel']['type']
         dest = rules[current]['dest']
         not_aosp = rules[current]['direction']
         src_base, src_attr = self.entity_rule(example_stack, src)
         dest_base, dest_attr = self.entity_rule(example_stack, dest)
+        rel_attr = rules[current]['rel']['attrs']
         if len(rules) == 1:
             flag_map = defaultdict(list)
             for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
-                if self.handle_attr_match(self.base_model.entity_assi[item.src['id']], **src_attr) and \
-                        self.handle_attr_match(self.base_model.entity_assi[item.dest['id']], **dest_attr):
-                    flag_map[item.src['id']].append(item)
+                if self.handle_entity_attr_match(self.base_model.entity_assi[item.src], **src_attr) and \
+                        self.handle_entity_attr_match(self.base_model.entity_assi[item.dest], **dest_attr) and \
+                        self.handle_relation_attr_match(item, **rel_attr):
+                    flag_map[item.src].append(item)
             for item in flag_map:
                 result_set.append(flag_map[item])
         else:
             for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
-                if self.handle_attr_match(self.base_model.entity_assi[item.src['id']], **src_attr) and \
-                        self.handle_attr_match(self.base_model.entity_assi[item.dest['id']], **dest_attr) and \
-                        str(item.src['id']) + str(item.dest['id']) not in flag:
+                if self.handle_entity_attr_match(self.base_model.entity_assi[item.src], **src_attr) and \
+                        self.handle_entity_attr_match(self.base_model.entity_assi[item.dest], **dest_attr) and \
+                        self.handle_relation_attr_match(item, **rel_attr) and \
+                        str(item.src) + str(item.dest) not in flag:
                     next_stack = example_stack[:]
                     next_stack.append(item)
                     flag_update = flag[:]
-                    flag_update.append(str(item.src['id']) + str(item.dest['id']))
+                    flag_update.append(str(item.src) + str(item.dest))
                     if current < len(rules) - 1:
                         current += 1
                         self.handle_matching(result_set, next_stack, flag_update, rules, current)
@@ -139,10 +156,10 @@ class Match:
                     temp_file_set = set()
                     temp_entity_set = set()
                     for rel in exa:
-                        temp_entity_set.add(rel.src['id'])
-                        temp_entity_set.add(rel.dest['id'])
-                        temp_file_set.add(self.get_root_file(rel.src['id']).file_path)
-                        temp_file_set.add(self.get_root_file(rel.dest['id']).file_path)
+                        temp_entity_set.add(rel.src)
+                        temp_entity_set.add(rel.dest)
+                        temp_file_set.add(self.get_root_file(rel.src).file_path)
+                        temp_file_set.add(self.get_root_file(rel.dest).file_path)
                     for file_name in temp_file_set:
                         pattern_files_set[file_name] += 1
                     for entity_id in temp_entity_set:
@@ -169,32 +186,32 @@ class Match:
         match_set = []
         union_temp: List = []
         re_map = defaultdict(int)
-        anti_patterns = {}
+        res = {}
         total_count = 0
-        anti_patterns['modeCount'] = len(self.match_result)
-        anti_patterns['totalCount'] = total_count
-        anti_patterns['values'] = {}
+        res['modeCount'] = len(self.match_result)
+        res['totalCount'] = total_count
+        res['values'] = {}
         for item in self.match_result:
             for mode in item:
                 anti_temp = []
                 for exa in item[mode]:
                     anti_temp.append(self.show_details(exa))
                     for rel in exa:
-                        s2d = str(rel.src['id']) + str(rel.dest['id'])
+                        s2d = str(rel.src) + str(rel.dest)
                         if re_map[s2d] == 0:
                             re_map[s2d] = 1
                             union_temp.append(self.to_detail_json(rel))
                 match_set.append({mode: anti_temp})
-                anti_patterns['values'][mode] = {}
-                anti_patterns['values'][mode]['count'] = len(anti_temp)
-                anti_patterns['values'][mode]['examples'] = anti_temp
+                res['values'][mode] = {}
+                res['values'][mode]['count'] = len(anti_temp)
+                res['values'][mode]['examples'] = anti_temp
                 total_count += len(anti_temp)
-        anti_patterns['totalCount'] = total_count
-        return match_set, union_temp, anti_patterns
+        res['totalCount'] = total_count
+        return match_set, union_temp, res
 
     def to_detail_json(self, relation: Relation):
-        return {"src": self.base_model.entity_assi[relation.src['id']].toJson(), "values": {relation.rel: 1},
-                "dest": self.base_model.entity_assi[relation.dest['id']].toJson()}
+        return {"src": self.base_model.entity_assi[relation.src].toJson(), "values": {relation.rel: 1},
+                "dest": self.base_model.entity_assi[relation.dest].toJson()}
 
     def show_details(self, section: List[Relation]):
         temp = []
