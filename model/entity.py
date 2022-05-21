@@ -10,6 +10,7 @@ class Entity:
     parentId: int
     raw_type: str
     parameter_types: str
+    parameter_names: str
     file_path: str
     package_name: str
     not_aosp: int
@@ -77,9 +78,11 @@ class Entity:
         except KeyError:
             self.raw_type = ''
         try:
-            self.parameter_types = args['parameterTypes']
+            self.parameter_types = args['parameter']['types']
+            self.parameter_names = args['parameter']['names']
         except KeyError:
             self.parameter_types = ""
+            self.parameter_names = ""
         try:
             self.is_global = 1 if args['global'] else 0
         except KeyError:
@@ -118,6 +121,7 @@ class Entity:
             temp['endColumn'] = self.end_column
         if self.parameter_types != '':
             temp['parameterTypes'] = self.parameter_types
+            temp['parameterNames'] = self.parameter_names
         if self.raw_type != '':
             temp['rawType'] = self.raw_type
         if self.modifiers:

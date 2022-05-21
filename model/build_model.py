@@ -21,12 +21,13 @@ class BuildModel:
     final_modify_entities: List[int]
     diff_relations: List[Relation]
     define_relations: List[Relation]
+    reflect_relation: List[Relation]
     # query set
     query_map: defaultdict
 
     def __init__(self, entities_assi, cells_assi, statistics_assi: Dict, entities_android, cells_android,
                  statistics_android: Dict, intrusive_entities: List[int], assi_entities: List[int],
-                 blame_null_entities: List[int]):
+                 all_entities: List[int]):
         # first init
         self.entity_android = []
         self.entity_assi = []
@@ -40,6 +41,7 @@ class BuildModel:
         self.final_modify_entities = []
         self.diff_relations = []
         self.define_relations = []
+        self.reflect_relation = []
         # init entity
         print("start init model entities")
         entity: Entity
@@ -67,6 +69,8 @@ class BuildModel:
                         if not entity.final and temp.final:
                             self.final_modify_entities.append(entity.id)
                 else:
+                    if all_entities and intrusive_entities and entity.id in all_entities and entity.id not in intrusive_entities:
+                        entity.set_honor(0)
                     entity.set_honor(1)
                 # get entity package
                 if entity.category != Constant.E_package:
@@ -96,7 +100,7 @@ class BuildModel:
             self.set_dep_assi(relation, relation_set)
 
         # query set build
-        self.query_map_build(self.diff_relations, self.define_relations)
+        self.query_map_build(self.diff_relations, self.define_relations, self.reflect_relation)
 
     # Get entity mapping relationship
     def get_entity_map(self, entity: Entity, android_entity_set: defaultdict):
@@ -130,6 +134,8 @@ class BuildModel:
             self.diff_relations.append(relation)
         elif relation.rel == Constant.define:
             self.define_relations.append(relation)
+        elif relation.rel == Constant.reflect:
+            self.reflect_relation.append(relation)
         return diff_set, define_set
 
     # get owner string '01', '10', '11' or '00'
@@ -137,7 +143,8 @@ class BuildModel:
         return str(self.entity_assi[relation.src].not_aosp) + str(self.entity_assi[relation.dest].not_aosp)
 
     # Construction of query map
-    def query_map_build(self, diff: List[Relation], android_define_set: List[Relation]):
+    def query_map_build(self, diff: List[Relation], android_define_set: List[Relation],
+                        android_reflect_set: List[Relation]):
         self.query_map = defaultdict(partial(defaultdict, partial(defaultdict, partial(defaultdict, list))))
         for item in diff:
             self.query_map[item.rel][self.get_direction(item)][self.entity_assi[item.src].category][
@@ -151,6 +158,8 @@ class BuildModel:
 
             self.query_map[item.rel][self.get_direction(item)][item.src][item.dest].append(item)
         for item in android_define_set:
+            self.query_map[item.rel]['00'][item.src][item.dest].append(item)
+        for item in android_reflect_set:
             self.query_map[item.rel]['00'][item.src][item.dest].append(item)
 
     # query method

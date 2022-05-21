@@ -1,12 +1,13 @@
 import threading
 import os
+from datetime import datetime
 from typing import List, Dict
 from collections import defaultdict
 from model.relation import Relation
 from model.entity import Entity
 from model.build_model import BuildModel
 from model.pattern_type import PatternType
-from utils import FileJson, FileCSV
+from utils import FileJson, FileCSV, Constant
 
 
 class Match:
@@ -146,10 +147,12 @@ class Match:
         return temp
 
     def get_statistics(self):
+        simple_stat = {}
         self.match_result_base_statistic['Total'] = {'files_count': self.base_model.statistics_assi['File']}
         for item in self.match_result:
             for pattern in item:
                 self.match_result_base_statistic[pattern] = {}
+                simple_stat[pattern] = len(item[pattern])
                 pattern_files_set = defaultdict(int)
                 pattern_entities_set = defaultdict(int)
                 for exa in item[pattern]:
@@ -173,7 +176,7 @@ class Match:
                     try:
                         self.statistic_files[file_name][pattern] = pattern_files_set[file_name]
                     except KeyError:
-                        self.statistic_files[file_name] = {'file_name': file_name}
+                        self.statistic_files[file_name] = {'filename': file_name}
                         self.statistic_files[file_name][pattern] = pattern_files_set[file_name]
                 for entity_id in pattern_entities_set:
                     try:
@@ -181,8 +184,9 @@ class Match:
                     except KeyError:
                         self.statistic_entities[entity_id] = self.base_model.entity_assi[entity_id].to_csv()
                         self.statistic_entities[entity_id][pattern] = pattern_entities_set[entity_id]
+        return simple_stat
 
-    def ready_for_write(self):
+    def deal_res_for_output(self):
         match_set = []
         union_temp: List = []
         re_map = defaultdict(int)
@@ -232,11 +236,11 @@ class Match:
             th.start()
         for th in threads:
             th.join()
-        self.get_statistics()
-        match_set, match_set_union, match_set_json_res = self.ready_for_write()
+        simple_stat = self.get_statistics()
+        match_set, match_set_union, match_set_json_res = self.deal_res_for_output()
         self.output_res(pattern.ident, match_set, match_set_union, match_set_json_res)
         self.output_statistic(pattern.ident, pattern.patterns, self.match_result_base_statistic,
-                              self.statistic_files, self.statistic_entities)
+                              self.statistic_files, self.statistic_entities, simple_stat)
 
     def output_res(self, pattern_type: str, match_set, match_set_union, match_set_json_res):
         output_path = os.path.join(self.output, pattern_type)
@@ -245,13 +249,21 @@ class Match:
         FileJson.write_to_json(output_path, match_set_json_res, 3)
 
     def output_statistic(self, pattern_type: str, patterns: List[str], match_result_base_statistic,
-                         statistic_files_pattern, statistic_entities_pattern):
+                         statistic_files_pattern, statistic_entities_pattern, simple_stat):
         output_path = os.path.join(self.output, pattern_type)
         FileJson.write_to_json(output_path, match_result_base_statistic, 4)
-        # FileCSV.write_stat_to_csv(coupling_path, date.today(), args.honor, args.android, match_set_stat)
-        headers = ['file_name']
+        # FileCSV.write_stat_to_csv('D:\\Honor\\match_res', pattern_type, datetime.now(), self.output.rsplit('\\', 4)[1],
+        #                           self.output.rsplit('\\', 4)[2],
+        #                           self.output.rsplit('\\', 4)[3], simple_stat)
+        headers = ['filename']
         headers.extend(patterns)
         FileCSV.write_to_csv(output_path, 'file-pattern', headers, statistic_files_pattern)
         headers = Entity.get_csv_header()
         headers.extend(patterns)
         FileCSV.write_to_csv(output_path, 'entity-pattern', headers, statistic_entities_pattern)
+        # try:
+        #     left = os.path.join(self.output, Constant.file_mc)
+        #     right = os.path.join(output_path, 'file-pattern.csv')
+        #     FileCSV.merge_csv(left, right, ['filename'], self.output, pattern_type)
+        # except FileNotFoundError as e:
+        #     print(e)

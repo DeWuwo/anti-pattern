@@ -37,3 +37,6 @@ class Constant:
     # rule_type
     sing_rule: int = 0
     multi_rule: int = 1
+
+    # file_name
+    file_mc = 'mc\\file-mc.csv'

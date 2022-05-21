@@ -1,7 +1,8 @@
-import csv
 import os
+import csv
+import pandas as pd
 from datetime import date
-from typing import Dict
+from typing import Dict, List
 
 
 class FileCSV:
@@ -31,19 +32,20 @@ class FileCSV:
                 raise e
 
     @classmethod
-    def write_stat_to_csv(cls, out_path: str, run_time: date, assi: str, aosp: str, res: dict):
+    def write_stat_to_csv(cls, out_path: str, name: str, run_time: date, assi: str, assi_pkg: str, assi_version: str,
+                          res: dict):
         file_exist = False
-        file_path = os.path.join(out_path, 'res.csv')
+        file_path = os.path.join(out_path, name + '_res.csv')
         if os.path.exists(file_path):
             file_exist = True
         # get header
-        headers = ['run_time', 'assi', 'aosp']
+        headers = ['run_time', 'assi', 'assi_pkg', 'assi_version']
         for key in res:
             headers.append(key)
         # get res
-        res.update({'run_time': run_time, 'assi': assi, 'aosp': aosp})
+        res.update({headers[0]: run_time, headers[1]: assi, headers[2]: assi_pkg, headers[3]: assi_version})
         os.makedirs(out_path, exist_ok=True)
-        with open(os.path.join(out_path, 'res.csv'), 'a', newline='') as f:
+        with open(file_path, 'a', newline='') as f:
             f_writer = csv.DictWriter(f, headers)
             if not file_exist:
                 f_writer.writeheader()
@@ -57,3 +59,10 @@ class FileCSV:
             f_writer.writeheader()
             for key in statistic:
                 f_writer.writerow(statistic[key])
+
+    @classmethod
+    def merge_csv(cls, left: str, right: str, columns: List[str], output: str, name: str):
+        fl = pd.read_csv(left)
+        fr = pd.read_csv(right)
+        all_data = pd.merge(fl, fr, how='left', on=columns)
+        all_data.to_csv(os.path.join(output, 'file-mc-' + name + '.csv'))

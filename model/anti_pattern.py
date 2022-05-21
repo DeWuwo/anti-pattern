@@ -5,9 +5,9 @@ from utils import Constant
 class AntiPattern(PatternType):
     def __init__(self):
         ident = 'anti-patterns'
-        patterns = ['FinalDel', 'ClassAccessibility', 'HiddenApi', 'HiddenModify',
+        patterns = ['FinalDel', 'ClassAccessibilityModify', 'HiddenApi', 'HiddenModify',
                     'ParamListModify',
-                    'InheritDestroy', 'Reflect']
+                    'InheritDestroy', 'ReflectUse']
         rules = [
             {
                 patterns[0]: [
