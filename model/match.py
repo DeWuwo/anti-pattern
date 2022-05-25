@@ -57,19 +57,19 @@ class Match:
         return (not accessible) or entity.accessible in accessible or (entity.accessible == '' and '' in accessible)
 
     def handle_intrusive(self, entity: Entity, intrusive: bool):
-        return (not intrusive) or entity.is_intrusive
+        return not intrusive ^ (entity.is_intrusive == 1)
 
     def handle_hidden(self, entity: Entity, hidden: bool):
-        return (not hidden) or entity.aosp_hidden == 1
+        return not hidden ^ (entity.aosp_hidden == 1)
 
     def handle_final(self, entity: Entity, final: bool):
-        return (not final) or entity.id in self.base_model.final_modify_entities
+        return not final ^ (entity.id in self.base_model.final_modify_entities)
 
     def handle_accessible_modify(self, entity: Entity, accessible_modify: bool):
-        return (not accessible_modify) or entity.id in self.base_model.access_modify_entities
+        return not accessible_modify ^ (entity.id in self.base_model.access_modify_entities)
 
     def handle_hidden_modify(self, entity: Entity, hidden_modify: bool):
-        return (not hidden_modify) or entity.id in self.base_model.hidden_modify_entities
+        return not hidden_modify ^ (entity.id in self.base_model.hidden_modify_entities)
 
     # 依赖属性匹配
     def handle_relation_attr_match(self, relation: Relation, **kwargs):
@@ -80,10 +80,10 @@ class Match:
         return True
 
     def handle_set_accessible(self, relation: Relation, set_accessible: bool):
-        return (not set_accessible) or relation.setAccessible == 1
+        return not set_accessible ^ (relation.setAccessible == 1)
 
     def handle_invoke(self, relation: Relation, invoke: bool):
-        return (not invoke) or relation.invoke == 1
+        return not invoke ^ (relation.invoke == 1)
 
     # 匹配函数
     def handle_matching(self, result_set: list, example_stack: list, flag: list, rules: List[dict], current):
@@ -252,18 +252,18 @@ class Match:
                          statistic_files_pattern, statistic_entities_pattern, simple_stat):
         output_path = os.path.join(self.output, pattern_type)
         FileJson.write_to_json(output_path, match_result_base_statistic, 4)
-        # FileCSV.write_stat_to_csv('D:\\Honor\\match_res', pattern_type, datetime.now(), self.output.rsplit('\\', 4)[1],
-        #                           self.output.rsplit('\\', 4)[2],
-        #                           self.output.rsplit('\\', 4)[3], simple_stat)
+        FileCSV.write_stat_to_csv('D:\\Honor\\match_res', pattern_type, datetime.now(), self.output.rsplit('\\', 4)[1],
+                                  self.output.rsplit('\\', 4)[2],
+                                  self.output.rsplit('\\', 4)[3], simple_stat)
         headers = ['filename']
         headers.extend(patterns)
         FileCSV.write_to_csv(output_path, 'file-pattern', headers, statistic_files_pattern)
         headers = Entity.get_csv_header()
         headers.extend(patterns)
         FileCSV.write_to_csv(output_path, 'entity-pattern', headers, statistic_entities_pattern)
-        # try:
-        #     left = os.path.join(self.output, Constant.file_mc)
-        #     right = os.path.join(output_path, 'file-pattern.csv')
-        #     FileCSV.merge_csv(left, right, ['filename'], self.output, pattern_type)
-        # except FileNotFoundError as e:
-        #     print(e)
+        try:
+            left = os.path.join(self.output, Constant.file_mc)
+            right = os.path.join(output_path, 'file-pattern.csv')
+            FileCSV.merge_csv(left, right, ['filename'], self.output, pattern_type)
+        except FileNotFoundError as e:
+            print(e)

@@ -134,8 +134,6 @@ class BuildModel:
             self.diff_relations.append(relation)
         elif relation.rel == Constant.define:
             self.define_relations.append(relation)
-        elif relation.rel == Constant.reflect:
-            self.reflect_relation.append(relation)
         return diff_set, define_set
 
     # get owner string '01', '10', '11' or '00'
@@ -158,8 +156,12 @@ class BuildModel:
 
             self.query_map[item.rel][self.get_direction(item)][item.src][item.dest].append(item)
         for item in android_define_set:
-            self.query_map[item.rel]['00'][item.src][item.dest].append(item)
-        for item in android_reflect_set:
+            self.query_map[item.rel]['00'][self.entity_assi[item.src].category][
+                self.entity_assi[item.dest].category].append(item)
+
+            self.query_map[item.rel]['00'][self.entity_assi[item.src].category][item.dest].append(item)
+
+            self.query_map[item.rel]['00'][item.src][self.entity_assi[item.dest].category].append(item)
             self.query_map[item.rel]['00'][item.src][item.dest].append(item)
 
     # query method

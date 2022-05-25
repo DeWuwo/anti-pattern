@@ -10,3 +10,9 @@ class Test:
 
     def test4(self):
         pass
+
+
+if __name__ == '__main__':
+    a = -1
+    b = 0
+    print(not a)
