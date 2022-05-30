@@ -40,3 +40,7 @@ class Constant:
 
     # file_name
     file_mc = 'mc\\file-mc.csv'
+
+    # hidden api sign
+    HD_blocked: str = 'blocked'
+    HD_unsupported: str = 'unsupported'

@@ -76,7 +76,7 @@ class AntiPattern(PatternType):
                                     'attrs': {}},
                             'rel': {'type': Constant.call, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
-                                     'attrs': {'hidden': True}},
+                                     'attrs': {'hidden': [Constant.HD_blocked, Constant.HD_unsupported]}},
                             'direction': '10'
                         }
                     ],
@@ -86,7 +86,7 @@ class AntiPattern(PatternType):
                                     'attrs': {}},
                             'rel': {'type': Constant.use, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_variable,
-                                     'attrs': {'hidden': True}},
+                                     'attrs': {'hidden': [Constant.HD_blocked, Constant.HD_unsupported]}},
                             'direction': '10'
                         }
 
