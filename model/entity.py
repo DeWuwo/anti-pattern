@@ -27,7 +27,7 @@ class Entity:
     start_column: int
     end_line: int
     end_column: int
-    aosp_hidden: int
+    hidden: List[str]
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -92,10 +92,11 @@ class Entity:
         except KeyError:
             self.innerType = []
         try:
-            self.aosp_hidden = 1 if args['aosp_hidden']['hidden'] else 0
-            self.max_target_sdk = args['aosp_hidden']['maxTargetSdk']
+            self.hidden = []
+            for item in args['hidden'].split(" "):
+                self.hidden.append(item)
         except KeyError:
-            self.aosp_hidden = -1
+            self.hidden = []
 
     def __str__(self):
         return self.category + "#" + self.qualifiedName
@@ -128,9 +129,8 @@ class Entity:
             temp['modifiers'] = " ".join(self.modifiers)
         if self.is_global != 2:
             temp['global'] = True if self.is_global else False
-        if self.aosp_hidden != -1:
-            temp['hidden'] = True if self.aosp_hidden == 1 else False
-            temp['maxTargetSdk'] = self.max_target_sdk
+        if self.hidden:
+            temp['hidden'] = " ".join(self.hidden)
         return temp
 
     def set_honor(self, not_aosp: int):

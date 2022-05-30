@@ -13,6 +13,7 @@ class Test:
 
 
 if __name__ == '__main__':
-    a = -1
-    b = 0
-    print(not a)
+    a = [1, 2]
+    b = [1, 2]
+    print(a == b)
+    pass

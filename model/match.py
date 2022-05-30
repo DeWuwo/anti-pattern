@@ -59,8 +59,10 @@ class Match:
     def handle_intrusive(self, entity: Entity, intrusive: bool):
         return not intrusive ^ (entity.is_intrusive == 1)
 
-    def handle_hidden(self, entity: Entity, hidden: bool):
-        return not hidden ^ (entity.aosp_hidden == 1)
+    def handle_hidden(self, entity: Entity, hidden: List[str]):
+        if set(hidden) & set(entity.hidden):
+            return True
+        return False
 
     def handle_final(self, entity: Entity, final: bool):
         return not final ^ (entity.id in self.base_model.final_modify_entities)

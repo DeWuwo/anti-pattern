@@ -61,7 +61,7 @@ class BuildModel:
                     temp = self.entity_android[entity.entity_mapping]
                     # if entity.aosp_hidden == 1:
                     #     self.hidden_entities.append(entity.id)
-                    if not entity.aosp_hidden and temp.aosp_hidden:
+                    if entity.hidden != temp.hidden:
                         self.hidden_modify_entities.append(entity.id)
                     if entity.modifiers != temp.modifiers:
                         if entity.accessible != temp.accessible:
