@@ -76,13 +76,13 @@ class Entity:
         try:
             self.raw_type = args['rawType']
         except KeyError:
-            self.raw_type = ''
+            self.raw_type = 'null'
         try:
             self.parameter_types = args['parameter']['types']
             self.parameter_names = args['parameter']['names']
         except KeyError:
-            self.parameter_types = ""
-            self.parameter_names = ""
+            self.parameter_types = "null"
+            self.parameter_names = "null"
         try:
             self.is_global = 1 if args['global'] else 0
         except KeyError:
@@ -120,10 +120,10 @@ class Entity:
             temp['startColumn'] = self.start_column
             temp['endLine'] = self.end_line
             temp['endColumn'] = self.end_column
-        if self.parameter_types != '':
+        if self.parameter_types != 'null':
             temp['parameterTypes'] = self.parameter_types
             temp['parameterNames'] = self.parameter_names
-        if self.raw_type != '':
+        if self.raw_type != 'null':
             temp['rawType'] = self.raw_type
         if self.modifiers:
             temp['modifiers'] = " ".join(self.modifiers)

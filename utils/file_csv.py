@@ -66,3 +66,12 @@ class FileCSV:
         fr = pd.read_csv(right)
         all_data = pd.merge(fl, fr, how='left', on=columns)
         all_data.to_csv(os.path.join(output, 'file-mc-' + name + '.csv'))
+
+    @classmethod
+    def dump_ent_commit_infos(cls, ent_commit_infos, file_name: str):
+        with open(file_name, "w", newline="") as file:
+            writer = csv.DictWriter(file, ["Entity", "category", "id", "file path", "commits",
+                                           "base commits", "accompany commits"])
+            writer.writeheader()
+            for row in ent_commit_infos:
+                writer.writerow(row)

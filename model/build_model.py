@@ -3,10 +3,13 @@ from collections import defaultdict
 from functools import partial
 from model.entity import Entity
 from model.relation import Relation
+from model.entity_owner import EntityOwner, get_rename_source
 from utils import Constant
 
 
 class BuildModel:
+    # blame data
+    entity_owner: EntityOwner
     # base info
     entity_android: List[Entity]
     entity_assi: List[Entity]
@@ -26,9 +29,9 @@ class BuildModel:
     query_map: defaultdict
 
     def __init__(self, entities_assi, cells_assi, statistics_assi: Dict, entities_android, cells_android,
-                 statistics_android: Dict, intrusive_entities: List[int], assi_entities: List[int],
-                 all_entities: List[int]):
+                 statistics_android: Dict, entity_owner: EntityOwner):
         # first init
+        self.entity_owner = entity_owner
         self.entity_android = []
         self.entity_assi = []
         self.relation_android = []
@@ -42,36 +45,30 @@ class BuildModel:
         self.diff_relations = []
         self.define_relations = []
         self.reflect_relation = []
+        # data get -- blame
+        print('start init owner from blame')
+        all_entities, intrusive_entities, pure_accompany_entities = self.get_blame_data()
+        keys_all_entities = all_entities.keys()
+        keys_intrusive_entities = intrusive_entities.keys()
+        keys_pure_accompany_entities = pure_accompany_entities.keys()
         # init entity
         print("start init model entities")
-        entity: Entity
-        entity_set = defaultdict(partial(defaultdict, list))
+        aosp_entity_set = defaultdict(partial(defaultdict, list))
+        assi_entity_set = defaultdict(partial(defaultdict, list))
+        # aosp entities
+        print('     get aosp entities')
         for item in entities_android:
             if not item['external']:
                 entity = Entity(**item)
                 self.entity_android.append(entity)
-                entity_set[entity.category][entity.qualifiedName].append(entity.id)
+                aosp_entity_set[entity.category][entity.qualifiedName].append(entity.id)
+
+        # assi entities
+        print('     get assi entities')
+
         for item in entities_assi:
             if not item['external']:
                 entity = Entity(**item)
-                if self.blame_stub(entity, entity_set):
-                    entity.set_honor(0)
-                    self.get_entity_map(entity, entity_set)
-                    # storage special entities
-                    temp = self.entity_android[entity.entity_mapping]
-                    # if entity.aosp_hidden == 1:
-                    #     self.hidden_entities.append(entity.id)
-                    if entity.hidden != temp.hidden:
-                        self.hidden_modify_entities.append(entity.id)
-                    if entity.modifiers != temp.modifiers:
-                        if entity.accessible != temp.accessible:
-                            self.access_modify_entities.append(entity.id)
-                        if not entity.final and temp.final:
-                            self.final_modify_entities.append(entity.id)
-                else:
-                    if all_entities and intrusive_entities and entity.id in all_entities and entity.id not in intrusive_entities:
-                        entity.set_honor(0)
-                    entity.set_honor(1)
                 # get entity package
                 if entity.category != Constant.E_package:
                     flag = True
@@ -88,40 +85,68 @@ class BuildModel:
                     else:
                         entity.set_package_name('null')
                 self.entity_assi.append(entity)
+                assi_entity_set[entity.category][entity.qualifiedName].append(entity.id)
+        # first get entity owner
+        print('     first get entity owner')
+        not_sure_entities = []
+        for entity in self.entity_assi:
+            if self.diff_map_aosp(entity, aosp_entity_set, assi_entity_set):
+                # diff = blame = aosp
+                if entity.id not in keys_pure_accompany_entities:
+                    entity.set_honor(0)
+                    if entity.id in keys_intrusive_entities:
+                        entity.set_intrusive(1)
+                    # storage special entities
+                    temp = self.entity_android[entity.entity_mapping]
+                    if entity.hidden and entity.hidden != temp.hidden:
+                        self.hidden_modify_entities.append(entity.id)
+                    if entity.modifiers != temp.modifiers:
+                        if entity.accessible != temp.accessible:
+                            self.access_modify_entities.append(entity.id)
+                        if not entity.final and temp.final:
+                            self.final_modify_entities.append(entity.id)
+                # diff = aosp != blame = assi(该情况应该是blame diff算法识别错误)
+                else:
+                    not_sure_entities.append(pure_accompany_entities[entity.id])
+            else:
+                # 保留旧版本代码情况
+                if entity.id not in keys_all_entities or \
+                        ((entity.id not in keys_pure_accompany_entities) and
+                         (entity.id not in keys_intrusive_entities)):
+                    entity.set_honor(0)
+                # diff = blame = assi
+                elif entity.id in pure_accompany_entities:
+                    entity.set_honor(1)
+                # diff = assi != blame = (aosp or ins) 此时一定在all_entities中，即该实体所在文件被第三方修改过
+                else:
+                    not_sure_entities.append(all_entities[entity.id])
+        print('     output entities owner unsure')
+        self.entity_owner.dump_ent_commit_infos(not_sure_entities)
+        # assi entities owner re sure
+        print('         get move')
+        move_list = self.entity_owner.re_divide_owner(not_sure_entities)
+        print('         re get entity owner')
+        self.resign_owner(not_sure_entities, move_list, aosp_entity_set, assi_entity_set, keys_intrusive_entities)
+
         # init dep
         print("start init model deps")
         relation_set = defaultdict(partial(defaultdict, partial(defaultdict, int)))
+        print("     get aosp dep")
         for item in cells_android:
             relation = Relation(**item)
             self.relation_android.append(relation)
             relation_set[item['src']][relation.rel][item['dest']] = 1
+        print("     get assi dep")
         for item in cells_assi:
             relation = Relation(**item)
             self.set_dep_assi(relation, relation_set)
 
         # query set build
-        self.query_map_build(self.diff_relations, self.define_relations, self.reflect_relation)
+        self.query_map_build(self.diff_relations, self.define_relations)
 
-    # Get entity mapping relationship
-    def get_entity_map(self, entity: Entity, android_entity_set: defaultdict):
-        map_list: List[entity] = android_entity_set[entity.category][entity.qualifiedName]
-        if len(map_list) == 1:
-            entity_id = map_list[0]
-            entity.set_entity_mapping(entity_id)
-            self.entity_android[entity_id].set_entity_mapping(entity.id)
-        elif not map_list:
-            if entity.is_intrusive:
-                entity.set_honor(1)
-            else:
-                # 文件路径修改
-                pass
-        else:
-            for item_id in map_list:
-                if self.entity_android[item_id].parameter_types == entity.parameter_types:
-                    entity.set_entity_mapping(item_id)
-                    self.entity_android[item_id].set_entity_mapping(entity.id)
-                    return
-            entity.set_honor(1)
+    # Get data of blame
+    def get_blame_data(self):
+        return self.entity_owner.divide_owner()
 
     # get diff and extra useful aosp 'define' dep
     def set_dep_assi(self, relation: Relation, rel_set: defaultdict):
@@ -141,8 +166,7 @@ class BuildModel:
         return str(self.entity_assi[relation.src].not_aosp) + str(self.entity_assi[relation.dest].not_aosp)
 
     # Construction of query map
-    def query_map_build(self, diff: List[Relation], android_define_set: List[Relation],
-                        android_reflect_set: List[Relation]):
+    def query_map_build(self, diff: List[Relation], android_define_set: List[Relation]):
         self.query_map = defaultdict(partial(defaultdict, partial(defaultdict, partial(defaultdict, list))))
         for item in diff:
             self.query_map[item.rel][self.get_direction(item)][self.entity_assi[item.src].category][
@@ -168,5 +192,85 @@ class BuildModel:
     def query_relation(self, rel: str, not_aosp: str, src, dest) -> List[Relation]:
         return self.query_map[rel][not_aosp][src][dest]
 
-    def blame_stub(self, entity: Entity, android_entity_set: defaultdict):
-        return android_entity_set[entity.category][entity.qualifiedName]
+    def diff_map_aosp(self, entity: Entity, aosp_entity_set: defaultdict, assi_entity_set: defaultdict):
+        aosp_list: List[int] = aosp_entity_set[entity.category][entity.qualifiedName]
+        assi_list: List[int] = assi_entity_set[entity.category][entity.qualifiedName]
+        if not aosp_list:
+            return 0
+        else:
+            if len(aosp_list) == 1:
+                if len(assi_list) == 1:
+                    get_entity_map(entity, self.entity_android[aosp_list[0]])
+                    return 1
+                else:
+                    if self.entity_android[aosp_list[0]].parameter_types == entity.parameter_types:
+                        get_entity_map(entity, self.entity_android[aosp_list[0]])
+                        return 1
+                    return 0
+            else:
+                for item_id in aosp_list:
+                    if self.entity_android[item_id].parameter_types == entity.parameter_types:
+                        get_entity_map(entity, self.entity_android[item_id])
+                        return 1
+                return 0
+
+    def resign_owner(self, not_sure_entities: List[dict], move_list: dict, aosp_entity_set: defaultdict,
+                     assi_entity_set: defaultdict, intrusive_entities):
+
+        def rename_map(rename_entity: Entity, method_name: str):
+            source_qualified_name = rename_entity.qualifiedName.rsplit('.', 1)[0].join('.').join(method_name)
+            aosp_list: List[int] = aosp_entity_set[rename_entity.category][source_qualified_name]
+            if len(aosp_list) == 1:
+                get_entity_map(rename_entity, self.entity_android[aosp_list[0]])
+                return 1
+            else:
+                for item_id in aosp_list:
+                    if self.entity_android[item_id].parameter_types == rename_entity.parameter_types:
+                        get_entity_map(rename_entity, self.entity_android[item_id])
+                        return 1
+                return 0
+
+        for entity in not_sure_entities:
+            diff_aosp = self.diff_map_aosp(self.entity_assi[int(entity['id'])], aosp_entity_set, assi_entity_set)
+            try:
+                moves = move_list[int(entity['id'])]['Moves']
+                move_types = []
+                move_types_map = {}
+                for index, move in enumerate(moves):
+                    move_types.append(move['type'])
+                    move_types_map[move['type']] = index
+                if not diff_aosp:
+                    # 主要处理重命名重构，其他重构认为伴生
+                    if int(entity['id']) in intrusive_entities and 'Rename Method' in move_types:
+                        self.entity_assi[int(entity['id'])].set_honor(0)
+                        self.entity_assi[int(entity['id'])].set_intrusive(1)
+                        print(moves[move_types_map['Rename Method']][0]['leftSideLocations']["codeElement"])
+                        source_name = get_rename_source(
+                            moves[move_types_map['Rename Method']][0]['leftSideLocations']["codeElement"])
+                        print('rename-m', source_name)
+                        rename_map(self.entity_assi[int(entity['id'])], source_name)
+
+                    elif int(entity['id']) in intrusive_entities and 'Rename Class' in move_types:
+                        self.entity_assi[int(entity['id'])].set_honor(0)
+                        self.entity_assi[int(entity['id'])].set_intrusive(1)
+                        source_name = get_rename_source(
+                            moves[move_types_map['Rename Class']][0]['leftSideLocations']["codeElement"])
+                        print('rename-m', source_name)
+                        rename_map(self.entity_assi[int(entity['id'])], source_name)
+                    else:
+                        self.entity_assi[int(entity['id'])].set_honor(1)
+            except KeyError:
+                native_entity = self.entity_assi[int(entity['id'])]
+                if diff_aosp:
+                    # git blame识别错误，原生方法没有任何修改，且认为不会在重载方法中发生
+                    native_entity.set_honor(0)
+                    map_native_index = aosp_entity_set[native_entity.category][native_entity.qualifiedName][0]
+                    get_entity_map(native_entity, self.entity_android[map_native_index])
+                else:
+                    self.entity_assi[int(entity['id'])].set_honor(1)
+
+
+# Get entity mapping relationship
+def get_entity_map(assi_entity: Entity, native_entity: Entity):
+    assi_entity.set_entity_mapping(native_entity.id)
+    native_entity.set_entity_mapping(assi_entity.id)

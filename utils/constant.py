@@ -44,3 +44,4 @@ class Constant:
     # hidden api sign
     HD_blocked: str = 'blocked'
     HD_unsupported: str = 'unsupported'
+    HD_max_target: List[str] = ['max-target-o', 'max-target-q']
