@@ -244,9 +244,9 @@ class BuildModel:
                     if int(entity['id']) in intrusive_entities and 'Rename Method' in move_types:
                         self.entity_assi[int(entity['id'])].set_honor(0)
                         self.entity_assi[int(entity['id'])].set_intrusive(1)
-                        print(moves[move_types_map['Rename Method']][0]['leftSideLocations']["codeElement"])
+                        # print(moves[move_types_map['Rename Method']]['leftSideLocations'][0]["codeElement"])
                         source_name = get_rename_source(
-                            moves[move_types_map['Rename Method']][0]['leftSideLocations']["codeElement"])
+                            moves[move_types_map['Rename Method']]['leftSideLocations'][0]["codeElement"])
                         print('rename-m', source_name)
                         rename_map(self.entity_assi[int(entity['id'])], source_name)
 
@@ -254,7 +254,7 @@ class BuildModel:
                         self.entity_assi[int(entity['id'])].set_honor(0)
                         self.entity_assi[int(entity['id'])].set_intrusive(1)
                         source_name = get_rename_source(
-                            moves[move_types_map['Rename Class']][0]['leftSideLocations']["codeElement"])
+                            moves[move_types_map['Rename Class']]['leftSideLocations'][0]["codeElement"])
                         print('rename-m', source_name)
                         rename_map(self.entity_assi[int(entity['id'])], source_name)
                     else:
