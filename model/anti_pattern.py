@@ -76,8 +76,7 @@ class AntiPattern(PatternType):
                                     'attrs': {}},
                             'rel': {'type': Constant.call, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
-                                     'attrs': {'hidden': [Constant.HD_blocked,
-                                                          Constant.HD_unsupported] + Constant.HD_max_target}},
+                                     'attrs': {'hidden': [Constant.HD_blacklist] + Constant.HD_max_target}},
                             'direction': '10'
                         }
                     ],
@@ -87,8 +86,7 @@ class AntiPattern(PatternType):
                                     'attrs': {}},
                             'rel': {'type': Constant.use, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_variable,
-                                     'attrs': {'hidden': [Constant.HD_blocked,
-                                                          Constant.HD_unsupported] + Constant.HD_max_target}},
+                                     'attrs': {'hidden': [Constant.HD_blacklist] + Constant.HD_max_target}},
                             'direction': '10'
                         }
 

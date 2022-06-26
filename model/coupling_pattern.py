@@ -48,17 +48,17 @@ class CouplingPattern(PatternType):
                         {
                             'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
-                            'dest': {'id': [-1], 'category': Constant.E_variable,
+                            'dest': {'id': [-1], 'category': Constant.E_method,
                                      'attrs': {}},
-                            'direction': '01'
+                            'direction': '00'
                         },
                         {
-                            'src': {'id': [-1], 'category': Constant.E_interface,
+                            'src': {'id': ['id', 0, 1], 'category': Constant.E_method,
                                     'attrs': {}},
-                            'rel': {'type': Constant.typed, 'attrs': {}},
-                            'dest': {'id': ['id', 0, 1], 'category': Constant.E_variable,
+                            'rel': {'type': Constant.call, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_method,
                                      'attrs': {}},
-                            'direction': '11'
+                            'direction': '01'
                         },
                         # {
                         #     'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
@@ -68,26 +68,26 @@ class CouplingPattern(PatternType):
                         #     'direction': '11'
                         # },
                         {
-                            'src': {'id': ['id', 1, 0], 'category': Constant.E_interface,
-                                    'attrs': {}},
-                            'rel': {'type': Constant.define, 'attrs': {}},
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'direction': '11'
-                        },
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': {'type': Constant.call, 'attrs': {}},
-                            'dest': {'id': ['id', 2, 1], 'category': Constant.E_method,
-                                     'attrs': {}},
-                            'direction': '01'
-                        },
-                        {
                             'src': {'id': ['id', 0, 0], 'category': Constant.E_class,
                                     'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
-                            'dest': {'id': ['id', 3, 0], 'category': Constant.E_method,
+                            'dest': {'id': ['bindVar', 1], 'category': Constant.E_variable, 'attrs': {}},
+                            'direction': '01'
+                        },
+                        {
+                            'src': {'id': ['id', 2, 1], 'category': Constant.E_variable, 'attrs': {}},
+                            'rel': {'type': Constant.typed, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_interface,
                                      'attrs': {}},
-                            'direction': '00'
+                            'direction': '11'
+                        },
+                        {
+                            'src': {'id': ['id', 3, 1], 'category': Constant.E_interface,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.define, 'attrs': {}},
+                            'dest': {'id': ['id', 1, 1], 'category': Constant.E_method,
+                                     'attrs': {}},
+                            'direction': '11'
                         }
                     ]
 
@@ -231,22 +231,6 @@ class CouplingPattern(PatternType):
                             'direction': '11'
                         },
                         {
-                            'src': {'id': ['id', 0, 0], 'category': Constant.E_class,
-                                    'attrs': {}},
-                            'rel': {'type': Constant.define, 'attrs': {}},
-                            'dest': {'id': [-1], 'category': Constant.E_variable,
-                                     'attrs': {}},
-                            'direction': '11'
-                        },
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_interface,
-                                    'attrs': {}},
-                            'rel': {'type': Constant.typed, 'attrs': {}},
-                            'dest': {'id': ['id', 1, 1], 'category': Constant.E_variable,
-                                     'attrs': {}},
-                            'direction': '01'
-                        },
-                        {
                             'src': {'id': ['id', 0, 1], 'category': Constant.E_method,
                                     'attrs': {}},
                             'rel': {'type': Constant.call, 'attrs': {}},
@@ -254,10 +238,25 @@ class CouplingPattern(PatternType):
                             'direction': '10'
                         },
                         {
-                            'src': {'id': ['id', 2, 0], 'category': Constant.E_interface,
+                            'src': {'id': ['id', 0, 0], 'category': Constant.E_class,
                                     'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
-                            'dest': {'id': ['id', 3, 1], 'category': Constant.E_method,
+                            'dest': {'id': ['bindVar', 1], 'category': Constant.E_variable,
+                                     'attrs': {}},
+                            'direction': '11'
+                        },
+                        {
+                            'src': {'id': ['id', 2, 1], 'category': Constant.E_variable,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.typed, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_interface, 'attrs': {}},
+                            'direction': '10'
+                        },
+                        {
+                            'src': {'id': ['id', 3, 1], 'category': Constant.E_interface,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.define, 'attrs': {}},
+                            'dest': {'id': ['id', 1, 1], 'category': Constant.E_method,
                                      'attrs': {}},
                             'direction': '00'
                         },
