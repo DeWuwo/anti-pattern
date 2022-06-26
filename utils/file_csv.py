@@ -3,6 +3,7 @@ import csv
 import pandas as pd
 from datetime import date
 from typing import Dict, List
+from model.entity import Entity
 
 
 class FileCSV:
@@ -75,3 +76,27 @@ class FileCSV:
             writer.writeheader()
             for row in ent_commit_infos:
                 writer.writerow(row)
+
+    @classmethod
+    def write_dict_to_csv(cls, out_path: str, name: str, data: List[dict]):
+        file_path = os.path.join(out_path, name + '.csv')
+        headers = []
+        if data:
+            headers = [item for item in data[0].keys()]
+        with open(file_path, 'w', newline='') as f:
+            f_writer = csv.DictWriter(f, headers)
+            f_writer.writeheader()
+            f_writer.writerows(data)
+
+
+    @classmethod
+    def write_owner_to_csv(cls, out_path: str, name: str, data: List[Entity]):
+        file_path = os.path.join(out_path, name + '.csv')
+        headers = []
+        if data:
+            headers = [item for item in data[0].to_owner().keys()]
+        with open(file_path, 'w', newline='') as f:
+            f_writer = csv.DictWriter(f, headers)
+            f_writer.writeheader()
+            for item in data:
+                f_writer.writerow(item.to_owner())

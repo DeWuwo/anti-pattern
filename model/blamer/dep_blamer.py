@@ -40,6 +40,7 @@ class Entity:
     id: int
     category: str
     qualified_name: str
+    decoupling: int
     start_line: int
     end_line: int
 
@@ -101,9 +102,13 @@ class DepData:
         for v in self.dep_obj["variables"]:
             try:
                 location = v["location"]
+                try:
+                    decoupling = v['additionalBinNum']
+                except Exception:
+                    decoupling = 1
                 ret.add(
-                    Entity(Path(v["File"]), v["id"], v["category"], v["qualifiedName"], location["startLine"],
-                           location["endLine"]))
+                    Entity(Path(v["File"]), v["id"], v["category"], v["qualifiedName"], decoupling,
+                           location["startLine"], location["endLine"]))
             except KeyError:
                 pass
 
@@ -126,7 +131,8 @@ def dump_ownership(ownership_data: List[EntOwnership], fp: IO):
 def collect_all_file(ents: Iterable[Entity]) -> Set[Path]:
     ret = set()
     for ent in ents:
-        ret.add(ent.path)
+        if ent.decoupling == 1:
+            ret.add(ent.path)
     return ret
 
 
@@ -140,9 +146,11 @@ class BlameObject:
 def create_blame_dict(file_set: Set[Path], repo: git.Repo, commit: str) -> Dict[Path, List[BlameObject]]:
     file_blame_dict: Dict[Path, List[BlameObject]] = dict()
     for file_path in file_set:
-        file_blame_dict[file_path] = [BlameObject(str(be.commit), be.linenos.start, be.linenos.stop) for be in
-                                      repo.blame_incremental(commit, str(file_path))]
-
+        try:
+            file_blame_dict[file_path] = [BlameObject(str(be.commit), be.linenos.start, be.linenos.stop) for be in
+                                          repo.blame_incremental(commit, str(file_path))]
+        except Exception:
+            pass
     return file_blame_dict
 
 

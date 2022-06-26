@@ -20,6 +20,7 @@ class Entity:
     entity_mapping: int
     modifiers: List[str]
     accessible: str
+    access_modify: str
     final: bool
     static: bool
     is_global: int
@@ -47,6 +48,7 @@ class Entity:
         self.final = False
         self.accessible = ''
         self.is_decoupling = -1
+        self.access_modify = ''
         try:
             self.start_line = args['startLine']
             self.start_column = args['startColumn']
@@ -110,6 +112,10 @@ class Entity:
     def to_csv(self):
         return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName}
 
+    def to_owner(self):
+        return {'id': self.id, 'not_aosp': self.not_aosp, 'category': self.category,
+                'qualifiedName': self.qualifiedName, 'file_path': self.file_path, 'isIntrusive': self.is_intrusive}
+
     @classmethod
     def get_csv_header(cls):
         return ['id', 'category', 'qualifiedName']
@@ -150,6 +156,9 @@ class Entity:
 
     def set_package_name(self, package_name: str):
         self.package_name = package_name
+
+    def set_access_modify(self, access_modify: str):
+        self.access_modify = access_modify
 
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package

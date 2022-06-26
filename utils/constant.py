@@ -42,6 +42,8 @@ class Constant:
     file_mc = 'mc\\file-mc.csv'
 
     # hidden api sign
-    HD_blocked: str = 'blocked'
-    HD_unsupported: str = 'unsupported'
-    HD_max_target: List[str] = ['max-target-o', 'max-target-q']
+    HD_aosp_blocked: str = 'blocked'
+    HD_aosp_unsupported: str = 'unsupported'
+    HD_aosp_max_target: List[str] = ['max-target-o', 'max-target-q']
+    HD_blacklist: str = 'blacklist'
+    HD_max_target: List[str] = ['greylist-max-o', 'greylist-max-q']
