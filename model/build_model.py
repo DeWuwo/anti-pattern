@@ -48,9 +48,6 @@ class BuildModel:
         # data get -- blame
         print('start init owner from blame')
         all_entities, intrusive_entities, pure_accompany_entities = self.get_blame_data()
-        keys_all_entities = all_entities.keys()
-        keys_intrusive_entities = intrusive_entities.keys()
-        keys_pure_accompany_entities = pure_accompany_entities.keys()
         # init entity
         print("start init model entities")
         aosp_entity_set = defaultdict(partial(defaultdict, list))
@@ -65,7 +62,6 @@ class BuildModel:
 
         # assi entities
         print('     get assi entities')
-
         for item in entities_assi:
             if not item['external']:
                 entity = Entity(**item)
@@ -88,45 +84,15 @@ class BuildModel:
                 assi_entity_set[entity.category][entity.qualifiedName].append(entity.id)
         # first get entity owner
         print('     first get entity owner')
-        not_sure_entities = []
-        for entity in self.entity_assi:
-            if self.diff_map_aosp(entity, aosp_entity_set, assi_entity_set):
-                # diff = blame = aosp
-                if entity.id not in keys_pure_accompany_entities:
-                    entity.set_honor(0)
-                    if entity.id in keys_intrusive_entities:
-                        entity.set_intrusive(1)
-                    # storage special entities
-                    temp = self.entity_android[entity.entity_mapping]
-                    if entity.hidden and entity.hidden != temp.hidden:
-                        self.hidden_modify_entities.append(entity.id)
-                    if entity.modifiers != temp.modifiers:
-                        if entity.accessible != temp.accessible:
-                            self.access_modify_entities.append(entity.id)
-                        if not entity.final and temp.final:
-                            self.final_modify_entities.append(entity.id)
-                # diff = aosp != blame = assi(该情况应该是blame diff算法识别错误)
-                else:
-                    not_sure_entities.append(pure_accompany_entities[entity.id])
-            else:
-                # 保留旧版本代码情况
-                if entity.id not in keys_all_entities or \
-                        ((entity.id not in keys_pure_accompany_entities) and
-                         (entity.id not in keys_intrusive_entities)):
-                    entity.set_honor(0)
-                # diff = blame = assi
-                elif entity.id in pure_accompany_entities:
-                    entity.set_honor(1)
-                # diff = assi != blame = (aosp or ins) 此时一定在all_entities中，即该实体所在文件被第三方修改过
-                else:
-                    not_sure_entities.append(all_entities[entity.id])
+        not_sure_entities = self.first_owner(aosp_entity_set, assi_entity_set, all_entities, intrusive_entities,
+                                             pure_accompany_entities)
         print('     output entities owner unsure')
         self.entity_owner.dump_ent_commit_infos(not_sure_entities)
         # assi entities owner re sure
         print('         get move')
         move_list = self.entity_owner.re_divide_owner(not_sure_entities)
         print('         re get entity owner')
-        self.resign_owner(not_sure_entities, move_list, aosp_entity_set, assi_entity_set, keys_intrusive_entities)
+        self.resign_owner(not_sure_entities, move_list, aosp_entity_set, assi_entity_set, intrusive_entities.keys())
 
         # init dep
         print("start init model deps")
@@ -203,17 +169,64 @@ class BuildModel:
                     get_entity_map(entity, self.entity_android[aosp_list[0]])
                     return 1
                 else:
+                    # 新增了重载方法的情况
                     if self.entity_android[aosp_list[0]].parameter_types == entity.parameter_types:
                         get_entity_map(entity, self.entity_android[aosp_list[0]])
                         return 1
                     return 0
             else:
+                # 默认不会对重载方法进行参数列表修改
                 for item_id in aosp_list:
                     if self.entity_android[item_id].parameter_types == entity.parameter_types:
                         get_entity_map(entity, self.entity_android[item_id])
                         return 1
                 return 0
 
+    # diff & blame
+    def first_owner(self, aosp_entity_map, assi_entity_map, all_entities: dict, intrusive_entities: dict,
+                    pure_accompany_entities: dict) -> List:
+        not_sure_entity_list = []
+        keys_intrusive_entities = intrusive_entities.keys()
+        keys_pure_accompany_entities = pure_accompany_entities.keys()
+        keys_all_entities = all_entities.keys()
+        for entity in self.entity_assi:
+            if entity.is_decoupling > 1:
+                entity.set_honor(1)
+            elif self.diff_map_aosp(entity, aosp_entity_map, assi_entity_map):
+                # diff = blame = aosp
+                if entity.above_file_level():
+                    entity.set_honor(0)
+                elif entity.id not in keys_pure_accompany_entities:
+                    entity.set_honor(0)
+                    if entity.id in keys_intrusive_entities:
+                        entity.set_intrusive(1)
+                    # storage special entities
+                    temp = self.entity_android[entity.entity_mapping]
+                    if entity.hidden and entity.hidden != temp.hidden:
+                        self.hidden_modify_entities.append(entity.id)
+                    if entity.modifiers != temp.modifiers:
+                        if entity.accessible != temp.accessible:
+                            self.access_modify_entities.append(entity.id)
+                        if not entity.final and temp.final:
+                            self.final_modify_entities.append(entity.id)
+                # diff = aosp != blame = assi(该情况应该是blame diff算法识别错误)
+                else:
+                    not_sure_entity_list.append(pure_accompany_entities[entity.id])
+            else:
+                # 保留旧版本代码情况
+                if entity.id not in keys_all_entities or \
+                        ((entity.id not in keys_pure_accompany_entities) and
+                         (entity.id not in keys_intrusive_entities)):
+                    entity.set_honor(0)
+                # diff = blame = assi
+                elif entity.id in pure_accompany_entities:
+                    entity.set_honor(1)
+                # diff = assi != blame = (aosp or ins) 此时一定在all_entities中，即该实体所在文件被第三方修改过
+                else:
+                    not_sure_entity_list.append(all_entities[entity.id])
+        return not_sure_entity_list
+
+    # 通过refactoring miner再次识别
     def resign_owner(self, not_sure_entities: List[dict], move_list: dict, aosp_entity_set: defaultdict,
                      assi_entity_set: defaultdict, intrusive_entities):
 

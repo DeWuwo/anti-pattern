@@ -16,6 +16,7 @@ class Entity:
     not_aosp: int
     max_target_sdk: int
     is_intrusive: int
+    is_decoupling: int
     entity_mapping: int
     modifiers: List[str]
     accessible: str
@@ -45,6 +46,7 @@ class Entity:
         self.static = False
         self.final = False
         self.accessible = ''
+        self.is_decoupling = -1
         try:
             self.start_line = args['startLine']
             self.start_column = args['startColumn']
@@ -97,6 +99,10 @@ class Entity:
                 self.hidden.append(item)
         except KeyError:
             self.hidden = []
+        try:
+            self.is_decoupling = args['additionalBin']
+        except KeyError:
+            self.is_decoupling = 0
 
     def __str__(self):
         return self.category + "#" + self.qualifiedName
@@ -144,3 +150,6 @@ class Entity:
 
     def set_package_name(self, package_name: str):
         self.package_name = package_name
+
+    def above_file_level(self):
+        return self.category == Constant.E_file or self.category == Constant.E_package
