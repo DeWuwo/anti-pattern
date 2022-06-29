@@ -9,4 +9,4 @@ class Command:
             ret = subprocess.run(command, shell=True, check=True, encoding="utf-8")
             return ret.returncode == 0
         except CalledProcessError:
-            print('command run error')
+            print(f'command run error --- {command}')

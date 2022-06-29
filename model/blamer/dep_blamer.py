@@ -273,16 +273,16 @@ def get_entity_commits(repo_path: str, accompany_dep: str, base_commits: str, on
     repo_path = Path(analyzed_root)
     sha = get_sha(repo_path)
     print(f"{sha} @ {analyzed_root}")
-    print('get dep data')
+    print(' get dep data')
     dep_data = DepData(repo_path, Path(analyzed_root), Path(accompany_dep))
     current_commit = sha
-    print('get dep entities')
+    print(' get dep entities')
     ents = dep_data.get_dep_ents()
     ownership_data = []
     only_accompany_commits = load_commits(Path(only_accompany_commits))
 
     file_set = collect_all_file(ents)
-    print('load blame dict')
+    print(' load blame dict')
     blame_dict_path = Path(f"{blame_cache}/blame_dict.csv")
     if not blame_dict_path.exists():
         blame_dict = create_blame_dict(file_set, git.Repo(repo_path), current_commit)
@@ -295,8 +295,8 @@ def get_entity_commits(repo_path: str, accompany_dep: str, base_commits: str, on
 
     accompany_file_set = set(filter(is_accompany_file, file_set))
     blame = create_blamer(blame_dict)
+    print(' get entities commits')
     for ent in ents:
-        print(ent)
         if ent.path not in accompany_file_set:
             continue
         ent_commits = blame(ent.path, ent.start_line, ent.end_line)

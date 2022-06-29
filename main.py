@@ -21,8 +21,6 @@ def main():
                         help='root json file of android')
     parser.add_argument('--refactor_miner', '-ref', action='store', dest='refactor_miner',
                         help='root directory of refactor miner tool')
-    parser.add_argument('--owner_output', '-oo', action='store', dest='owner_output',
-                        help='root directory of owner output')
     parser.add_argument('--output', '-o', action='store', dest='output',
                         help='root directory of out')
     args = parser.parse_args()
@@ -54,7 +52,7 @@ def dispatch(args):
         #     'D:/Honor/experiment/lineage/4-18/base/blame/lineageos_all_entities.csv')
         # build base model
         entity_owner = EntityOwner(args.code_android, args.code_honor, args.honor, args.refactor_miner,
-                                   args.owner_output)
+                                   args.output)
 
         base_model = BuildModel(entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp,
                                 entities_stat_aosp, entity_owner)
