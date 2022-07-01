@@ -44,19 +44,17 @@ def dispatch(args):
     try:
         entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp, entities_stat_aosp = \
             FileJson.read_from_json(args.android, args.honor)
-        # intrusive_entities = FileCSV.read_from_csv(
-        #     'D:/Honor/experiment/lineage/4-18/base/blame/lineageos_mixed_entities.csv')
-        # assi_entities = FileCSV.read_from_csv(
-        #     'D:/Honor/experiment/lineage/4-18/base/blame/lineageos_pure_third_party_entities.csv')
-        # commit_null_entities = FileCSV.read_from_csv(
-        #     'D:/Honor/experiment/lineage/4-18/base/blame/lineageos_all_entities.csv')
+        # 读取模块责任田
+        module_blame = {}
+
         # build base model
         entity_owner = EntityOwner(args.code_android, args.code_honor, args.honor, args.refactor_miner,
                                    args.output)
 
         base_model = BuildModel(entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp,
                                 entities_stat_aosp, entity_owner)
-        pattern_match = Match(base_model, args.output)
+
+        pattern_match = Match(base_model, args.output, module_blame)
         # match coupling pattern
         coupling_pattern = CouplingPattern()
         pattern_match.start_match_pattern(coupling_pattern)

@@ -15,16 +15,20 @@ class Match:
     output: str
     match_result: List[Dict[str, List[List[Relation]]]]
     match_result_base_statistic: Dict[str, Dict[str, int]]
+    # 不同粒度数量统计
     statistic_files: Dict[str, Dict[str, int]]
     statistic_entities: Dict[int, Dict[str, int]]
+    statistic_modules: Dict[str, Dict[str, int]]
+    module_blame: defaultdict
 
-    def __init__(self, model: BuildModel, output: str):
+    def __init__(self, model: BuildModel, output: str, module_blame):
         self.base_model = model
         self.output = output
         self.match_result = []
         self.match_result_base_statistic = {}
         self.statistic_files = {}
         self.statistic_entities = {}
+        self.module_blame = module_blame
 
     # 命令中实体属性解析
     def entity_rule(self, entity_stack: List[Relation], entity: dict):
@@ -148,6 +152,14 @@ class Match:
             temp = self.base_model.entity_assi[temp.parentId]
         return temp
 
+    # 模块统计
+    def get_module_blame(self, file_path: str):
+        if not self.module_blame:
+            return 'repo'
+        for content in self.module_blame:
+            if content in file_path:
+                return self.module_blame[content]
+
     def get_statistics(self):
         simple_stat = {}
         self.match_result_base_statistic['Total'] = {'files_count': self.base_model.statistics_assi['File']}
@@ -157,18 +169,26 @@ class Match:
                 simple_stat[pattern] = len(item[pattern])
                 pattern_files_set = defaultdict(int)
                 pattern_entities_set = defaultdict(int)
+                pattern_module_set = defaultdict(int)
                 for exa in item[pattern]:
                     temp_file_set = set()
                     temp_entity_set = set()
+                    temp_module_set = set()
                     for rel in exa:
                         temp_entity_set.add(rel.src)
                         temp_entity_set.add(rel.dest)
-                        temp_file_set.add(self.get_root_file(rel.src).file_path)
-                        temp_file_set.add(self.get_root_file(rel.dest).file_path)
+                        src_file = self.get_root_file(rel.src).file_path
+                        dest_file = self.get_root_file(rel.dest).file_path
+                        temp_file_set.add(src_file)
+                        temp_file_set.add(dest_file)
+                        temp_module_set.add(self.get_module_blame(src_file))
+                        temp_module_set.add(self.get_module_blame(dest_file))
                     for file_name in temp_file_set:
                         pattern_files_set[file_name] += 1
                     for entity_id in temp_entity_set:
                         pattern_entities_set[entity_id] += 1
+                    for module_blame in temp_module_set:
+                        pattern_module_set[module_blame] += 1
                 self.match_result_base_statistic[pattern] = {'example_count': len(item[pattern]),
                                                              'entities_count': len(pattern_entities_set),
                                                              'entities': pattern_entities_set,
@@ -186,6 +206,13 @@ class Match:
                     except KeyError:
                         self.statistic_entities[entity_id] = self.base_model.entity_assi[entity_id].to_csv()
                         self.statistic_entities[entity_id][pattern] = pattern_entities_set[entity_id]
+                for module_blame in pattern_module_set:
+                    try:
+                        self.statistic_modules[module_blame][pattern] = pattern_module_set[module_blame]
+                    except KeyError:
+                        self.statistic_modules[module_blame] = {'module_blame': module_blame}
+                        self.statistic_modules[module_blame][pattern] = pattern_module_set[module_blame]
+
         return simple_stat
 
     def deal_res_for_output(self):
@@ -241,8 +268,7 @@ class Match:
         simple_stat = self.get_statistics()
         match_set, match_set_union, match_set_json_res = self.deal_res_for_output()
         self.output_res(pattern.ident, match_set, match_set_union, match_set_json_res)
-        self.output_statistic(pattern.ident, pattern.patterns, self.match_result_base_statistic,
-                              self.statistic_files, self.statistic_entities, simple_stat)
+        self.output_statistic(pattern.ident, pattern.patterns, simple_stat)
 
     def output_res(self, pattern_type: str, match_set, match_set_union, match_set_json_res):
         output_path = os.path.join(self.output, pattern_type)
@@ -250,19 +276,28 @@ class Match:
         FileJson.write_to_json(output_path, match_set_union, 1)
         FileJson.write_to_json(output_path, match_set_json_res, 3)
 
-    def output_statistic(self, pattern_type: str, patterns: List[str], match_result_base_statistic,
-                         statistic_files_pattern, statistic_entities_pattern, simple_stat):
+    def output_statistic(self, pattern_type: str, patterns: List[str], simple_stat):
         output_path = os.path.join(self.output, pattern_type)
-        FileJson.write_to_json(output_path, match_result_base_statistic, 4)
+
+        # 输出检测结果
+        FileJson.write_to_json(output_path, self.match_result_base_statistic, 4)
         FileCSV.write_stat_to_csv('D:\\Honor\\match_res', pattern_type, datetime.now(), self.output.rsplit('\\', 4)[1],
                                   self.output.rsplit('\\', 4)[2],
                                   self.output.rsplit('\\', 4)[3], simple_stat)
-        headers = ['filename']
-        headers.extend(patterns)
-        FileCSV.write_to_csv(output_path, 'file-pattern', headers, statistic_files_pattern)
+        # 输出实体粒度统计
         headers = Entity.get_csv_header()
         headers.extend(patterns)
-        FileCSV.write_to_csv(output_path, 'entity-pattern', headers, statistic_entities_pattern)
+        FileCSV.write_to_csv(output_path, 'entity-pattern', headers, self.statistic_entities)
+        # 输出文件粒度统计
+        headers = ['filename']
+        headers.extend(patterns)
+        FileCSV.write_to_csv(output_path, 'file-pattern', headers, self.statistic_files)
+        # 输出模块粒度统计
+        headers = ['module_blame']
+        headers.extend(patterns)
+        FileCSV.write_to_csv(output_path, 'module-pattern', headers, self.statistic_modules)
+
+        # 输出维护成本
         try:
             left = os.path.join(self.output, Constant.file_mc)
             right = os.path.join(output_path, 'file-pattern.csv')

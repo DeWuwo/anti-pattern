@@ -2,7 +2,7 @@ import os
 import csv
 import pandas as pd
 from datetime import date
-from typing import Dict, List
+from typing import Dict, List, Any
 from model.entity import Entity
 
 
@@ -53,7 +53,7 @@ class FileCSV:
             f_writer.writerow(res)
 
     @classmethod
-    def write_to_csv(cls, out_path: str, name: str, headers: list, statistic: Dict[str, dict]):
+    def write_to_csv(cls, out_path: str, name: str, headers: list, statistic: Dict[Any, dict]):
         file_path = os.path.join(out_path, name + '.csv')
         with open(file_path, 'w', newline='') as f:
             f_writer = csv.DictWriter(f, headers)
