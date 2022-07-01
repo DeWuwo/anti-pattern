@@ -4,7 +4,17 @@ from typing import List, Dict
 
 
 class FileJson:
-    outFile = ['/diff.json', '/union.json', '/example.json', '/res.json', '/stat.json']
+    outFile = ['/diff.json', '/union.json', '/example.json', '/res.json', '/stat.json', 'test.json']
+
+    @classmethod
+    def read_base_json(cls, file_path: str):
+        print('reading json file')
+        try:
+            with open(file_path, encoding='utf-8') as f:
+                res = json.load(f, strict=False)
+                return res
+        except Exception as e:
+            print(e)
 
     @classmethod
     def read_from_json(cls, file_android, file_honor: str):
@@ -28,7 +38,7 @@ class FileJson:
     @classmethod
     def write_to_json(cls, out_path: str, section, mode):
         os.makedirs(out_path, exist_ok=True)
-        with open(out_path + cls.outFile[mode], 'w+', encoding='utf-8') as o:
+        with open(os.path.join(out_path, cls.outFile[mode]), 'w+', encoding='utf-8') as o:
             json.dump({'res': section}, o, ensure_ascii=False, indent=4)
 
     @classmethod
