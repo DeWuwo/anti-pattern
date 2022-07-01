@@ -30,6 +30,7 @@ class Entity:
     end_line: int
     end_column: int
     hidden: List[str]
+    hidden_modify: str
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -49,6 +50,7 @@ class Entity:
         self.accessible = ''
         self.is_decoupling = -1
         self.access_modify = ''
+        self.hidden_modify = ''
         try:
             self.start_line = args['startLine']
             self.start_column = args['startColumn']
@@ -143,6 +145,8 @@ class Entity:
             temp['global'] = True if self.is_global else False
         if self.hidden:
             temp['hidden'] = " ".join(self.hidden)
+        if self.hidden_modify:
+            temp['hiddenModify'] = self.hidden_modify
         return temp
 
     def set_honor(self, not_aosp: int):
@@ -159,6 +163,9 @@ class Entity:
 
     def set_access_modify(self, access_modify: str):
         self.access_modify = access_modify
+
+    def set_hidden_modify(self, hidden_modify: str):
+        self.hidden_modify = hidden_modify
 
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package

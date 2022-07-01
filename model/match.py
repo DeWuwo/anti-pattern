@@ -60,7 +60,7 @@ class Match:
         return not intrusive ^ (entity.is_intrusive == 1)
 
     def handle_hidden(self, entity: Entity, hidden: List[str]):
-        if set(hidden) & set(entity.hidden):
+        if Constant.hidden_map(entity.hidden) in hidden:
             return True
         return False
 

@@ -42,8 +42,23 @@ class Constant:
     file_mc = 'mc\\file-mc.csv'
 
     # hidden api sign
-    HD_aosp_blocked: str = 'blocked'
-    HD_aosp_unsupported: str = 'unsupported'
-    HD_aosp_max_target: List[str] = ['max-target-o', 'max-target-q']
+    HD_blocked: str = 'blocked'
+    HD_unsupported: str = 'unsupported'
+    HD_max_target: List[str] = ['max-target-o', 'max-target-q']
+
     HD_blacklist: str = 'blacklist'
-    HD_max_target: List[str] = ['greylist-max-o', 'greylist-max-q']
+    HD_greylist: List[str] = ['greylist-max-o', 'greylist-max-q']
+    HD_whitelist: str = 'whitelist'
+
+    @classmethod
+    def hidden_map(cls, label: List[str]) -> str:
+        if cls.HD_blocked in label or cls.HD_unsupported in label or cls.HD_blacklist in label:
+            return cls.HD_blacklist
+        elif set(label) & set(cls.HD_max_target):
+            hd_index = cls.HD_max_target.index(list(set(label) & set(cls.HD_max_target))[0])
+            return cls.HD_greylist[hd_index]
+        elif set(label) & set(cls.HD_greylist):
+            hd_index = cls.HD_max_target.index(list(set(label) & set(cls.HD_greylist))[0])
+            return cls.HD_greylist[hd_index]
+        else:
+            return cls.HD_whitelist

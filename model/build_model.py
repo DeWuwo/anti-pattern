@@ -202,8 +202,12 @@ class BuildModel:
                         entity.set_intrusive(1)
                     # storage special entities
                     temp = self.entity_android[entity.entity_mapping]
-                    if entity.hidden and entity.hidden != temp.hidden:
-                        self.hidden_modify_entities.append(entity.id)
+                    if entity.hidden:
+                        source_hd = Constant.hidden_map(temp.hidden)
+                        update_hd = Constant.hidden_map(entity.hidden)
+                        if source_hd != update_hd:
+                            self.hidden_modify_entities.append(entity.id)
+                            entity.set_hidden_modify(source_hd.join('--').join(update_hd))
                     if entity.modifiers != temp.modifiers:
                         if entity.accessible != temp.accessible:
                             self.access_modify_entities.append(entity.id)
@@ -245,7 +249,9 @@ class BuildModel:
 
         for entity in not_sure_entities:
             diff_aosp = self.diff_map_aosp(self.entity_assi[int(entity['id'])], aosp_entity_set, assi_entity_set)
+            print(entity['id'])
             try:
+                print('             move')
                 moves = move_list[int(entity['id'])]['Moves']
                 move_types = []
                 move_types_map = {}
@@ -271,7 +277,9 @@ class BuildModel:
                         rename_map(self.entity_assi[int(entity['id'])], source_name)
                     else:
                         self.entity_assi[int(entity['id'])].set_honor(1)
+                print('             move over')
             except KeyError:
+                print('             un move')
                 native_entity = self.entity_assi[int(entity['id'])]
                 if diff_aosp:
                     # git blame识别错误，原生方法没有任何修改，且认为不会在重载方法中发生
@@ -280,6 +288,7 @@ class BuildModel:
                     get_entity_map(native_entity, self.entity_android[map_native_index])
                 else:
                     self.entity_assi[int(entity['id'])].set_honor(1)
+                print('             un move over')
 
 
 # Get entity mapping relationship
