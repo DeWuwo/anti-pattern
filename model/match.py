@@ -28,6 +28,7 @@ class Match:
         self.match_result_base_statistic = {}
         self.statistic_files = {}
         self.statistic_entities = {}
+        self.statistic_modules = {}
         self.module_blame = module_blame
 
     # 命令中实体属性解析

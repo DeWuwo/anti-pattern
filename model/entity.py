@@ -199,7 +199,7 @@ def set_package(entity: Entity, entities: List[Entity]):
 
 
 def set_parameters(entity: Entity, entities: List[Entity]):
-    if entity.parentId != -1:
+    if entity.parentId != -1 and entity.category == Constant.E_variable:
         temp = entity
         while entities[temp.parentId].category == Constant.E_method:
             temp = entities[temp.parentId]

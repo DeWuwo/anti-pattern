@@ -259,10 +259,9 @@ class BuildModel:
                     elif int(entity['id']) in intrusive_entities and 'Rename Class' in move_types:
                         self.entity_assi[int(entity['id'])].set_honor(0)
                         self.entity_assi[int(entity['id'])].set_intrusive(1)
-                        source_name = get_rename_source(
-                            moves[move_types_map['Rename Class']]['leftSideLocations'][0]["codeElement"])
+                        source_name: str = moves[move_types_map['Rename Class']]['leftSideLocations'][0]["codeElement"]
                         print('                 rename-m', source_name)
-                        rename_map(self.entity_assi[int(entity['id'])], source_name)
+                        rename_map(self.entity_assi[int(entity['id'])], source_name.rsplit('.', 1)[1])
                     else:
                         self.entity_assi[int(entity['id'])].set_honor(1)
                 print('             move over')
