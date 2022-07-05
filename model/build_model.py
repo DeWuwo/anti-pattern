@@ -1,7 +1,7 @@
 from typing import List, Dict
 from collections import defaultdict
 from functools import partial
-from model.entity import Entity
+from model.entity import Entity, set_package, set_parameters
 from model.relation import Relation
 from model.entity_owner import EntityOwner, get_rename_source
 from utils import Constant
@@ -66,20 +66,8 @@ class BuildModel:
             if not item['external']:
                 entity = Entity(**item)
                 # get entity package
-                if entity.category != Constant.E_package:
-                    flag = True
-                    if entity.parentId != -1:
-                        temp = self.entity_assi[entity.parentId]
-                        while temp.category != Constant.E_package:
-                            if temp.package_name != "":
-                                entity.set_package_name(temp.package_name)
-                                flag = False
-                                break
-                            temp = self.entity_assi[temp.parentId]
-                        if flag:
-                            entity.set_package_name(temp.qualifiedName)
-                    else:
-                        entity.set_package_name('null')
+                set_package(entity, self.entity_assi)
+                set_parameters(entity, self.entity_assi)
                 self.entity_assi.append(entity)
                 assi_entity_set[entity.category][entity.qualifiedName].append(entity.id)
         # first get entity owner

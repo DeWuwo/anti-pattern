@@ -154,11 +154,10 @@ class Match:
 
     # 模块统计
     def get_module_blame(self, file_path: str):
-        if not self.module_blame:
-            return 'repo'
         for content in self.module_blame:
             if content in file_path:
                 return self.module_blame[content]
+        return 'unknown_module'
 
     def get_statistics(self):
         simple_stat = {}

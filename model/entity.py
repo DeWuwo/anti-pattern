@@ -17,6 +17,7 @@ class Entity:
     max_target_sdk: int
     is_intrusive: int
     is_decoupling: int
+    bin_path: str
     entity_mapping: int
     modifiers: List[str]
     accessible: str
@@ -51,6 +52,7 @@ class Entity:
         self.is_decoupling = -1
         self.access_modify = ''
         self.hidden_modify = ''
+        self.bin_path = ''
         try:
             self.start_line = args['startLine']
             self.start_column = args['startColumn']
@@ -104,9 +106,13 @@ class Entity:
         except KeyError:
             self.hidden = []
         try:
-            self.is_decoupling = args['additionalBin']
+            self.is_decoupling = args['additionalBin']['binNum']
         except KeyError:
             self.is_decoupling = 0
+        try:
+            self.bin_path = args['additionalBin']['binPath']
+        except KeyError:
+            self.bin_path = 'aosp'
 
     def __str__(self):
         return self.category + "#" + self.qualifiedName
@@ -167,5 +173,34 @@ class Entity:
     def set_hidden_modify(self, hidden_modify: str):
         self.hidden_modify = hidden_modify
 
+    def set_parent_param(self, parameter_types: str, parameter_names: str):
+        self.parameter_types = parameter_types
+        self.parameter_names = parameter_names
+
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package
+
+
+def set_package(entity: Entity, entities: List[Entity]):
+    if entity.category != Constant.E_package:
+        flag = True
+        if entity.parentId != -1:
+            temp = entities[entity.parentId]
+            while temp.category != Constant.E_package:
+                if temp.package_name != "":
+                    entity.set_package_name(temp.package_name)
+                    flag = False
+                    break
+                temp = entities[temp.parentId]
+            if flag:
+                entity.set_package_name(temp.qualifiedName)
+        else:
+            entity.set_package_name('null')
+
+
+def set_parameters(entity: Entity, entities: List[Entity]):
+    if entity.parentId != -1:
+        temp = entity
+        while entities[temp.parentId].category == Constant.E_method:
+            temp = entities[temp.parentId]
+        entity.set_parent_param(temp.parameter_types, temp.parameter_names)

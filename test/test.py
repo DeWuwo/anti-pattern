@@ -1,5 +1,6 @@
 import os
-from utils import Command
+from utils import Command, FileCSV
+
 
 class Test:
     def test1(self, a: int, b: int):
@@ -24,10 +25,6 @@ def test2():
 
 
 if __name__ == '__main__':
-    a = [1, 2]
-    b = [1, 2]
-    c = {1: 1, 2:2, 3: 3}
-    print(4 in c.keys())
-    for index, val in enumerate(a):
-        print(index, val)
-    pass
+    res = FileCSV.read_from_file_csv('C:\\Users\\76723\\Desktop\\test.csv')
+    for item in res:
+        print(item)
