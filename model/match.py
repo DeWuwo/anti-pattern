@@ -145,6 +145,7 @@ class Match:
         self.match_result_base_statistic = {}
         self.statistic_files = {}
         self.statistic_entities = {}
+        self.statistic_modules = {}
 
     # 统计
     def get_root_file(self, entity_id: int) -> Entity:

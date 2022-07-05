@@ -12,10 +12,9 @@ class OpenOS:
 
     def __init__(self):
         self.LineageOS = [
-
+            ['LineageOS', 'lineage-19.1', 'base', '9cdf73f7cbed891c433d278d533f0e0113d68efc'],
             ['LineageOS', 'lineage-17.1', 'base', '3e199be0fcc31325bab3aea9ecd7808006b14e9d'],
             ['LineageOS', 'lineage-18.1', 'base', '82f6df1c2d329a128953088b662df8ed6fc6ae5b'],
-            ['LineageOS', 'lineage-19.1', 'base', '9cdf73f7cbed891c433d278d533f0e0113d68efc'],
 
         ]
 
