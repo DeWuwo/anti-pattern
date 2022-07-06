@@ -223,18 +223,9 @@ class BuildModel:
         def rename_map(rename_entity: Entity, method_name: str):
             source_qualified_name = rename_entity.qualifiedName.rsplit('.', 1)[0].join('.').join(method_name)
             aosp_list: List[int] = aosp_entity_set[rename_entity.category][source_qualified_name]
-            if len(aosp_list) == 1:
-                get_entity_map(rename_entity, self.entity_android[aosp_list[0]])
-                return 1
-            else:
-                for item_id in aosp_list:
-                    if self.entity_android[item_id].parameter_types == rename_entity.parameter_types:
-                        get_entity_map(rename_entity, self.entity_android[item_id])
-                        return 1
-                return 0
+            get_entity_map(rename_entity, self.entity_android[aosp_list[0]])
 
         for entity in not_sure_entities:
-            diff_aosp = self.diff_map_aosp(self.entity_assi[int(entity['id'])], aosp_entity_set, assi_entity_set)
             if self.entity_assi[int(entity['id'])].is_core_entity():
                 print(entity['id'])
                 try:
@@ -245,39 +236,31 @@ class BuildModel:
                     for index, move in enumerate(moves):
                         move_types.append(move['type'])
                         move_types_map[move['type']] = index
-                    if not diff_aosp:
-                        # 主要处理重命名重构，其他重构认为伴生
-                        if int(entity['id']) in intrusive_entities and 'Rename Method' in move_types:
-                            self.entity_assi[int(entity['id'])].set_honor(0)
-                            self.entity_assi[int(entity['id'])].set_intrusive(1)
-                            # print(moves[move_types_map['Rename Method']]['leftSideLocations'][0]["codeElement"])
-                            source_name = get_rename_source(
-                                moves[move_types_map['Rename Method']]['leftSideLocations'][0]["codeElement"])
-                            print('                 rename-m', source_name)
-                            rename_map(self.entity_assi[int(entity['id'])], source_name)
-                        elif int(entity['id']) in intrusive_entities and 'Rename Class' in move_types:
-                            self.entity_assi[int(entity['id'])].set_honor(0)
-                            self.entity_assi[int(entity['id'])].set_intrusive(1)
-                            source_name: str = moves[move_types_map['Rename Class']]['leftSideLocations'][0][
-                                "codeElement"]
-                            print('                 rename-m', source_name)
-                            rename_map(self.entity_assi[int(entity['id'])], source_name.rsplit('.', 1)[1])
-                        else:
-                            self.entity_assi[int(entity['id'])].set_honor(1)
+                    # 主要处理重命名重构，其他重构认为伴生
+                    if int(entity['id']) in intrusive_entities and 'Rename Method' in move_types:
+                        self.entity_assi[int(entity['id'])].set_honor(0)
+                        self.entity_assi[int(entity['id'])].set_intrusive(1)
+                        # print(moves[move_types_map['Rename Method']]['leftSideLocations'][0]["codeElement"])
+                        source_name = get_rename_source(
+                            moves[move_types_map['Rename Method']]['leftSideLocations'][0]["codeElement"])
+                        print('                 rename-m', source_name)
+                        rename_map(self.entity_assi[int(entity['id'])], source_name)
+                    elif int(entity['id']) in intrusive_entities and 'Rename Class' in move_types:
+                        self.entity_assi[int(entity['id'])].set_honor(0)
+                        self.entity_assi[int(entity['id'])].set_intrusive(1)
+                        source_name: str = moves[move_types_map['Rename Class']]['leftSideLocations'][0][
+                            "codeElement"]
+                        print('                 rename-m', source_name)
+                        rename_map(self.entity_assi[int(entity['id'])], source_name.rsplit('.', 1)[1])
+                    else:
+                        self.entity_assi[int(entity['id'])].set_honor(1)
                     print('             move over')
                 except KeyError:
                     print('             un move')
-                    native_entity = self.entity_assi[int(entity['id'])]
-                    if diff_aosp:
-                        # git blame识别错误，原生方法没有任何修改，且认为不会在重载方法中发生
-                        native_entity.set_honor(0)
-                        map_native_index = aosp_entity_set[native_entity.category][native_entity.qualifiedName][0]
-                        get_entity_map(native_entity, self.entity_android[map_native_index])
-                    else:
-                        self.entity_assi[int(entity['id'])].set_honor(1)
+                    self.entity_assi[int(entity['id'])].set_honor(1)
                     print('             un move over')
             else:
-                self.entity_assi[int(entity['id'])].set_honor(diff_aosp)
+                self.entity_assi[int(entity['id'])].set_honor(1)
 
 
 # Get entity mapping relationship
