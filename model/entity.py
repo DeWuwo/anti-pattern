@@ -180,6 +180,9 @@ class Entity:
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package
 
+    def is_core_entity(self):
+        return self.category == Constant.E_method or self.category == Constant.E_class
+
 
 def set_package(entity: Entity, entities: List[Entity]):
     if entity.category != Constant.E_package:

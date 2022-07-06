@@ -4,7 +4,7 @@ from functools import partial
 from model.entity import Entity, set_package, set_parameters
 from model.relation import Relation
 from model.entity_owner import EntityOwner, get_rename_source
-from utils import Constant
+from utils import Constant, FileCSV
 
 
 class BuildModel:
@@ -81,6 +81,8 @@ class BuildModel:
         move_list = self.entity_owner.re_divide_owner(not_sure_entities)
         print('         re get entity owner')
         self.resign_owner(not_sure_entities, move_list, aosp_entity_set, assi_entity_set, intrusive_entities.keys())
+        print('     output entities owner final')
+        FileCSV.write_owner_to_csv(self.entity_owner.out_path, 'final_ownership', self.entity_assi)
 
         # init dep
         print("start init model deps")
