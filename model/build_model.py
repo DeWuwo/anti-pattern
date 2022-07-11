@@ -196,10 +196,11 @@ class BuildModel:
                     update_hd = Constant.hidden_map(entity.hidden)
                     if source_hd != update_hd:
                         self.hidden_modify_entities.append(entity.id)
-                        entity.set_hidden_modify(source_hd.join('--').join(update_hd))
+                        entity.set_hidden_modify(source_hd + '--' + update_hd)
                 if entity.modifiers != temp.modifiers:
                     if entity.accessible != temp.accessible:
                         self.access_modify_entities.append(entity.id)
+                        entity.set_access_modify(temp.accessible + '-' + entity.accessible)
                     if not entity.final and temp.final:
                         self.final_modify_entities.append(entity.id)
             else:
@@ -221,15 +222,16 @@ class BuildModel:
                      assi_entity_set: defaultdict, intrusive_entities):
 
         def rename_map(rename_entity: Entity, method_name: str):
-            source_qualified_name = rename_entity.qualifiedName.rsplit('.', 1)[0].join('.').join(method_name)
+            source_qualified_name = rename_entity.qualifiedName.rsplit('.', 1)[0] + '.' + method_name
             aosp_list: List[int] = aosp_entity_set[rename_entity.category][source_qualified_name]
-            get_entity_map(rename_entity, self.entity_android[aosp_list[0]])
+            if aosp_list:
+                get_entity_map(rename_entity, self.entity_android[aosp_list[0]])
+            else:
+                rename_entity.set_honor(1)
 
         for entity in not_sure_entities:
             if self.entity_assi[int(entity['id'])].is_core_entity():
-                print(entity['id'])
                 try:
-                    print('             move')
                     moves = move_list[int(entity['id'])]['Moves']
                     move_types = []
                     move_types_map = {}
@@ -240,7 +242,6 @@ class BuildModel:
                     if int(entity['id']) in intrusive_entities and 'Rename Method' in move_types:
                         self.entity_assi[int(entity['id'])].set_honor(0)
                         self.entity_assi[int(entity['id'])].set_intrusive(1)
-                        # print(moves[move_types_map['Rename Method']]['leftSideLocations'][0]["codeElement"])
                         source_name = get_rename_source(
                             moves[move_types_map['Rename Method']]['leftSideLocations'][0]["codeElement"])
                         print('                 rename-m', source_name)
@@ -254,11 +255,8 @@ class BuildModel:
                         rename_map(self.entity_assi[int(entity['id'])], source_name.rsplit('.', 1)[1])
                     else:
                         self.entity_assi[int(entity['id'])].set_honor(1)
-                    print('             move over')
                 except KeyError:
-                    print('             un move')
                     self.entity_assi[int(entity['id'])].set_honor(1)
-                    print('             un move over')
             else:
                 self.entity_assi[int(entity['id'])].set_honor(1)
 

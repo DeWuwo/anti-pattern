@@ -118,6 +118,7 @@ def get_name_from_sig(sig: str) -> str:
         method_name = matched.group(2)
         return method_name
     else:
+        print('get rename error')
         assert False
 
 

@@ -147,6 +147,8 @@ class Entity:
             temp['rawType'] = self.raw_type
         if self.modifiers:
             temp['modifiers'] = " ".join(self.modifiers)
+        if self.access_modify:
+            temp['accessModify'] = self.access_modify
         if self.is_global != 2:
             temp['global'] = True if self.is_global else False
         if self.hidden:

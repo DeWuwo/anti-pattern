@@ -273,6 +273,7 @@ class Match:
 
     def output_res(self, pattern_type: str, match_set, match_set_union, match_set_json_res):
         output_path = os.path.join(self.output, pattern_type)
+        print(f'output {pattern_type} match res')
         FileJson.write_match_mode(output_path, match_set)
         FileJson.write_to_json(output_path, match_set_union, 1)
         FileJson.write_to_json(output_path, match_set_json_res, 3)
