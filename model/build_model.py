@@ -1,3 +1,4 @@
+import os.path
 from typing import List, Dict
 from collections import defaultdict
 from functools import partial
@@ -259,6 +260,12 @@ class BuildModel:
                     self.entity_assi[int(entity['id'])].set_honor(1)
             else:
                 self.entity_assi[int(entity['id'])].set_honor(1)
+
+    def load_owner_from_catch(self):
+        owners = FileCSV.read_from_file_csv(os.path.join(self.entity_owner.out_path, 'final_ownership.csv'))
+        for owner in owners:
+            self.entity_assi[int(owner[0])].set_honor(int(owner[1]))
+            self.entity_assi[int(owner[0])].set_honor(int(owner[5]))
 
 
 # Get entity mapping relationship

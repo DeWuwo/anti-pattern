@@ -11,6 +11,11 @@ class BlameField:
         self.module_blame = {}
 
     def read_blame_field(self):
-        reader_res = FileCSV.read_from_file_csv(self.file_path)
+        try:
+            reader_res = FileCSV.read_from_file_csv(self.file_path)
+        except Exception as e:
+            reader_res = {}
         for blame in reader_res:
-            self.module_blame[blame[1] + blame[2]] = blame[3]
+            for file in blame[2].split(';'):
+                self.module_blame[blame[1] + file] = blame[3]
+        return self.module_blame

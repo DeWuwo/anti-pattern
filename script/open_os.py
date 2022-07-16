@@ -13,9 +13,10 @@ class OpenOS:
 
     def __init__(self):
         self.LineageOS = [
+            ['LineageOS', 'lineage-16.0', 'base', 'lineage-16.0', 'e9b725168c57cc542382e0796ac5c9ec76974b5d'],
             ['LineageOS', 'lineage-17.1', 'base', 'lineage-17.1', '3e199be0fcc31325bab3aea9ecd7808006b14e9d'],
             ['LineageOS', 'lineage-18.1', 'base', 'lineage-18.1', '82f6df1c2d329a128953088b662df8ed6fc6ae5b'],
-            ['LineageOS', 'lineage-19.1', 'base', 'lineage-17.1', '9cdf73f7cbed891c433d278d533f0e0113d68efc'],
+            ['LineageOS', 'lineage-19.1', 'base', 'lineage-19.1', '9cdf73f7cbed891c433d278d533f0e0113d68efc'],
         ]
 
         self.GraphneOs = [
@@ -45,13 +46,13 @@ class OpenOS:
 
     # self.LA + self.LineageOS + self.GraphneOs + self.CalyxOS + self.OmniROM
     def get_all_os(self):
-        return self.AOSPA
+        return self.LineageOS + self.GraphneOs + self.CalyxOS + self.OmniROM + self.AOSPA + self.LA
 
 
 def get_path(os_name: str, os_version: str, pkg: str, os_commit, aosp_commit: str):
     aosp_code_path = os.path.join('D:\\Honor\\source_code\\android', pkg)
     assi_code_path = os.path.join('D:\\Honor\\source_code\\', os_name, pkg)
-    aosp_dep_path = os.path.join('D:\\Honor\\dep_res\\android', pkg, os_version + '.json')
+    aosp_dep_path = os.path.join('D:\\Honor\\dep_res\\android', pkg, aosp_commit + '.json')
     assi_dep_path = os.path.join('D:\\Honor\\dep_res\\', os_name, pkg, os_version + '.json')
     out_path = os.path.join('D:\\Honor\\match_res\\', os_name, pkg, os_version)
     return aosp_code_path, assi_code_path, aosp_dep_path, assi_dep_path, aosp_commit, os_commit, out_path

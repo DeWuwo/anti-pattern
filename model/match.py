@@ -10,10 +10,11 @@ from model.pattern_type import PatternType
 from utils import FileJson, FileCSV, Constant
 
 
+
 class Match:
     base_model: BuildModel
     output: str
-    match_result: List[Dict[str, List[List[Relation]]]]
+    match_result: List[Dict[str, List[Dict[str, List[List[Relation]]]]]]
     match_result_base_statistic: Dict[str, Dict[str, int]]
     # 不同粒度数量统计
     statistic_files: Dict[str, Dict[str, int]]
@@ -46,7 +47,11 @@ class Match:
             entity_base = entity_category
         entity_attrs: dict = entity['attrs']
         entity_attrs.update({'category': entity_category})
-        return entity_base, entity_attrs
+        try:
+            entity_filter: dict = entity['filter']
+        except:
+            entity_filter = {}
+        return entity_base, entity_attrs, entity_filter
 
     def handle_entity_attr_match(self, entity: Entity, **kwargs):
         for key, val in kwargs.items():
@@ -78,6 +83,17 @@ class Match:
     def handle_hidden_modify(self, entity: Entity, hidden_modify: bool):
         return not hidden_modify ^ (entity.id in self.base_model.hidden_modify_entities)
 
+    # 实体属性过滤
+    def handle_entity_filter(self, entity: Entity, **kwargs):
+        for key, val in kwargs.items():
+            method = getattr(self, f'handle_entity_filter_{key}', None)
+            if not method(entity, val):
+                return True
+        return False
+
+    def handle_entity_filter_qualified_name(self, entity: Entity, qualified_name: str):
+        return qualified_name in entity.qualifiedName
+
     # 依赖属性匹配
     def handle_relation_attr_match(self, relation: Relation, **kwargs):
         for key, val in kwargs.items():
@@ -93,23 +109,31 @@ class Match:
         return not invoke ^ (relation.invoke == 1)
 
     # 匹配函数
-    def handle_matching(self, result_set: list, example_stack: list, flag: list, rules: List[dict], current):
+    def handle_matching(self, result_set: list, filter_set: list, example_stack: list, flag: list, rules: List[dict],
+                        current):
         src = rules[current]['src']
         rel = rules[current]['rel']['type']
         dest = rules[current]['dest']
         not_aosp = rules[current]['direction']
-        src_base, src_attr = self.entity_rule(example_stack, src)
-        dest_base, dest_attr = self.entity_rule(example_stack, dest)
+        src_base, src_attr, src_filter = self.entity_rule(example_stack, src)
+        dest_base, dest_attr, dest_filter = self.entity_rule(example_stack, dest)
         rel_attr = rules[current]['rel']['attrs']
         if len(rules) == 1:
             flag_map = defaultdict(list)
+            filter_map = defaultdict(list)
             for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
                 if self.handle_entity_attr_match(self.base_model.entity_assi[item.src], **src_attr) and \
                         self.handle_entity_attr_match(self.base_model.entity_assi[item.dest], **dest_attr) and \
                         self.handle_relation_attr_match(item, **rel_attr):
-                    flag_map[item.src].append(item)
+                    if self.handle_entity_filter(self.base_model.entity_assi[item.src], **src_filter) or \
+                            self.handle_entity_filter(self.base_model.entity_assi[item.src], **dest_filter):
+                        filter_map[item.src].append(item)
+                    else:
+                        flag_map[item.src].append(item)
             for item in flag_map:
                 result_set.append(flag_map[item])
+            for item in filter_map:
+                filter_set.append(flag_map[item])
         else:
             for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
                 if self.handle_entity_attr_match(self.base_model.entity_assi[item.src], **src_attr) and \
@@ -122,7 +146,7 @@ class Match:
                     flag_update.append(str(item.src) + str(item.dest))
                     if current < len(rules) - 1:
                         current += 1
-                        self.handle_matching(result_set, next_stack, flag_update, rules, current)
+                        self.handle_matching(result_set, filter_set, next_stack, flag_update, rules, current)
                         current -= 1
                     else:
                         result_set.append(next_stack)
@@ -136,8 +160,9 @@ class Match:
         res = []
         for item in rules:
             mode_set = []
-            self.handle_matching(mode_set, [], [], item, 0)
-            res.extend(mode_set)
+            filter_set = []
+            self.handle_matching(mode_set, filter_set, [], [], item, 0)
+            res.append({'res': mode_set, 'filter': filter_set})
         self.match_result.append({pattern: res})
 
     def pre_del(self):
@@ -155,13 +180,17 @@ class Match:
         return temp
 
     # 模块统计
-    def get_module_blame(self, file_path: str):
+    def get_module_blame(self, entity_id: int) -> str:
+        temp = self.base_model.entity_assi[entity_id]
+        blame_path = os.path.join(temp.bin_path, temp.file_path)
+        blame_path.replace('\\', '/')
         for content in self.module_blame:
-            if content in file_path:
+            if content in blame_path:
                 return self.module_blame[content]
         return 'unknown_module'
 
     def get_statistics(self):
+        print('get statistics')
         simple_stat = {}
         self.match_result_base_statistic['Total'] = {'files_count': self.base_model.statistics_assi['File']}
         for item in self.match_result:
@@ -171,7 +200,11 @@ class Match:
                 pattern_files_set = defaultdict(int)
                 pattern_entities_set = defaultdict(int)
                 pattern_module_set = defaultdict(int)
-                for exa in item[pattern]:
+                pattern_res: List[List[Relation]] = []
+                for style in item[pattern]:
+                    pattern_res.extend(style['res'])
+                    pattern_res.extend(style['filter'])
+                for exa in pattern_res:
                     temp_file_set = set()
                     temp_entity_set = set()
                     temp_module_set = set()
@@ -182,8 +215,8 @@ class Match:
                         dest_file = self.get_root_file(rel.dest).file_path
                         temp_file_set.add(src_file)
                         temp_file_set.add(dest_file)
-                        temp_module_set.add(self.get_module_blame(src_file))
-                        temp_module_set.add(self.get_module_blame(dest_file))
+                        temp_module_set.add(self.get_module_blame(rel.src))
+                        temp_module_set.add(self.get_module_blame(rel.dest))
                     for file_name in temp_file_set:
                         pattern_files_set[file_name] += 1
                     for entity_id in temp_entity_set:
@@ -217,29 +250,49 @@ class Match:
         return simple_stat
 
     def deal_res_for_output(self):
+        print('ready for write')
         match_set = []
         union_temp: List = []
         re_map = defaultdict(int)
         res = {}
         total_count = 0
         res['modeCount'] = len(self.match_result)
-        res['totalCount'] = total_count
         res['values'] = {}
         for item in self.match_result:
             for mode in item:
                 anti_temp = []
-                for exa in item[mode]:
-                    anti_temp.append(self.show_details(exa))
-                    for rel in exa:
-                        s2d = str(rel.src) + str(rel.dest)
-                        if re_map[s2d] == 0:
-                            re_map[s2d] = 1
-                            union_temp.append(self.to_detail_json(rel))
+                pattern_count = 0
+                for style in item[mode]:
+                    style_res = {}
+                    res_temp = []
+                    filter_temp = []
+                    for exa in style['res']:
+                        res_temp.append(self.show_details(exa))
+                        for rel in exa:
+                            s2d = str(rel.src) + str(rel.dest)
+                            if re_map[s2d] == 0:
+                                re_map[s2d] = 1
+                                union_temp.append(self.to_detail_json(rel))
+
+                    for exa in style['filter']:
+                        filter_temp.append(self.show_details(exa))
+                        for rel in exa:
+                            s2d = str(rel.src) + str(rel.dest)
+                            if re_map[s2d] == 0:
+                                re_map[s2d] = 1
+                                union_temp.append(self.to_detail_json(rel))
+                    style_res['resCount'] = len(res_temp)
+                    style_res['filterCount'] = len(filter_temp)
+                    style_res['res'] = res_temp
+                    style_res['filter'] = filter_temp
+                    pattern_count += style_res['resCount']
+                    pattern_count += style_res['filterCount']
+                    anti_temp.append(style_res)
+                total_count += pattern_count
                 match_set.append({mode: anti_temp})
                 res['values'][mode] = {}
-                res['values'][mode]['count'] = len(anti_temp)
-                res['values'][mode]['examples'] = anti_temp
-                total_count += len(anti_temp)
+                res['values'][mode]['count'] = pattern_count
+                res['values'][mode]['res'] = anti_temp
         res['totalCount'] = total_count
         return match_set, union_temp, res
 

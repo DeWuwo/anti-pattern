@@ -4,7 +4,7 @@ from typing import List, Dict
 
 
 class FileJson:
-    outFile = ['/diff.json', '/union.json', '/example.json', '/res.json', '/stat.json', 'test.json']
+    outFile = ['diff.json', 'union.json', 'example.json', 'res.json', 'stat.json', 'test.json']
 
     @classmethod
     def read_base_json(cls, file_path: str):
@@ -43,11 +43,19 @@ class FileJson:
 
     @classmethod
     def write_match_mode(cls, out_path: str, match_set: List[Dict]):
+        print('write match res')
         for item in match_set:
             for mode in item:
-                mode_path = out_path + '/' + mode
+                mode_path = os.path.join(out_path, mode)
                 os.makedirs(mode_path, exist_ok=True)
-                for index, exa in enumerate(item[mode]):
-                    exa_path = mode_path + '/' + str(index)
-                    os.makedirs(exa_path, exist_ok=True)
-                    cls.write_to_json(exa_path, exa, 2)
+                for s_index, style in enumerate(item[mode]):
+                    style_path = os.path.join(mode_path, 'style' + str(s_index))
+                    os.makedirs(style_path, exist_ok=True)
+                    for index, exa in enumerate(style['res']):
+                        exa_path = os.path.join(style_path, 'res', str(index))
+                        os.makedirs(exa_path, exist_ok=True)
+                        cls.write_to_json(exa_path, exa, 2)
+                    for index, exa in enumerate(style['filter']):
+                        exa_path = os.path.join(style_path, 'filter', str(index))
+                        os.makedirs(exa_path, exist_ok=True)
+                        cls.write_to_json(exa_path, exa, 2)
