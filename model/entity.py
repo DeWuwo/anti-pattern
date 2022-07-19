@@ -14,7 +14,6 @@ class Entity:
     file_path: str
     package_name: str
     not_aosp: int
-    max_target_sdk: int
     is_intrusive: int
     is_decoupling: int
     bin_path: str
@@ -32,6 +31,8 @@ class Entity:
     end_column: int
     hidden: List[str]
     hidden_modify: str
+    commits: List[str]
+    refactor: dict
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -42,17 +43,18 @@ class Entity:
         self.file_path = ""
         self.package_name = ""
         self.not_aosp = 0
-        self.max_target_sdk = -1
         self.is_intrusive = 0
         self.entity_mapping = -1
         self.modifiers = []
         self.static = False
         self.final = False
-        self.accessible = ''
+        self.accessible = 'null'
         self.is_decoupling = -1
         self.access_modify = ''
         self.hidden_modify = ''
         self.bin_path = ''
+        self.commits = []
+        self.refactor = {}
         try:
             self.start_line = args['startLine']
             self.start_column = args['startColumn']
@@ -124,6 +126,15 @@ class Entity:
         return {'id': self.id, 'not_aosp': self.not_aosp, 'category': self.category,
                 'qualifiedName': self.qualifiedName, 'file_path': self.file_path, 'isIntrusive': self.is_intrusive}
 
+    def handle_to_format(self, to_format: str):
+        method = getattr(self, f'handle_to_{to_format}', None)
+        return method()
+
+    def handle_to_modify(self):
+        return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName,
+                'file_path': self.file_path, 'not_aosp': self.not_aosp, 'isIntrusive': self.is_intrusive,
+                'accessModify': self.access_modify, 'hiddenModify': self.hidden_modify, 'refactor': self.refactor}
+
     @classmethod
     def get_csv_header(cls):
         return ['id', 'category', 'qualifiedName']
@@ -155,6 +166,10 @@ class Entity:
             temp['hidden'] = " ".join(self.hidden)
         if self.hidden_modify:
             temp['hiddenModify'] = self.hidden_modify
+        if self.commits:
+            temp['commits'] = self.commits
+        if self.refactor:
+            temp['refactor'] = self.refactor
         return temp
 
     def set_honor(self, not_aosp: int):
@@ -178,6 +193,12 @@ class Entity:
     def set_parent_param(self, parameter_types: str, parameter_names: str):
         self.parameter_types = parameter_types
         self.parameter_names = parameter_names
+
+    def set_commits(self, commits: List[str]):
+        self.commits = commits
+
+    def set_refactor(self, refactor: dict):
+        self.refactor = refactor
 
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package

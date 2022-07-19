@@ -10,13 +10,18 @@ class OpenOS:
     OmniROM: List
     LA: List
     AOSPA: List
+    test: List
 
     def __init__(self):
         self.LineageOS = [
-            ['LineageOS', 'lineage-16.0', 'base', 'lineage-16.0', 'e9b725168c57cc542382e0796ac5c9ec76974b5d'],
-            ['LineageOS', 'lineage-17.1', 'base', 'lineage-17.1', '3e199be0fcc31325bab3aea9ecd7808006b14e9d'],
-            ['LineageOS', 'lineage-18.1', 'base', 'lineage-18.1', '82f6df1c2d329a128953088b662df8ed6fc6ae5b'],
-            ['LineageOS', 'lineage-19.1', 'base', 'lineage-19.1', '9cdf73f7cbed891c433d278d533f0e0113d68efc'],
+            ['LineageOS', 'lineage-16.0', 'base', 'd56f59389212df5462b342be7600c1974d27c0d5',
+             'ad31dbbdcd76091d7d2d1fc6c863ee17c3bfe87d'],
+            ['LineageOS', 'lineage-17.1', 'base', '44f7cdc0ef98074572a572b6aa78d1c0a23420f7',
+             'dff3deab5d25f8bbfd49abfb423043c9be47b7db'],
+            ['LineageOS', 'lineage-18.1', 'base', '7f7fc2562a95be630dbe609e8fb70383dcfada4f',
+             '49d8b986dddd441df741698541788c5f3a9c465f'],
+            ['LineageOS', 'lineage-19.1', 'base', '484c59b972c1772f75a4b1b9fce7512eee517dcb',
+             '9cdf73f7cbed891c433d278d533f0e0113d68efc'],
         ]
 
         self.GraphneOs = [
@@ -44,15 +49,27 @@ class OpenOS:
             ['aospa', 'sapphire', 'base', 'sapphire', '898ad0236f79d81514806e4f4ca3a2fe401e0705']
         ]
 
+        self.test = [
+            ['LineageOS', 'lineage-16.0', 'base', 'd56f59389212df5462b342be7600c1974d27c0d5',
+             'ad31dbbdcd76091d7d2d1fc6c863ee17c3bfe87d'],
+            ['LineageOS', 'lineage-17.1', 'base', '44f7cdc0ef98074572a572b6aa78d1c0a23420f7',
+             'dff3deab5d25f8bbfd49abfb423043c9be47b7db'],
+            ['LineageOS', 'lineage-18.1', 'base', '7f7fc2562a95be630dbe609e8fb70383dcfada4f',
+             '49d8b986dddd441df741698541788c5f3a9c465f'],
+            ['LineageOS', 'lineage-19.1', 'base', '484c59b972c1772f75a4b1b9fce7512eee517dcb',
+             '9cdf73f7cbed891c433d278d533f0e0113d68efc'],
+        ]
+
     # self.LA + self.LineageOS + self.GraphneOs + self.CalyxOS + self.OmniROM
     def get_all_os(self):
-        return self.LineageOS + self.GraphneOs + self.CalyxOS + self.OmniROM + self.AOSPA + self.LA
+        return self.test
+        # return self.LineageOS + self.GraphneOs + self.CalyxOS + self.OmniROM + self.AOSPA + self.LA
 
 
 def get_path(os_name: str, os_version: str, pkg: str, os_commit, aosp_commit: str):
     aosp_code_path = os.path.join('D:\\Honor\\source_code\\android', pkg)
     assi_code_path = os.path.join('D:\\Honor\\source_code\\', os_name, pkg)
     aosp_dep_path = os.path.join('D:\\Honor\\dep_res\\android', pkg, aosp_commit + '.json')
-    assi_dep_path = os.path.join('D:\\Honor\\dep_res\\', os_name, pkg, os_version + '.json')
+    assi_dep_path = os.path.join('D:\\Honor\\dep_res\\', os_name, pkg, os_commit + '.json')
     out_path = os.path.join('D:\\Honor\\match_res\\', os_name, pkg, os_version)
     return aosp_code_path, assi_code_path, aosp_dep_path, assi_dep_path, aosp_commit, os_commit, out_path

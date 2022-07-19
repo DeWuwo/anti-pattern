@@ -64,7 +64,7 @@ class Match:
         return category == '' or entity.category == category
 
     def handle_accessible(self, entity: Entity, accessible: List[str]):
-        return (not accessible) or entity.accessible in accessible or (entity.accessible == '' and '' in accessible)
+        return (not accessible) or entity.accessible in accessible
 
     def handle_intrusive(self, entity: Entity, intrusive: bool):
         return not intrusive ^ (entity.is_intrusive == 1)
@@ -93,6 +93,9 @@ class Match:
 
     def handle_entity_filter_qualified_name(self, entity: Entity, qualified_name: str):
         return qualified_name in entity.qualifiedName
+
+    def handle_entity_filter_accessible(self, entity: Entity, accessible: List[str]):
+        return (not accessible) or entity.accessible in accessible
 
     # 依赖属性匹配
     def handle_relation_attr_match(self, relation: Relation, **kwargs):

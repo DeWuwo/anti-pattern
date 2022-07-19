@@ -61,7 +61,7 @@ class AntiPattern(PatternType):
                             'rel': {'type': Constant.define, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
                                      'attrs': {
-                                         'accessible': [Constant.accessible_list[2]], 'accessible_modify': True}
+                                         'accessible_modify': True}
                                      },
                             'direction': '00'
                         },
@@ -123,7 +123,8 @@ class AntiPattern(PatternType):
                     [
                         {
                             'src': {'id': [-1], 'category': Constant.E_method,
-                                    'attrs': {'accessible': ['public']}},
+                                    'attrs': {},
+                                    'filter': {'accessible': ['public']}},
                             'rel': {'type': Constant.param, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_variable,
                                      'attrs': {}},
@@ -157,7 +158,8 @@ class AntiPattern(PatternType):
                                               'invoke': True}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
                                      'attrs': {
-                                         'accessible': [Constant.accessible_list[0], Constant.accessible_list[1], '']}},
+                                         'accessible': [Constant.accessible_list[0], Constant.accessible_list[1],
+                                                        Constant.un_define]}},
                             'direction': '10'
                         }
                     ],
@@ -170,36 +172,11 @@ class AntiPattern(PatternType):
                                               'invoke': True}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
                                      'attrs': {
-                                         'accessible': [Constant.accessible_list[0], Constant.accessible_list[1], '']}},
+                                         'accessible': [Constant.accessible_list[0], Constant.accessible_list[1],
+                                                        Constant.un_define]}},
                             'direction': '10'
                         }
                     ],
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_method,
-                                    'attrs': {}},
-                            'rel': {'type': Constant.reflect,
-                                    'attrs': {'set_accessible': True,
-                                              'invoke': True}},
-                            'dest': {'id': [-1], 'category': Constant.E_method,
-                                     'attrs': {
-                                         'accessible': [Constant.accessible_list[0], Constant.accessible_list[1], '']}},
-                            'direction': '00'
-                        }
-                    ],
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_class,
-                                    'attrs': {}},
-                            'rel': {'type': Constant.reflect,
-                                    'attrs': {'set_accessible': True,
-                                              'invoke': True}},
-                            'dest': {'id': [-1], 'category': Constant.E_method,
-                                     'attrs': {
-                                         'accessible': [Constant.accessible_list[0], Constant.accessible_list[1], '']}},
-                            'direction': '00'
-                        }
-                    ]
                 ]
             }
         ]

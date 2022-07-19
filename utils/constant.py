@@ -33,6 +33,7 @@ class Constant:
     accessible_list: List[str] = ['private', 'protected', 'public']
     M_final: str = 'final'
     M_static: str = 'static'
+    un_define: str = 'null'
 
     # rule_type
     sing_rule: int = 0
