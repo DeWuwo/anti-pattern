@@ -1,6 +1,7 @@
 .idea
 /build
 /dist
+/test
 venv
 /file_test
 __pycache__
