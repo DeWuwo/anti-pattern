@@ -42,6 +42,9 @@ class Constant:
     # file_name
     file_mc = 'mc\\file-mc.csv'
 
+    # ano
+    anonymous_class = 'Anonymous_Class'
+
     # hidden api sign
     HD_blocked: str = 'blocked'
     HD_unsupported: str = 'unsupported'

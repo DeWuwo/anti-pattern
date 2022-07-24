@@ -33,6 +33,7 @@ class Entity:
     hidden_modify: str
     commits: List[str]
     refactor: dict
+    anonymous: int
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -115,6 +116,10 @@ class Entity:
             self.bin_path = args['additionalBin']['binPath']
         except KeyError:
             self.bin_path = 'aosp'
+        try:
+            self.anonymous = args['anonymousBindVar']
+        except KeyError:
+            self.anonymous = -1
 
     def __str__(self):
         return self.category + "#" + self.qualifiedName
