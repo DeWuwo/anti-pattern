@@ -52,12 +52,6 @@ class OpenOS:
         self.test = [
             ['LineageOS', 'lineage-16.0', 'base', 'd56f59389212df5462b342be7600c1974d27c0d5',
              'ad31dbbdcd76091d7d2d1fc6c863ee17c3bfe87d'],
-            ['LineageOS', 'lineage-17.1', 'base', '44f7cdc0ef98074572a572b6aa78d1c0a23420f7',
-             'dff3deab5d25f8bbfd49abfb423043c9be47b7db'],
-            ['LineageOS', 'lineage-18.1', 'base', '7f7fc2562a95be630dbe609e8fb70383dcfada4f',
-             '49d8b986dddd441df741698541788c5f3a9c465f'],
-            ['LineageOS', 'lineage-19.1', 'base', '484c59b972c1772f75a4b1b9fce7512eee517dcb',
-             '9cdf73f7cbed891c433d278d533f0e0113d68efc'],
         ]
 
     # self.LA + self.LineageOS + self.GraphneOs + self.CalyxOS + self.OmniROM

@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 from utils.file_csv import FileCSV
 
@@ -7,7 +8,7 @@ class BlameField:
     module_blame: Dict
 
     def __init__(self, file_path):
-        self.file_path = file_path
+        self.file_path = os.path.join(file_path, 'blame_field.csv')
         self.module_blame = {}
 
     def read_blame_field(self):
@@ -17,5 +18,7 @@ class BlameField:
             reader_res = {}
         for blame in reader_res:
             for file in blame[2].split(';'):
+                if file == "*":
+                    file = ""
                 self.module_blame[blame[1] + file] = blame[3]
         return self.module_blame

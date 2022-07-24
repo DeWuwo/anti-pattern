@@ -30,6 +30,9 @@ class BuildModel:
     # query set
     query_map: defaultdict
 
+    owner_proc: List[Dict]
+    owner_proc_count: dict
+
     def __init__(self, entities_assi, cells_assi, statistics_assi: Dict, entities_android, cells_android,
                  statistics_android: Dict, entity_owner: EntityOwner):
         # first init
@@ -48,9 +51,9 @@ class BuildModel:
         self.diff_relations = []
         self.define_relations = []
         self.reflect_relation = []
-        # data get -- blame
-        print('start init owner from blame')
-        all_entities, intrusive_entities, pure_accompany_entities = self.get_blame_data()
+        self.owner_proc = []
+        self.owner_proc_count = {}
+
         # init entity
         print("start init model entities")
         aosp_entity_set = defaultdict(partial(defaultdict, list))
@@ -60,6 +63,7 @@ class BuildModel:
         for item in entities_android:
             if not item['external']:
                 entity = Entity(**item)
+                set_parameters(entity, self.entity_android)
                 self.entity_android.append(entity)
                 aosp_entity_set[entity.category][entity.qualifiedName].append(entity.id)
 
@@ -84,11 +88,18 @@ class BuildModel:
             relation_set[item['src']][relation.rel][item['dest']] = 1
         print("     get assi dep")
         temp_param = defaultdict(list)
+        temp_define = defaultdict(list)
         for item in cells_assi:
             relation = Relation(**item)
             self.relation_assi.append(relation)
             if relation.rel == Constant.param:
                 temp_param[relation.src].append(self.entity_assi[relation.dest])
+            elif self.entity_assi[relation.src].category == Constant.E_method and relation.rel == Constant.define:
+                temp_define[relation.src].append(self.entity_assi[relation.dest])
+
+        # data get -- blame
+        print('start init owner from blame')
+        all_entities, intrusive_entities, pure_accompany_entities = self.get_blame_data()
         print('get entity owner')
         # first get entity owner
         print('     first get entity owner')
@@ -100,7 +111,7 @@ class BuildModel:
         print('     get unsure entities refactoring info')
         move_list = self.entity_owner.re_divide_owner(not_sure_entities)
         print('     get refactoring entity owner')
-        self.resign_owner(not_sure_entities, move_list, temp_param, aosp_entity_set, assi_entity_set,
+        self.resign_owner(not_sure_entities, move_list, temp_param, temp_define, aosp_entity_set, assi_entity_set,
                           intrusive_entities.keys())
         print('     output entities owner and intrusive info')
         self.out_intrusive_info()
@@ -170,13 +181,17 @@ class BuildModel:
                     self.get_entity_map(entity, self.entity_android[aosp_list[0]])
                     return 1
                 else:
+                    if entity.category == Constant.E_class:
+                        if self.entity_android[aosp_list[0]].raw_type == entity.raw_type:
+                            self.get_entity_map(entity, self.entity_android[aosp_list[0]])
+                            return 1
+                        return 0
                     # 新增了重载方法的情况
                     if self.entity_android[aosp_list[0]].parameter_types == entity.parameter_types:
                         self.get_entity_map(entity, self.entity_android[aosp_list[0]])
                         return 1
                     return 0
             else:
-                # 默认不会对重载方法进行参数列表修改
                 for item_id in aosp_list:
                     if self.entity_android[item_id].parameter_types == entity.parameter_types:
                         self.get_entity_map(entity, self.entity_android[item_id])
@@ -190,33 +205,93 @@ class BuildModel:
         keys_intrusive_entities = intrusive_entities.keys()
         keys_pure_accompany_entities = pure_accompany_entities.keys()
         keys_all_entities = all_entities.keys()
+        self.owner_proc_count = {
+            'dep_coupling': 0,
+            'dep_native': 0,
+            'dep_extension': 0,
+            'git_native': 0,
+            'git_intrusive': 0,
+            'git_extension': 0,
+            'dep_native_git_native': 0,
+            'dep_native2git_intrusive': 0,
+            'dep_native2git_extension': 0,
+            'dep_native2git_extension_c': [0, 0, 0],
+            'dep_extension_git_extension': 0,
+            'dep_extension2git_native': 0,
+            'dep_extension2git_native_c': [0, 0, 0],
+            'dep_extension2git_intrusive': 0,
+            'dep_extension2git_intrusive_c': [0, 0, 0],
+            'rename': [0, 0]
+        }
+
+        def get_index(category: str) -> int:
+            if category == Constant.E_class:
+                return 0
+            elif category == Constant.E_method:
+                return 1
+            else:
+                return 2
+
         for entity in self.entity_assi:
+            proc = entity.to_csv()
+            proc['modify_to'] = 'null'
+            if entity.id in keys_intrusive_entities:
+                proc['git_blame'] = '0.5'
+                self.owner_proc_count['git_intrusive'] += 1
+            elif entity.id in keys_pure_accompany_entities:
+                proc['git_blame'] = '1'
+                self.owner_proc_count['git_extension'] += 1
+            elif entity.is_decoupling <= 1:
+                proc['git_blame'] = '0'
+                self.owner_proc_count['git_native'] += 1
             # 解耦仓实体
             if entity.is_decoupling > 1:
                 entity.set_honor(1)
+                proc['dep_diff'] = '1-coupling'
+                self.owner_proc_count['dep_coupling'] += 1
             # diff 识别为原生的实体，一定正确
             elif self.diff_map_aosp(entity, entity.qualifiedName, aosp_entity_map, assi_entity_map):
                 # diff = aosp
                 entity.set_honor(0)
+                proc['dep_diff'] = '0'
+                self.owner_proc_count['dep_native'] += 1
                 if entity.id in keys_intrusive_entities:
                     entity.set_intrusive(1)
+                    proc['modify_to'] = '0.5'
+                    self.owner_proc_count['dep_native2git_intrusive'] += 1
+                elif entity.id in keys_pure_accompany_entities:
+                    self.owner_proc_count['dep_native2git_extension'] += 1
+                    self.owner_proc_count['dep_native2git_extension_c'][get_index(entity.category)] += 1
+                else:
+                    self.owner_proc_count['dep_native_git_native'] += 1
             else:
+                proc['dep_diff'] = '1'
+                self.owner_proc_count['dep_extension'] += 1
                 # git blame 识别为原生的实体，一定正确
                 if entity.id not in keys_all_entities or \
                         ((entity.id not in keys_pure_accompany_entities) and
                          (entity.id not in keys_intrusive_entities)):
                     entity.set_honor(0)
+                    proc['modify_to'] = '0'
+                    self.owner_proc_count['dep_extension2git_native'] += 1
+                    self.owner_proc_count['dep_extension2git_native_c'][get_index(entity.category)] += 1
                 # diff = blame = assi
                 elif entity.id in pure_accompany_entities:
                     entity.set_honor(1)
+                    self.owner_proc_count['dep_extension_git_extension'] += 1
                 # diff = assi != blame = (aosp or ins) 此时一定在all_entities中，即该实体所在文件被第三方修改过
                 else:
                     not_sure_entity_list.append(all_entities[entity.id])
+                    proc['modify_to'] = 'unsure'
+                    self.owner_proc_count['dep_extension2git_intrusive'] += 1
+                    self.owner_proc_count['dep_extension2git_intrusive_c'][get_index(entity.category)] += 1
+            self.owner_proc.append(proc)
         return not_sure_entity_list
 
     # 通过refactoring miner再次识别
     def resign_owner(self, not_sure_entities: List[dict], move_list: dict, param_entities: defaultdict,
-                     aosp_entity_set: defaultdict, assi_entity_set: defaultdict, intrusive_entities):
+                     define_entities: defaultdict, aosp_entity_set: defaultdict, assi_entity_set: defaultdict,
+                     intrusive_entities):
 
         def rename_map(rename_entity: Entity, search_qualified_name: str):
             aosp_list: List[int] = aosp_entity_set[rename_entity.category][search_qualified_name]
@@ -240,6 +315,7 @@ class BuildModel:
                         refactor_entity.set_honor(0)
                         refactor_entity.set_intrusive(1)
                         self.refactor_entities.append(int(entity['id']))
+                        self.owner_proc_count['rename'][0] += 1
                         source_name = get_rename_source(
                             moves[move_types_map['Rename Method']]['leftSideLocations'][0]["codeElement"])
                         self.entity_assi[int(entity['id'])].set_refactor(
@@ -247,16 +323,17 @@ class BuildModel:
                         print('                 rename-m', source_name)
                         source_qualified_name = refactor_entity.qualifiedName.rsplit('.', 1)[0] + '.' + source_name
                         rename_map(self.entity_assi[int(entity['id'])], source_qualified_name)
-                        for param in param_entities[int(entity['id'])]:
-                            name_list = param.qualifiedName.rsplit('.', 2)
+                        for ent in param_entities[int(entity['id'])] + define_entities[int(entity['id'])]:
+                            name_list = ent.qualifiedName.rsplit('.', 2)
                             name_list[1] = source_name
                             source_qualified_name = '.'.join(name_list)
-                            owner = 0 if self.diff_map_aosp(param, source_qualified_name, aosp_entity_set,
+                            owner = 0 if self.diff_map_aosp(ent, source_qualified_name, aosp_entity_set,
                                                             assi_entity_set) else 1
-                            param.set_honor(owner)
+                            ent.set_honor(owner)
                     elif int(entity['id']) in intrusive_entities and 'Rename Class' in move_types:
                         self.entity_assi[int(entity['id'])].set_honor(0)
                         self.entity_assi[int(entity['id'])].set_intrusive(1)
+                        self.owner_proc_count['rename'][1] += 1
                         self.refactor_entities.append(int(entity['id']))
                         source_name: str = moves[move_types_map['Rename Class']]['leftSideLocations'][0][
                             "codeElement"]
@@ -299,6 +376,8 @@ class BuildModel:
     # out intrusive entities info
     def out_intrusive_info(self):
         FileCSV.write_owner_to_csv(self.entity_owner.out_path, 'final_ownership', self.entity_assi)
+        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'owner_proc', self.owner_proc)
+        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'owner_proc_count', [self.owner_proc_count])
         FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'access_modify_entities',
                                     [self.entity_assi[entity_id] for entity_id in self.access_modify_entities],
                                     'modify')

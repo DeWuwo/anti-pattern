@@ -59,7 +59,7 @@ class Constant:
             hd_index = cls.HD_max_target.index(list(set(label) & set(cls.HD_max_target))[0])
             return cls.HD_greylist[hd_index]
         elif set(label) & set(cls.HD_greylist):
-            hd_index = cls.HD_max_target.index(list(set(label) & set(cls.HD_greylist))[0])
+            hd_index = cls.HD_greylist.index(list(set(label) & set(cls.HD_greylist))[0])
             return cls.HD_greylist[hd_index]
         else:
             return cls.HD_whitelist

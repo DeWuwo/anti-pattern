@@ -136,7 +136,7 @@ class Match:
             for item in flag_map:
                 result_set.append(flag_map[item])
             for item in filter_map:
-                filter_set.append(flag_map[item])
+                filter_set.append(filter_map[item])
         else:
             for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
                 if self.handle_entity_attr_match(self.base_model.entity_assi[item.src], **src_attr) and \
@@ -199,7 +199,6 @@ class Match:
         for item in self.match_result:
             for pattern in item:
                 self.match_result_base_statistic[pattern] = {}
-                simple_stat[pattern] = len(item[pattern])
                 pattern_files_set = defaultdict(int)
                 pattern_entities_set = defaultdict(int)
                 pattern_module_set = defaultdict(int)
@@ -207,6 +206,7 @@ class Match:
                 for style in item[pattern]:
                     pattern_res.extend(style['res'])
                     pattern_res.extend(style['filter'])
+                simple_stat[pattern] = len(pattern_res)
                 for exa in pattern_res:
                     temp_file_set = set()
                     temp_entity_set = set()
