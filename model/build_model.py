@@ -176,22 +176,39 @@ class BuildModel:
         if not aosp_list:
             return 0
         else:
-            if len(aosp_list) == 1 and len(assi_list) == 1:
-                self.get_entity_map(entity, self.entity_android[aosp_list[0]])
-                return 1
-            else:
-                for item_id in aosp_list:
+            if len(aosp_list) == 1:
+                if len(assi_list) == 1:
+                    self.get_entity_map(entity, self.entity_android[aosp_list[0]])
+                    return 1
+                else:
                     if entity.category == Constant.E_class and entity.anonymous != -1:
-                        if self.entity_android[item_id].raw_type == entity.raw_type and \
-                                self.entity_android[item_id].name == self.entity_assi[entity.anonymous].name:
-                            self.get_entity_map(entity, self.entity_android[item_id])
+                        if self.entity_android[aosp_list[0]].raw_type == entity.raw_type and \
+                                self.entity_android[self.entity_android[aosp_list[0]].anonymous].name == \
+                                self.entity_assi[entity.anonymous].name:
+                            self.get_entity_map(entity, self.entity_android[aosp_list[0]])
                             return 1
-                        return 0
                     elif Constant.anonymous_class in entity.qualifiedName:
                         return self.diff_map_aosp(self.entity_assi[entity.parentId],
                                                   self.entity_assi[entity.parentId].qualifiedName, aosp_entity_set,
                                                   assi_entity_set)
-                    if self.entity_android[item_id].parameter_types == entity.parameter_types:
+                    # 新增了重载方法的情况
+                    elif self.entity_android[aosp_list[0]].parameter_types == entity.parameter_types:
+                        self.get_entity_map(entity, self.entity_android[aosp_list[0]])
+                        return 1
+                    return 0
+            else:
+                for item_id in aosp_list:
+                    if entity.category == Constant.E_class and entity.anonymous != -1:
+                        if self.entity_android[item_id].raw_type == entity.raw_type and \
+                                self.entity_android[self.entity_android[aosp_list[0]].anonymous].name == \
+                                self.entity_assi[entity.anonymous].name:
+                            self.get_entity_map(entity, self.entity_android[item_id])
+                            return 1
+                    elif Constant.anonymous_class in entity.qualifiedName:
+                        return self.diff_map_aosp(self.entity_assi[entity.parentId],
+                                                  self.entity_assi[entity.parentId].qualifiedName, aosp_entity_set,
+                                                  assi_entity_set)
+                    elif self.entity_android[item_id].parameter_types == entity.parameter_types:
                         self.get_entity_map(entity, self.entity_android[item_id])
                         return 1
                 return 0
