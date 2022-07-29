@@ -264,7 +264,7 @@ def entry():
     print(end_time - start_time)
 
 
-def get_entity_commits(repo_path: str, accompany_dep: str, base_commits: str, only_accompany_commits: str,
+def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str, only_accompany_commits: str,
                        blame_cache: str, out_path: str):
     start_time = time()
     # analyzed_root = "D:\\Master\\CodeSmell\\Refactor\\frameworks\\base"
@@ -279,8 +279,8 @@ def get_entity_commits(repo_path: str, accompany_dep: str, base_commits: str, on
     print(' get dep entities')
     ents = dep_data.get_dep_ents()
     ownership_data = []
-    only_accompany_commits = load_commits(Path(only_accompany_commits))
-
+    only_accompany_commits_set = load_commits(Path(only_accompany_commits))
+    old_base_commits_set = load_commits(Path(old_base_commits))
     file_set = collect_all_file(ents)
     print(' load blame dict')
     blame_dict_path = Path(f"{blame_cache}/blame_dict.csv")
@@ -291,7 +291,7 @@ def get_entity_commits(repo_path: str, accompany_dep: str, base_commits: str, on
         blame_dict = load_blame_dict(blame_dict_path)
 
     def is_accompany_file(f: Path):
-        return contain_commit(blame_dict[f], only_accompany_commits)
+        return contain_commit(blame_dict[f], only_accompany_commits_set | old_base_commits_set)
 
     accompany_file_set = set(filter(is_accompany_file, file_set))
     blame = create_blamer(blame_dict)

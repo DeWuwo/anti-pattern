@@ -34,6 +34,7 @@ class Entity:
     commits: List[str]
     refactor: dict
     anonymous: int
+    old_aosp: int
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -56,6 +57,7 @@ class Entity:
         self.bin_path = ''
         self.commits = []
         self.refactor = {}
+        self.old_aosp = -1
         try:
             self.start_line = args['startLine']
             self.start_column = args['startColumn']
@@ -145,7 +147,7 @@ class Entity:
         return ['id', 'category', 'qualifiedName']
 
     def toJson(self):
-        temp = {'id': self.id, 'not_aosp': self.not_aosp, 'category': self.category,
+        temp = {'id': self.id, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp, 'category': self.category,
                 'qualifiedName': self.qualifiedName, 'name': self.name, 'isIntrusive': self.is_intrusive}
         if self.file_path != "":
             temp['File'] = self.file_path
@@ -204,6 +206,9 @@ class Entity:
 
     def set_refactor(self, refactor: dict):
         self.refactor = refactor
+
+    def set_old_aosp(self, old_aosp: int):
+        self.old_aosp = old_aosp
 
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package

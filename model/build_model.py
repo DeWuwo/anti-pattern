@@ -99,11 +99,12 @@ class BuildModel:
 
         # data get -- blame
         print('start init owner from blame')
-        all_entities, intrusive_entities, pure_accompany_entities = self.get_blame_data()
+        all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities = self.get_blame_data()
         print('get entity owner')
         # first get entity owner
         print('     first get entity owner')
-        not_sure_entities = self.first_owner(aosp_entity_set, assi_entity_set, all_entities, intrusive_entities,
+        not_sure_entities = self.first_owner(aosp_entity_set, assi_entity_set, all_native_entities, old_native_entities,
+                                             old_update_entities, intrusive_entities, old_intrusive_entities,
                                              pure_accompany_entities)
         print('     output entities owner unsure')
         self.entity_owner.dump_ent_commit_infos(not_sure_entities)
@@ -188,9 +189,11 @@ class BuildModel:
                             self.get_entity_map(entity, self.entity_android[aosp_list[0]])
                             return 1
                     elif Constant.anonymous_class in entity.qualifiedName:
-                        return self.diff_map_aosp(self.entity_assi[entity.parentId],
-                                                  self.entity_assi[entity.parentId].qualifiedName, aosp_entity_set,
-                                                  assi_entity_set)
+                        if self.diff_map_aosp(self.entity_assi[entity.parentId],
+                                              self.entity_assi[entity.parentId].qualifiedName, aosp_entity_set,
+                                              assi_entity_set):
+                            self.get_entity_map(entity, self.entity_android[aosp_list[0]])
+                            return 1
                     # 新增了重载方法的情况
                     elif self.entity_android[aosp_list[0]].parameter_types == entity.parameter_types:
                         self.get_entity_map(entity, self.entity_android[aosp_list[0]])
@@ -200,42 +203,64 @@ class BuildModel:
                 for item_id in aosp_list:
                     if entity.category == Constant.E_class and entity.anonymous != -1:
                         if self.entity_android[item_id].raw_type == entity.raw_type and \
-                                self.entity_android[self.entity_android[aosp_list[0]].anonymous].name == \
+                                self.entity_android[self.entity_android[item_id].anonymous].name == \
                                 self.entity_assi[entity.anonymous].name:
                             self.get_entity_map(entity, self.entity_android[item_id])
                             return 1
                     elif Constant.anonymous_class in entity.qualifiedName:
-                        return self.diff_map_aosp(self.entity_assi[entity.parentId],
-                                                  self.entity_assi[entity.parentId].qualifiedName, aosp_entity_set,
-                                                  assi_entity_set)
+                        if self.diff_map_aosp(self.entity_assi[entity.parentId],
+                                              self.entity_assi[entity.parentId].qualifiedName, aosp_entity_set,
+                                              assi_entity_set):
+                            self.get_entity_map(entity, self.entity_android[item_id])
+                            return 1
                     elif self.entity_android[item_id].parameter_types == entity.parameter_types:
                         self.get_entity_map(entity, self.entity_android[item_id])
                         return 1
                 return 0
 
     # diff & blame
-    def first_owner(self, aosp_entity_map, assi_entity_map, all_entities: dict, intrusive_entities: dict,
+    def first_owner(self, aosp_entity_map, assi_entity_map, all_native_entities: dict, old_native_entities: dict,
+                    old_update_entities: dict, intrusive_entities: dict, old_intrusive_entities: dict,
                     pure_accompany_entities: dict) -> List:
         not_sure_entity_list = []
         keys_intrusive_entities = intrusive_entities.keys()
+        keys_old_intrusive_entities = old_intrusive_entities.keys()
         keys_pure_accompany_entities = pure_accompany_entities.keys()
-        keys_all_entities = all_entities.keys()
+        keys_old_native_entities = old_native_entities.keys()
+        keys_old_update_entities = old_update_entities.keys()
+        keys_all_native_entities = all_native_entities.keys()
         self.owner_proc_count = {
             'dep_coupling': 0,
             'dep_native': 0,
             'dep_extension': 0,
             'git_native': 0,
+            'git_old_native': 0,
+            'git_old_update': 0,
             'git_intrusive': 0,
+            'git_old_intrusive': 0,
             'git_extension': 0,
             'dep_native_git_native': 0,
+            'dep_native2git_old_native': 0,
+            'dep_native2git_old_native_c': [0, 0, 0],
+            'dep_native2git_old_update': 0,
+            'dep_native2git_old_update_c': [0, 0, 0],
             'dep_native2git_intrusive': 0,
+            'dep_native2git_intrusive_c': [0, 0, 0],
+            'dep_native2git_old_intrusive': 0,
+            'dep_native2git_old_intrusive_c': [0, 0, 0],
             'dep_native2git_extension': 0,
             'dep_native2git_extension_c': [0, 0, 0],
             'dep_extension_git_extension': 0,
             'dep_extension2git_native': 0,
             'dep_extension2git_native_c': [0, 0, 0],
+            'dep_extension2git_old_native': 0,
+            'dep_extension2git_old_native_c': [0, 0, 0],
+            'dep_extension2git_old_update': 0,
+            'dep_extension2git_old_update_c': [0, 0, 0],
             'dep_extension2git_intrusive': 0,
             'dep_extension2git_intrusive_c': [0, 0, 0],
+            'dep_extension2git_old_intrusive': 0,
+            'dep_extension2git_old_intrusive_c': [0, 0, 0],
             'rename': [0, 0]
         }
 
@@ -251,12 +276,21 @@ class BuildModel:
             proc = entity.to_csv()
             proc['modify_to'] = 'null'
             if entity.id in keys_intrusive_entities:
-                proc['git_blame'] = '0.5'
+                proc['git_blame'] = '0-1'
                 self.owner_proc_count['git_intrusive'] += 1
+            elif entity.id in keys_old_intrusive_entities:
+                proc['git_blame'] = '_0-1'
+                self.owner_proc_count['git_old_intrusive'] += 1
             elif entity.id in keys_pure_accompany_entities:
                 proc['git_blame'] = '1'
                 self.owner_proc_count['git_extension'] += 1
-            elif entity.is_decoupling <= 1:
+            elif entity.id in keys_old_native_entities:
+                proc['git_blame'] = '_0'
+                self.owner_proc_count['git_old_native'] += 1
+            elif entity.id in keys_old_update_entities:
+                proc['git_blame'] = '_0-0'
+                self.owner_proc_count['git_old_update'] += 1
+            else:
                 proc['git_blame'] = '0'
                 self.owner_proc_count['git_native'] += 1
             # 解耦仓实体
@@ -272,8 +306,20 @@ class BuildModel:
                 self.owner_proc_count['dep_native'] += 1
                 if entity.id in keys_intrusive_entities:
                     entity.set_intrusive(1)
-                    proc['modify_to'] = '0.5'
                     self.owner_proc_count['dep_native2git_intrusive'] += 1
+                    self.owner_proc_count['dep_native2git_intrusive_c'][get_index(entity.category)] += 1
+                elif entity.id in keys_old_intrusive_entities:
+                    entity.set_intrusive(1)
+                    self.owner_proc_count['dep_native2git_old_intrusive'] += 1
+                    self.owner_proc_count['dep_native2git_old_intrusive_c'][get_index(entity.category)] += 1
+                elif entity.id in keys_old_native_entities:
+                    entity.set_old_aosp(1)
+                    self.owner_proc_count['dep_native2git_old_native'] += 1
+                    self.owner_proc_count['dep_native2git_old_native_c'][get_index(entity.category)] += 1
+                elif entity.id in keys_old_update_entities:
+                    entity.set_old_aosp(1)
+                    self.owner_proc_count['dep_native2git_old_update'] += 1
+                    self.owner_proc_count['dep_native2git_old_update_c'][get_index(entity.category)] += 1
                 elif entity.id in keys_pure_accompany_entities:
                     self.owner_proc_count['dep_native2git_extension'] += 1
                     self.owner_proc_count['dep_native2git_extension_c'][get_index(entity.category)] += 1
@@ -283,23 +329,39 @@ class BuildModel:
                 proc['dep_diff'] = '1'
                 self.owner_proc_count['dep_extension'] += 1
                 # git blame 识别为原生的实体，一定正确
-                if entity.id not in keys_all_entities or \
-                        ((entity.id not in keys_pure_accompany_entities) and
-                         (entity.id not in keys_intrusive_entities)):
+                if entity.id in keys_all_native_entities:
                     entity.set_honor(0)
-                    proc['modify_to'] = '0'
                     self.owner_proc_count['dep_extension2git_native'] += 1
                     self.owner_proc_count['dep_extension2git_native_c'][get_index(entity.category)] += 1
+                elif entity.id in keys_old_native_entities:
+                    entity.set_honor(0)
+                    entity.set_old_aosp(1)
+                    self.owner_proc_count['dep_extension2git_old_native'] += 1
+                    self.owner_proc_count['dep_extension2git_old_native_c'][get_index(entity.category)] += 1
+                elif entity.id in keys_old_update_entities:
+                    entity.set_honor(0)
+                    entity.set_old_aosp(1)
+                    self.owner_proc_count['dep_extension2git_old_update'] += 1
+                    self.owner_proc_count['dep_extension2git_old_update_c'][get_index(entity.category)] += 1
                 # diff = blame = assi
-                elif entity.id in pure_accompany_entities:
+                elif entity.id in keys_pure_accompany_entities:
                     entity.set_honor(1)
                     self.owner_proc_count['dep_extension_git_extension'] += 1
                 # diff = assi != blame = (aosp or ins) 此时一定在all_entities中，即该实体所在文件被第三方修改过
-                else:
-                    not_sure_entity_list.append(all_entities[entity.id])
+                elif entity.id in keys_intrusive_entities:
+                    not_sure_entity_list.append(intrusive_entities[entity.id])
                     proc['modify_to'] = 'unsure'
                     self.owner_proc_count['dep_extension2git_intrusive'] += 1
                     self.owner_proc_count['dep_extension2git_intrusive_c'][get_index(entity.category)] += 1
+                elif entity.id in keys_old_update_entities:
+                    not_sure_entity_list.append(old_intrusive_entities[entity.id])
+                    proc['modify_to'] = 'unsure'
+                    self.owner_proc_count['dep_extension2git_old_intrusive'] += 1
+                    self.owner_proc_count['dep_extension2git_old_intrusive_c'][get_index(entity.category)] += 1
+                else:
+                    entity.set_honor(0)
+                    self.owner_proc_count['dep_extension2git_native'] += 1
+                    self.owner_proc_count['dep_extension2git_native_c'][get_index(entity.category)] += 1
             self.owner_proc.append(proc)
         return not_sure_entity_list
 

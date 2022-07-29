@@ -42,18 +42,17 @@ class EntityOwner:
     def get_entity_commits(self):
         try:
             get_entity_commits(self.repo_path_accompany, self.accompany_relation_path,
-                               self.get_path('base_commits.csv'), self.get_path('only_accompany_commits.csv'),
+                               self.get_path('old_base_commits.csv'), self.get_path('only_accompany_commits.csv'),
                                self.out_path, self.out_path)
         except Exception as e:
             print('blame run error:', e)
 
     def divide_owner(self):
-        all_entities, intrusive_entities, pure_accompany_entities = get_entity_owner(self.get_path('base_commits.csv'),
-                                                                                     self.get_path(
-                                                                                         'only_accompany_commits.csv'),
-                                                                                     self.get_path('ownership.csv'),
-                                                                                     self.out_path)
-        return all_entities, intrusive_entities, pure_accompany_entities
+        all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities = \
+            get_entity_owner(self.get_path('base_commits.csv'), self.get_path('old_base_commits.csv'),
+                             self.get_path('only_accompany_commits.csv'), self.get_path('ownership.csv'), self.out_path)
+
+        return all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities
 
     def get_refactor(self):
         ref_tool = os.path.abspath(os.path.join(self.refactor_miner, 'RefactoringMiner'))
@@ -74,7 +73,7 @@ class EntityOwner:
     def dump_ent_commit_infos(self, ent_commit_infos):
         with open(self.get_path('unsure_entities.csv'), "w", newline="") as file:
             writer = csv.DictWriter(file, ["Entity", "category", "id", "file path", "commits",
-                                           "base commits", "accompany commits"])
+                                           "base commits", "old base commits", "accompany commits"])
             writer.writeheader()
             for row in ent_commit_infos:
                 writer.writerow(row)

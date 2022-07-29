@@ -15,6 +15,22 @@ RenameMethodFormat = "Rename Method (.*) " \
                      "renamed to (.*) " \
                      "in class (.*)"
 
+ExtractMethodFormat = "Extract Method (.*) " \
+                      "extracted from (.*) " \
+                      "in class (.*)"
+
+ExtractMoveMethodFormat = "Extract And Move Method (.*) " \
+                          "extracted from (.*) " \
+                          "in class (.*) " \
+                          "& moved to class (.*)"
+
+ExtractPattern = Tuple[re.Pattern, int, int, int, int]
+EMPattern = re.compile(ExtractMethodFormat)
+EMMPattern = re.compile(ExtractMoveMethodFormat)
+
+ExtractMethodPatterns = [(EMMPattern, 2, 3, 1, 4),
+                         (EMPattern, 2, 3, 1, 3)]
+
 RenamePattern = Tuple[re.Pattern, int, int, int, int]
 
 MRMPattern = re.compile(MoveRenameMethodFormat)
@@ -88,7 +104,7 @@ MoveAttributePattern = [(MAPattern, 1, 2, 3, 4),
                         (MRAPattern, 1, 2, 3, 4),
                         (PUAPattern, 1, 2, 3, 4),
                         (RAPattern, 1, 2, 3, 3)]
-SignatureFormat = "(private|public|package|protected) (.*)\\(.*\\)"
+SignatureFormat = "(private|public|package|protected) (.*)(\\(.*\\))"
 SignaturePattern = re.compile(SignatureFormat)
 
 
