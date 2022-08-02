@@ -318,12 +318,8 @@ class BuildModel:
         def detect_ownership(ent: Entity, all_refactor_info: Dict[int, list], src_name: str, src_param: str):
             try:
                 ent_refactor_info = all_refactor_info[ent.id][1]
-                if "android.view.WindowManagerPolicyControl" in ent.qualifiedName:
-                    print('  detect ref', ent.qualifiedName, src_name, src_param)
                 detect_refactor_entities(ent, ent_refactor_info, all_refactor_info)
             except KeyError:
-                if "android.view.WindowManagerPolicyControl" in ent.qualifiedName:
-                    print('  detect not ref', ent.qualifiedName, src_name, src_param)
                 detect_un_refactor_entities(ent, src_name, src_param)
 
         def detect_refactor_entities(ent: Entity, ent_refactor_info: list, all_refactor_info: Dict[int, list]):
@@ -334,8 +330,6 @@ class BuildModel:
                         child_source_param = child_ent.parameter_names
                     else:
                         child_source_param = outer_ref_param
-                    if "com.android.server.policy.PolicyControl" in child_source_qualified_name:
-                        print(" detect son", child_ent.qualifiedName, child_source_qualified_name, child_source_param)
                     detect_ownership(child_ent, all_refactor_info, child_source_qualified_name, child_source_param)
                     detect_refactor_entities_son(child_define[child_ent.id] + child_param[child_ent.id],
                                                  child_source_qualified_name, child_source_param)
@@ -355,7 +349,6 @@ class BuildModel:
                     ent.set_refactor(
                         {'type': move_type, 'value': source_state.longname()})
                     self.refactor_entities.append(ent.id)
-                    print(' ready to detect son', source_state.longname(), source_state.get_param())
                     detect_refactor_entities_son(child_define[ent.id], source_state.longname(),
                                                  source_state.get_param())
                     self.owner_proc[ent.id]['ref'] = move_type
@@ -407,8 +400,6 @@ class BuildModel:
                 return
             dep_diff_res = self.graph_differ(ent, source_name, source_param, aosp_entity_map,
                                              assi_entity_map)
-            if "android.view.WindowManagerPolicyControl" in ent.qualifiedName:
-                print('  detect not ref', ent.id, source_name, source_param, dep_diff_res)
             if dep_diff_res:
                 self.owner_proc[ent.id]['dep_diff'] = '0'
                 self.owner_proc_count['dep_native'] += 1
