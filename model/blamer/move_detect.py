@@ -15,7 +15,9 @@ MoveMethodRefactorings = [
     "Rename Method",
     "Rename Parameter",
     "Add Parameter",
-    "Remove Parameter"
+    "Remove Parameter",
+    "Extract Method",
+    "Extract And Move Method"
 ]
 
 MoveClassRefactoring = [
@@ -159,7 +161,7 @@ def extract_method_move(description: str,
     for pattern in MoveMethodPatterns:
         matched = pattern[0].match(description)
         if matched:
-            from_class_index = pattern[1]
+            from_class_index = pattern[2]
             to_class_index = pattern[4]
             src_class = matched.group(from_class_index)
             to_class = matched.group(to_class_index)

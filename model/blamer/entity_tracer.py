@@ -6,8 +6,8 @@ from typing import Any, List, Set, Optional, Tuple, Sequence, Dict, Iterable
 import git
 
 from model.blamer.commit_dag import CommitDAG, SHA, commit_dag_generator, CommitNode
-from model.blamer.refactor_format import MoveAttributePattern, MoveMethodPatterns, SpecialMoveMethodGetters, MoveClassPatterns, \
-    get_name_from_sig
+from model.blamer.refactor_format import MoveAttributePattern, MoveMethodPatterns, SpecialMoveMethodGetters, \
+    MoveClassPatterns, get_name_from_sig, get_param_from_sig
 from model.blamer.refactoring_analysis import RefactorData
 
 
@@ -18,6 +18,9 @@ class BaseState:
 
     def longname(self):
         return self.class_state
+
+    def get_param(self):
+        return 'null'
 
 
 @dataclass(frozen=True)
@@ -30,6 +33,9 @@ class MethodState(BaseState):
     def longname(self):
         return self.class_state + "." + get_name_from_sig(self.method_state)
 
+    def get_param(self):
+        return get_param_from_sig(self.method_state)[1]
+
 
 @dataclass(frozen=True)
 class AttributeState(BaseState):
@@ -40,6 +46,9 @@ class AttributeState(BaseState):
 
     def longname(self):
         return self.class_state + "." + self.attribute_state
+
+    def get_param(self):
+        return self.attribute_state
 
 
 def get_move_method(refactor_obj):

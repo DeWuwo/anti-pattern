@@ -32,7 +32,7 @@ class Entity:
     hidden: List[str]
     hidden_modify: str
     commits: List[str]
-    refactor: dict
+    refactor: List[dict]
     anonymous: int
     old_aosp: int
 
@@ -44,7 +44,7 @@ class Entity:
         self.parentId = args['parentId']
         self.file_path = ""
         self.package_name = ""
-        self.not_aosp = 0
+        self.not_aosp = -1
         self.is_intrusive = 0
         self.entity_mapping = -1
         self.modifiers = []
@@ -56,7 +56,7 @@ class Entity:
         self.hidden_modify = ''
         self.bin_path = ''
         self.commits = []
-        self.refactor = {}
+        self.refactor = []
         self.old_aosp = -1
         try:
             self.start_line = args['startLine']
@@ -130,8 +130,8 @@ class Entity:
         return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName}
 
     def to_owner(self):
-        return {'id': self.id, 'not_aosp': self.not_aosp, 'category': self.category,
-                'qualifiedName': self.qualifiedName, 'file_path': self.file_path, 'isIntrusive': self.is_intrusive}
+        return {'id': self.id, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp, 'isIntrusive': self.is_intrusive,
+                'category': self.category, 'qualifiedName': self.qualifiedName, 'file_path': self.file_path, }
 
     def handle_to_format(self, to_format: str):
         method = getattr(self, f'handle_to_{to_format}', None)
@@ -205,7 +205,7 @@ class Entity:
         self.commits = commits
 
     def set_refactor(self, refactor: dict):
-        self.refactor = refactor
+        self.refactor.append(refactor)
 
     def set_old_aosp(self, old_aosp: int):
         self.old_aosp = old_aosp

@@ -39,7 +39,7 @@ def entry():
     all_changes = []
 
     with open(args.ownership, "r") as file:
-        reader = csv.DictReader(file, ["Entity", "category", "id", "file path", "commits"])
+        reader = csv.DictReader(file, ["Entity", "category", "id", "param_names","file path", "commits"])
         reader.__next__()
         for row in reader:
             ent_commits = set(json.loads(row["commits"]))
@@ -66,7 +66,7 @@ def entry():
 
 def dump_ent_commit_infos(ent_commit_infos, file_name: str):
     with open(file_name, "w", newline="") as file:
-        writer = csv.DictWriter(file, ["Entity", "category", "id", "file path", "commits",
+        writer = csv.DictWriter(file, ["Entity", "category", "id", "param_names","file path", "commits",
                                        "base commits", "old base commits", "accompany commits"])
         writer.writeheader()
         for row in ent_commit_infos:
@@ -97,7 +97,7 @@ def get_entity_owner(base_commit: str, old_base_commits: str, only_accompany_com
     old_intrusive_entities = {}
 
     with open(ownership, "r") as file:
-        reader = csv.DictReader(file, ["Entity", "category", "id", "file path", "commits"])
+        reader = csv.DictReader(file, ["Entity", "category", "id", "param_names", "file path", "commits"])
         reader.__next__()
         for row in reader:
             ent_commits = set(json.loads(row["commits"]))

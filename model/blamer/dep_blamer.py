@@ -43,6 +43,7 @@ class Entity:
     decoupling: int
     start_line: int
     end_line: int
+    param_names: str
 
 
 cached_roots: Set[Path] = set()
@@ -104,11 +105,15 @@ class DepData:
                 location = v["location"]
                 try:
                     decoupling = v['additionalBinNum']
-                except Exception:
+                except KeyError:
                     decoupling = 1
+                try:
+                    param_names = v["parameter"]["names"]
+                except KeyError:
+                    param_names = "null"
                 ret.add(
                     Entity(Path(v["File"]), v["id"], v["category"], v["qualifiedName"], decoupling,
-                           location["startLine"], location["endLine"]))
+                           location["startLine"], location["endLine"], param_names))
             except KeyError:
                 pass
 
@@ -116,13 +121,14 @@ class DepData:
 
 
 def dump_ownership(ownership_data: List[EntOwnership], fp: IO):
-    writer = csv.DictWriter(fp, ["Entity", "category", "id", "file path", "commits"])
+    writer = csv.DictWriter(fp, ["Entity", "category", "id", "param_names","file path", "commits"])
     writer.writeheader()
     for d in ownership_data:
         writer.writerow({
             "Entity": (d.entity.qualified_name),
             "category": d.entity.category,
             "id": d.entity.id,
+            "param_names": d.entity.param_names,
             "file path": d.entity.path,
             "commits": json.dumps([str(c) for c in d.commits])
         })

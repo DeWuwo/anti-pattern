@@ -71,7 +71,7 @@ class FileCSV:
     @classmethod
     def dump_ent_commit_infos(cls, ent_commit_infos, file_name: str):
         with open(file_name, "w", newline="") as file:
-            writer = csv.DictWriter(file, ["Entity", "category", "id", "file path", "commits",
+            writer = csv.DictWriter(file, ["Entity", "category", "id", "param_names", "file path", "commits",
                                            "base commits", "accompany commits"])
             writer.writeheader()
             for row in ent_commit_infos:

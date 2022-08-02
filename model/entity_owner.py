@@ -64,6 +64,7 @@ class EntityOwner:
         Command.command_run(cmd)
 
     def re_divide_owner(self, not_sure_rows):
+        print('   get refactor info')
         try:
             return diff_re_divide_owner(self.repo_path_accompany, self.get_path('ref.json'),
                                         not_sure_rows, self.out_path)
@@ -72,7 +73,7 @@ class EntityOwner:
 
     def dump_ent_commit_infos(self, ent_commit_infos):
         with open(self.get_path('unsure_entities.csv'), "w", newline="") as file:
-            writer = csv.DictWriter(file, ["Entity", "category", "id", "file path", "commits",
+            writer = csv.DictWriter(file, ["Entity", "category", "id", "param_names","file path", "commits",
                                            "base commits", "old base commits", "accompany commits"])
             writer.writeheader()
             for row in ent_commit_infos:

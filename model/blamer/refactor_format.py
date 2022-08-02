@@ -24,22 +24,19 @@ ExtractMoveMethodFormat = "Extract And Move Method (.*) " \
                           "in class (.*) " \
                           "& moved to class (.*)"
 
-ExtractPattern = Tuple[re.Pattern, int, int, int, int]
-EMPattern = re.compile(ExtractMethodFormat)
-EMMPattern = re.compile(ExtractMoveMethodFormat)
-
-ExtractMethodPatterns = [(EMMPattern, 2, 3, 1, 4),
-                         (EMPattern, 2, 3, 1, 3)]
-
 RenamePattern = Tuple[re.Pattern, int, int, int, int]
 
 MRMPattern = re.compile(MoveRenameMethodFormat)
 MMPattern = re.compile(MoveMethodFormat)
 RMPattern = re.compile(RenameMethodFormat)
+EMPattern = re.compile(ExtractMethodFormat)
+EMMPattern = re.compile(ExtractMoveMethodFormat)
 
 MoveMethodPatterns = [(MRMPattern, 1, 2, 3, 4),
                       (MMPattern, 1, 2, 3, 4),
-                      (RMPattern, 3, 1, 2, 3)]
+                      (RMPattern, 2, 3, 1, 3),
+                      (EMMPattern, 2, 3, 1, 4),
+                      (EMPattern, 2, 3, 1, 3)]
 
 RenameClassFormat = "Rename Class (.*) " \
                     "renamed to (.*)"
@@ -64,7 +61,7 @@ RPPattern = re.compile(RenameParameterFormat)
 AddParameterFormat = "Add Parameter (.*) " \
                      "in method (.*) " \
                      "from class (.*)"
-APPattern = re.compile(RenameParameterFormat)
+APPattern = re.compile(AddParameterFormat)
 
 RemoveParameterFormat = "Remove Parameter (.*) " \
                         "in method (.*) " \
@@ -104,7 +101,7 @@ MoveAttributePattern = [(MAPattern, 1, 2, 3, 4),
                         (MRAPattern, 1, 2, 3, 4),
                         (PUAPattern, 1, 2, 3, 4),
                         (RAPattern, 1, 2, 3, 3)]
-SignatureFormat = "(private|public|package|protected) (.*)(\\(.*\\))"
+SignatureFormat = "(private|public|package|protected) (.*)\\((.*)\\)"
 SignaturePattern = re.compile(SignatureFormat)
 
 
@@ -136,6 +133,30 @@ def get_name_from_sig(sig: str) -> str:
     else:
         print('get rename error')
         assert False
+
+
+def get_param_from_sig(sig: str):
+    matched = SignaturePattern.match(sig)
+    if matched:
+        method_params = matched.group(3)
+        params = method_params.split(", ")
+        if method_params == "":
+            return "", ""
+        param_types = []
+        param_names = []
+        for param in params:
+            param_names.append(param.split(' ')[0])
+            param_types.append(param.split(' ')[1])
+        return " ".join(param_types), " ".join(param_names)
+    else:
+        print('get params error')
+        assert False
+
+
+if __name__ == '__main__':
+    test = "public authenticateForOperation(cancel CancellationSignal, executor Executor, callback AuthenticationCallback, operationId long) : long"
+    print(get_name_from_sig(test))
+    print(get_param_from_sig(test))
 
 
 def get_method_sig_from_code_elements(code_elements):
