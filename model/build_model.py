@@ -251,7 +251,8 @@ class BuildModel:
     # diff & blame
     def first_owner(self, aosp_entity_map, assi_entity_map, all_native_entities: dict, old_native_entities: dict,
                     old_update_entities: dict, intrusive_entities: dict, old_intrusive_entities: dict,
-                    pure_accompany_entities: dict, refactor_list: Dict[int, list], child_define: Dict[int, List[Entity]],
+                    pure_accompany_entities: dict, refactor_list: Dict[int, list],
+                    child_define: Dict[int, List[Entity]],
                     child_param: dict) -> List:
         not_sure_entity_list = []
         keys_intrusive_entities = intrusive_entities.keys()
@@ -270,7 +271,7 @@ class BuildModel:
             'git_intrusive': 0,
             'git_old_intrusive': 0,
             'git_extension': 0,
-            'dep_native_git_native': 0,
+            'dep_native2git_native': 0,
             'dep_native2git_old_native': 0,
             'dep_native2git_old_native_c': [0, 0, 0],
             'dep_native2git_old_update': 0,
@@ -281,7 +282,7 @@ class BuildModel:
             'dep_native2git_old_intrusive_c': [0, 0, 0],
             'dep_native2git_extension': 0,
             'dep_native2git_extension_c': [0, 0, 0],
-            'dep_extension_git_extension': 0,
+            'dep_extension2git_extension': 0,
             'dep_extension2git_native': 0,
             'dep_extension2git_native_c': [0, 0, 0],
             'dep_extension2git_old_native': 0,
@@ -292,6 +293,7 @@ class BuildModel:
             'dep_extension2git_intrusive_c': [0, 0, 0],
             'dep_extension2git_old_intrusive': 0,
             'dep_extension2git_old_intrusive_c': [0, 0, 0],
+            'parent_ref': 0,
             "Move And Rename Method": 0,
             "Move Method": 0,
             "Rename Method": 0,
@@ -353,10 +355,11 @@ class BuildModel:
                     ent.set_refactor(
                         {'type': move_type, 'value': source_state.longname()})
                     self.refactor_entities.append(ent.id)
-                    self.owner_proc_count[move_type] += 1
                     print(' ready to detect son', source_state.longname(), source_state.get_param())
                     detect_refactor_entities_son(child_define[ent.id], source_state.longname(),
                                                  source_state.get_param())
+                    self.owner_proc[ent.id]['ref'] = move_type
+                    self.owner_proc_count[move_type] += 1
                 elif move_type in MoveMethodRefactorings:
                     ent.set_honor(0)
                     ent.set_intrusive(1)
@@ -366,6 +369,8 @@ class BuildModel:
                     self.owner_proc_count[move_type] += 1
                     detect_refactor_entities_son(child_define[ent.id] + child_param[ent.id], source_state.longname(),
                                                  source_state.get_param())
+                    self.owner_proc[ent.id]['ref'] = move_type
+                    self.owner_proc_count[move_type] += 1
                 elif move_type in ExtractMethodRefactorings:
                     ent.set_honor(1)
                     for ent in child_param[ent.id]:
@@ -376,6 +381,8 @@ class BuildModel:
                     self.owner_proc_count[move_type] += 1
                     detect_refactor_entities_son(child_define[ent.id], source_state.longname(),
                                                  source_state.get_param())
+                    self.owner_proc[ent.id]['ref'] = move_type
+                    self.owner_proc_count[move_type] += 1
                 elif move_type in MoveMethodParamRefactorings:
                     ent.set_honor(0)
                     ent.set_intrusive(1)
@@ -385,6 +392,8 @@ class BuildModel:
                     self.owner_proc_count[move_type] += 1
                     detect_refactor_entities_son(child_define[ent.id] + child_param[ent.id], source_state.longname(),
                                                  source_state.get_param())
+                    self.owner_proc[ent.id]['ref'] = move_type
+                    self.owner_proc_count[move_type] += 1
                 else:
                     ent.set_honor(0)
                     ent.set_intrusive(1)
@@ -393,43 +402,91 @@ class BuildModel:
 
         def detect_un_refactor_entities(ent: Entity, source_name: str, source_param: str):
             if ent.not_aosp != -1:
+                self.owner_proc[ent.id]['dep_diff'] = 'parent_ref'
+                self.owner_proc_count['parent_ref'] += 1
                 return
             dep_diff_res = self.graph_differ(ent, source_name, source_param, aosp_entity_map,
                                              assi_entity_map)
             if "android.view.WindowManagerPolicyControl" in ent.qualifiedName:
                 print('  detect not ref', ent.id, source_name, source_param, dep_diff_res)
             if dep_diff_res:
+                self.owner_proc[ent.id]['dep_diff'] = '0'
+                self.owner_proc_count['dep_native'] += 1
                 if ent.id in keys_old_native_entities or ent.id in keys_old_update_entities:
                     ent.set_honor(0)
                     ent.set_old_aosp(1)
+                    if ent.id in keys_old_native_entities:
+                        self.owner_proc[ent.id]['git_blame'] = '_0'
+                        self.owner_proc_count['dep_native2git_old_native'] += 1
+                        self.owner_proc_count['dep_native2git_old_native_c'][get_index(ent.category)] += 1
+                    else:
+                        self.owner_proc[ent.id]['git_blame'] = '_0 0'
+                        self.owner_proc_count['dep_native2git_old_update'] += 1
+                        self.owner_proc_count['dep_native2git_old_update_c'][get_index(ent.category)] += 1
                 elif ent.id in keys_intrusive_entities or ent.id in keys_old_intrusive_entities:
                     ent.set_honor(0)
                     ent.set_intrusive(1)
+                    if ent.id in keys_intrusive_entities:
+                        self.owner_proc[ent.id]['git_blame'] = '0 1'
+                        self.owner_proc_count['dep_native2git_intrusive'] += 1
+                        self.owner_proc_count['dep_native2git_intrusive_c'][get_index(ent.category)] += 1
+                    else:
+                        self.owner_proc[ent.id]['git_blame'] = '_0 0 1'
+                        self.owner_proc_count['dep_native2git_old_intrusive'] += 1
+                        self.owner_proc_count['dep_native2git_old_intrusive_c'][get_index(ent.category)] += 1
                 elif ent.id in keys_pure_accompany_entities:
                     ent.set_honor(0)
                     # 修改覆盖所有行
+                    self.owner_proc[ent.id]['git_blame'] = '1'
+                    self.owner_proc_count['dep_native2git_extension'] += 1
+                    self.owner_proc_count['dep_native2git_extension_c'][get_index(ent.category)] += 1
                 else:
                     ent.set_honor(0)
+                    self.owner_proc[ent.id]['git_blame'] = '0'
+                    self.owner_proc_count['dep_native2git_native'] += 1
             else:
+                self.owner_proc[ent.id]['dep_diff'] = '1'
                 if ent.id in keys_old_native_entities:
                     ent.set_honor(0)
+                    ent.set_old_aosp(1)
+                    self.owner_proc[ent.id]['git_blame'] = '_0'
+                    self.owner_proc_count['dep_extension2git_old_native'] += 1
+                    self.owner_proc_count['dep_extension2git_old_native_c'][get_index(ent.category)] += 1
+                elif ent.id in keys_old_update_entities:
+                    ent.set_honor(0)
                     ent.set_old_aosp(2)
+                    self.owner_proc[ent.id]['git_blame'] = '_0'
+                    self.owner_proc_count['dep_extension2git_old_update'] += 1
+                    self.owner_proc_count['dep_extension2git_old_update_c'][get_index(ent.category)] += 1
                 elif ent.id in keys_old_intrusive_entities:
                     ent.set_honor(0)
                     ent.set_intrusive(1)
+                    self.owner_proc[ent.id]['git_blame'] = '1'
+                    self.owner_proc_count['dep_extension2git_old_intrusive'] += 1
+                    self.owner_proc_count['dep_extension2git_old_intrusive_c'][get_index(ent.category)] += 1
                 elif ent.id in keys_pure_accompany_entities:
                     ent.set_honor(1)
                     # 修改覆盖所有行
+                    self.owner_proc[ent.id]['git_blame'] = '1'
+                    self.owner_proc_count['dep_extension2git_extension'] += 1
+                    self.owner_proc_count['dep_extension2git_extension_c'][get_index(ent.category)] += 1
                 else:
                     ent.set_honor(1)
-
+                    if ent.id in keys_intrusive_entities:
+                        self.owner_proc[ent.id]['git_blame'] = '1'
+                        self.owner_proc_count['dep_extension2git_intrusive'] += 1
+                        self.owner_proc_count['dep_extension2git_intrusive_c'][get_index(ent.category)] += 1
+                    else:
+                        self.owner_proc[ent.id]['git_blame'] = '1'
+                        self.owner_proc_count['dep_extension2git_native'] += 1
+                        self.owner_proc_count['dep_extension2git_native_c'][get_index(ent.category)] += 1
         for entity in self.entity_assi:
-            proc = entity.to_csv()
-            proc['modify_to'] = 'null'
+            self.owner_proc[entity.id] = entity.to_csv()
+            self.owner_proc[entity.id]['modify_to'] = 'null'
             # 解耦仓实体
             if entity.is_decoupling > 1:
                 entity.set_honor(1)
-                proc['dep_diff'] = '1-coupling'
+                self.owner_proc[entity.id]['dep_diff'] = '1-coupling'
                 self.owner_proc_count['dep_coupling'] += 1
             else:
                 detect_ownership(entity, refactor_list, entity.qualifiedName, entity.parameter_names)
