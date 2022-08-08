@@ -54,12 +54,14 @@ class FileCSV:
 
     @classmethod
     def write_to_csv(cls, out_path: str, name: str, headers: list, statistic: Dict[Any, dict]):
+        print(f'start write {name}')
         file_path = os.path.join(out_path, name + '.csv')
         with open(file_path, 'w', newline='') as f:
             f_writer = csv.DictWriter(f, headers)
             f_writer.writeheader()
             for key in statistic:
                 f_writer.writerow(statistic[key])
+        print(f'write {name} success')
 
     @classmethod
     def merge_csv(cls, left: str, right: str, columns: List[str], output: str, name: str):

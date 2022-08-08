@@ -56,6 +56,7 @@ class Constant:
     HD_greylist_max = re.compile('greylist-max-(.*)')
     HD_whitelist: str = 'whitelist'
     HD_greylist_max_label = 'greylist-max-'
+    HD_greylist_max_list: List[str] = ['greylist-max-o', 'greylist-max-p']
 
     @classmethod
     def hidden_map(cls, label: List[str]) -> str:
