@@ -79,6 +79,7 @@ class FileCSV:
 
     @classmethod
     def write_dict_to_csv(cls, out_path: str, name: str, data: List[dict]):
+        print(f'start write {name}')
         file_path = os.path.join(out_path, name + '.csv')
         headers = []
         if data:
@@ -87,6 +88,8 @@ class FileCSV:
             f_writer = csv.DictWriter(f, headers)
             f_writer.writeheader()
             f_writer.writerows(data)
+        print(f'write {name} success')
+
 
     @classmethod
     def write_owner_to_csv(cls, out_path: str, name: str, data: List[Entity]):
@@ -101,7 +104,21 @@ class FileCSV:
                 f_writer.writerow(item.to_owner())
 
     @classmethod
+    def write_file_to_csv(cls, out_path: str, name: str, data: Dict[str, Dict[str, int]], key: str, headers: List[str]):
+        file_path = os.path.join(out_path, name + '.csv')
+        header = [key]
+        header.extend(headers)
+        with open(file_path, 'w', newline='') as f:
+            f_writer = csv.DictWriter(f, header)
+            f_writer.writeheader()
+            for k, v in data.items():
+                temp = {key: k}
+                temp.update(v)
+                f_writer.writerow(temp)
+
+    @classmethod
     def write_entity_to_csv(cls, out_path: str, name: str, data: List[Entity], to_format: str):
+        print('start write ', name)
         file_path = os.path.join(out_path, name + '.csv')
         headers = []
         if data:
@@ -111,3 +128,4 @@ class FileCSV:
             f_writer.writeheader()
             for item in data:
                 f_writer.writerow(item.handle_to_format(to_format))
+        print(f'write {name} success')

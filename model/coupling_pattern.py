@@ -60,13 +60,6 @@ class CouplingPattern(PatternType):
                                      'attrs': {}},
                             'direction': '01'
                         },
-                        # {
-                        #     'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
-                        #     'rel': {'type': Constant.implement, 'attrs': {}},
-                        #     'dest': {'id': ['id', 1, 0], 'category': Constant.E_interface,
-                        #              'attrs': {}},
-                        #     'direction': '11'
-                        # },
                         {
                             'src': {'id': ['id', 0, 0], 'category': Constant.E_class,
                                     'attrs': {}},
@@ -106,13 +99,6 @@ class CouplingPattern(PatternType):
                                      'attrs': {}},
                             'direction': '01'
                         },
-                        # {
-                        #     'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
-                        #     'rel': {'type': Constant.implement, 'attrs': {}},
-                        #     'dest': {'id': ['id', 1, 0], 'category': Constant.E_interface,
-                        #              'attrs': {}},
-                        #     'direction': '11'
-                        # },
                         {
                             'src': {'id': ['id', 0, 0], 'category': Constant.E_class,
                                     'attrs': {}},
@@ -143,7 +129,7 @@ class CouplingPattern(PatternType):
                 'Android2Honor/ParameterListModifyDep': [
                     [
                         {
-                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
+                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {'intrusive': True}},
                             'rel': {'type': Constant.param, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_variable,
                                      'attrs': {}},

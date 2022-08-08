@@ -2,6 +2,7 @@
 /build
 /dist
 /test
+/base-enre-out
 venv
 /file_test
 __pycache__

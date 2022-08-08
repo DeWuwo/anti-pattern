@@ -10,7 +10,6 @@ from model.pattern_type import PatternType
 from utils import FileJson, FileCSV, Constant
 
 
-
 class Match:
     base_model: BuildModel
     output: str
@@ -255,7 +254,8 @@ class Match:
     def deal_res_for_output(self):
         print('ready for write')
         match_set = []
-        union_temp: List = []
+        union_temp_relation: List = []
+        union_temp_entities = set()
         re_map = defaultdict(int)
         res = {}
         total_count = 0
@@ -272,18 +272,22 @@ class Match:
                     for exa in style['res']:
                         res_temp.append(self.show_details(exa))
                         for rel in exa:
-                            s2d = str(rel.src) + str(rel.dest)
+                            s2d = str(rel.src) + '-' + str(rel.dest)
+                            union_temp_entities.add(rel.src)
+                            union_temp_entities.add(rel.dest)
                             if re_map[s2d] == 0:
                                 re_map[s2d] = 1
-                                union_temp.append(self.to_detail_json(rel))
+                                union_temp_relation.append(self.to_detail_json(rel))
 
                     for exa in style['filter']:
                         filter_temp.append(self.show_details(exa))
                         for rel in exa:
-                            s2d = str(rel.src) + str(rel.dest)
+                            s2d = str(rel.src) + '-' + str(rel.dest)
+                            union_temp_entities.add(rel.src)
+                            union_temp_entities.add(rel.dest)
                             if re_map[s2d] == 0:
                                 re_map[s2d] = 1
-                                union_temp.append(self.to_detail_json(rel))
+                                union_temp_relation.append(self.to_detail_json(rel))
                     style_res['resCount'] = len(res_temp)
                     style_res['filterCount'] = len(filter_temp)
                     style_res['res'] = res_temp
@@ -297,7 +301,7 @@ class Match:
                 res['values'][mode]['count'] = pattern_count
                 res['values'][mode]['res'] = anti_temp
         res['totalCount'] = total_count
-        return match_set, union_temp, res
+        return match_set, union_temp_relation, union_temp_entities, res
 
     def to_detail_json(self, relation: Relation):
         return {"src": self.base_model.entity_assi[relation.src].toJson(), "values": {relation.rel: 1},
@@ -323,16 +327,23 @@ class Match:
         for th in threads:
             th.join()
         simple_stat = self.get_statistics()
-        match_set, match_set_union, match_set_json_res = self.deal_res_for_output()
-        self.output_res(pattern.ident, match_set, match_set_union, match_set_json_res)
+        match_set, match_set_union_relation, match_set_union_entity, match_set_json_res = self.deal_res_for_output()
+        self.output_res(pattern.ident, match_set, match_set_union_relation, match_set_union_entity, match_set_json_res)
         self.output_statistic(pattern.ident, pattern.patterns, simple_stat)
 
-    def output_res(self, pattern_type: str, match_set, match_set_union, match_set_json_res):
+    def output_res(self, pattern_type: str, match_set, match_set_union_relation, match_set_union_entity,
+                   match_set_json_res):
         output_path = os.path.join(self.output, pattern_type)
         print(f'output {pattern_type} match res')
         FileJson.write_match_mode(output_path, match_set)
-        FileJson.write_to_json(output_path, match_set_union, 1)
+        FileJson.write_to_json(output_path, match_set_union_relation, 1)
         FileJson.write_to_json(output_path, match_set_json_res, 3)
+        FileCSV.write_entity_to_csv(output_path, 'coupling_entities',
+                                    [self.base_model.entity_assi[entity_id] for entity_id in match_set_union_entity],
+                                    'facade')
+        FileCSV.write_dict_to_csv(output_path, 'coupling_statistic', [
+            {'coupling_relation': len(match_set_union_relation), 'total_relation': len(self.base_model.relation_assi),
+             'coupling_entity': len(match_set_union_entity), 'total_entity': len(self.base_model.entity_assi)}])
 
     def output_statistic(self, pattern_type: str, patterns: List[str], simple_stat):
         output_path = os.path.join(self.output, pattern_type)

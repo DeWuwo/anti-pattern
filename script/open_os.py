@@ -11,17 +11,24 @@ class OpenOS:
     LA: List
     AOSPA: List
     test: List
+    individualization: List
+    source_code_path: str
+    source_dep_path: str
+    out_path: str
 
     def __init__(self):
+        self.source_code_path = 'D:\\Honor\\source_code\\'
+        self.source_dep_path = 'D:\\Honor\\dep_res\\'
+        self.out_path = 'D:\\Honor\\match_res\\'
         self.LineageOS = [
             ['LineageOS', 'lineage-16.0', 'base', 'd56f59389212df5462b342be7600c1974d27c0d5',
-             'ad31dbbdcd76091d7d2d1fc6c863ee17c3bfe87d'],
+             'ad31dbbdcd76091d7d2d1fc6c863ee17c3bfe87d', 'null', 'null'],
             ['LineageOS', 'lineage-17.1', 'base', '44f7cdc0ef98074572a572b6aa78d1c0a23420f7',
-             'dff3deab5d25f8bbfd49abfb423043c9be47b7db'],
+             'dff3deab5d25f8bbfd49abfb423043c9be47b7db', 'null', 'null'],
             ['LineageOS', 'lineage-18.1', 'base', '7f7fc2562a95be630dbe609e8fb70383dcfada4f',
-             '49d8b986dddd441df741698541788c5f3a9c465f'],
+             '49d8b986dddd441df741698541788c5f3a9c465f', 'hiddenapi-flags-lineage18.csv', 'hiddenapi-flags-11.csv'],
             ['LineageOS', 'lineage-19.1', 'base', '484c59b972c1772f75a4b1b9fce7512eee517dcb',
-             '9cdf73f7cbed891c433d278d533f0e0113d68efc'],
+             '9cdf73f7cbed891c433d278d533f0e0113d68efc', 'hiddenapi-flags-lineage19.csv', 'hiddenapi-flags-12.csv'],
         ]
 
         self.GraphneOs = [
@@ -29,15 +36,19 @@ class OpenOS:
         ]
 
         self.CalyxOS = [
-            ['CalyxOS', 'android10', 'base', 'android10', '2cdeacfe733cc625462b93ddb312ecf3934b89b9'],
-            ['CalyxOS', 'android11', 'base', 'android11', '8551ec363dcd7c2d7c82c45e89db4922156766ab'],
-            ['CalyxOS', 'android12', 'base', 'android12', '187a94cca708cf7aa87ef875e16fed561e72679d']
+            # ['CalyxOS', 'android10', 'base', 'android10', '2cdeacfe733cc625462b93ddb312ecf3934b89b9'],
+            ['CalyxOS', 'android11', 'base', '687846d3b443e9a740c73d628c60f3d725f4a95c', '49d8b986dddd', 'null',
+             'null'],
+            ['CalyxOS', 'android12', 'base', 'ca93c649fb376e572dc9fcc1242fd9ba316c37d7', '187a94cca708', 'null', 'null']
         ]
 
         self.OmniROM = [
-            ['OmniROM', 'android-10', 'base', 'android-10', '2cdeacfe733cc625462b93ddb312ecf3934b89b9'],
-            ['OmniROM', 'android-11', 'base', 'android-11', 'ba595d5debf2a214e05a8a774be658b09b354d1a'],
-            ['OmniROM', 'android-12.0', 'base', 'android-12.0', '4bd4cf2ac7dd470de97c673f086133b7e7e4d5d3']
+            ['OmniROM', 'android-9', 'base', 'fb069e3b9c5744327bf62231dfc08e03d7e4502f', '988624eda2c5', 'null',
+             'null'],
+            ['OmniROM', 'android-10', 'base', 'android-10', '2cdeacfe733cc625462b93ddb312ecf3934b89b9', 'null', 'null'],
+            ['OmniROM', 'android-11', 'base', 'android-11', 'ba595d5debf2a214e05a8a774be658b09b354d1a', 'null', 'null'],
+            ['OmniROM', 'android-12.0', 'base', 'android-12.0', '4bd4cf2ac7dd470de97c673f086133b7e7e4d5d3', 'null',
+             'null']
         ]
 
         self.LA = [
@@ -46,24 +57,41 @@ class OpenOS:
         ]
 
         self.AOSPA = [
-            ['aospa', 'sapphire', 'base', 'sapphire', '898ad0236f79d81514806e4f4ca3a2fe401e0705']
+            ['aospa', 'quartz-dev', 'base', '42d2107a29219428453ac8de3e4f46f270af763c', '823838e9efc3', 'null', 'null'],
+            ['aospa', 'ruby-staging', 'base', '3b08012599a6b4fb556dddd1e1e8972b2a2730fe', 'ca05b4c5f776', 'null',
+             'null'],
+            # ['aospa', 'sapphire', 'base', 'sapphire', '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null']
         ]
 
         self.test = [
-            ['LineageOS', 'lineage-16.0', 'base', 'd56f59389212df5462b342be7600c1974d27c0d5',
-             'ad31dbbdcd76091d7d2d1fc6c863ee17c3bfe87d'],
+            ['LineageOS', 'lineage-18.1', 'base', '7f7fc2562a95be630dbe609e8fb70383dcfada4f',
+             '49d8b986dddd441df741698541788c5f3a9c465f', 'hiddenapi-flags-lineage18.csv', 'hiddenapi-flags-11.csv'],
+            ['LineageOS', 'lineage-19.1', 'base', '484c59b972c1772f75a4b1b9fce7512eee517dcb',
+             '9cdf73f7cbed891c433d278d533f0e0113d68efc', 'hiddenapi-flags-lineage19.csv', 'hiddenapi-flags-12.csv'],
+        ]
+
+        self.individualization = [
+            ['aospa', 'sapphire', 'base', 'sapphire', '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null']
         ]
 
     # self.LA + self.LineageOS + self.GraphneOs + self.CalyxOS + self.OmniROM
     def get_all_os(self):
         return self.test
-        # return self.LineageOS + self.GraphneOs + self.CalyxOS + self.OmniROM + self.AOSPA + self.LA
+        # return self.LineageOS + self.CalyxOS + self.OmniROM + self.AOSPA + self.individualization
 
-
-def get_path(os_name: str, os_version: str, pkg: str, os_commit, aosp_commit: str):
-    aosp_code_path = os.path.join('D:\\Honor\\source_code\\android', pkg)
-    assi_code_path = os.path.join('D:\\Honor\\source_code\\', os_name, pkg)
-    aosp_dep_path = os.path.join('D:\\Honor\\dep_res\\android', pkg, aosp_commit + '.json')
-    assi_dep_path = os.path.join('D:\\Honor\\dep_res\\', os_name, pkg, os_commit + '.json')
-    out_path = os.path.join('D:\\Honor\\match_res\\', os_name, pkg, os_version)
-    return aosp_code_path, assi_code_path, aosp_dep_path, assi_dep_path, aosp_commit, os_commit, out_path
+    def get_path(self, os_name: str, os_version: str, pkg: str, os_commit, aosp_commit: str, os_hidden: str,
+                 aosp_hidden):
+        aosp_code_path = os.path.join(self.source_code_path, 'android', pkg)
+        assi_code_path = os.path.join(self.source_code_path, os_name, pkg)
+        aosp_dep_path = os.path.join(self.source_dep_path, 'android', pkg, aosp_commit + '.json')
+        assi_dep_path = os.path.join(self.source_dep_path, os_name, pkg, os_commit + '.json')
+        out_path = os.path.join(self.out_path, os_name, pkg, os_version)
+        if os_hidden != 'null':
+            aosp_hidden_path = os.path.join(self.source_dep_path, 'android', aosp_hidden)
+            aosp_hidden = f' -hd {aosp_hidden_path}'
+            os_hidden_path = os.path.join(self.source_dep_path, os_name, os_hidden)
+            os_hidden = f' -hd {os_hidden_path}'
+        else:
+            aosp_hidden = ''
+            os_hidden = ''
+        return aosp_code_path, assi_code_path, aosp_dep_path, assi_dep_path, aosp_commit, os_commit, out_path, aosp_hidden, os_hidden

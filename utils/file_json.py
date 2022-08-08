@@ -59,3 +59,4 @@ class FileJson:
                         exa_path = os.path.join(style_path, 'filter', str(index))
                         os.makedirs(exa_path, exist_ok=True)
                         cls.write_to_json(exa_path, exa, 2)
+        print('write match res success')

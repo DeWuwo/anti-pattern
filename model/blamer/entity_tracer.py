@@ -22,6 +22,9 @@ class BaseState:
     def get_param(self):
         return 'null'
 
+    def get_category(self):
+        return 'Class'
+
 
 @dataclass(frozen=True)
 class MethodState(BaseState):
@@ -36,6 +39,9 @@ class MethodState(BaseState):
     def get_param(self):
         return get_param_from_sig(self.method_state)[1]
 
+    def get_category(self):
+        return 'Method'
+
 
 @dataclass(frozen=True)
 class AttributeState(BaseState):
@@ -48,7 +54,7 @@ class AttributeState(BaseState):
         return self.class_state + "." + self.attribute_state
 
     def get_param(self):
-        return self.attribute_state
+        return 'null'
 
 
 def get_move_method(refactor_obj):

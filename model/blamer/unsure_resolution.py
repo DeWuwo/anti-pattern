@@ -11,7 +11,7 @@ from model.blamer.move_detect import distill_move_edit_list, MoveEdit
 refactor_move_cache: Dict[str, List[MoveEdit]] = {}
 
 
-def search_refactoring(longname: str, unsure_params: str, unsure_filepath: str,
+def search_refactoring(category: str, longname: str, unsure_params: str, unsure_filepath: str,
                        refactor_data: List[dict], commit: str) -> List[MoveEdit]:
     try:
         move_edits = refactor_move_cache[commit]
@@ -21,7 +21,8 @@ def search_refactoring(longname: str, unsure_params: str, unsure_filepath: str,
     ret = []
     for move in move_edits:
         to_state = move.to_state
-        if to_state.longname() == longname and Path(move.to_state.file_path) == Path(unsure_filepath) and \
+        if category == to_state.get_category() and to_state.longname() == longname and \
+                Path(move.to_state.file_path) == Path(unsure_filepath) and \
                 (unsure_params == "null" or to_state.get_param() == unsure_params):
             ret.append(move)
 
@@ -41,8 +42,12 @@ def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, refactor_data:
     unsure_longname = not_sure_line["Entity"]
     unsure_filepath = not_sure_line["file path"]
     unsure_param = not_sure_line["param_names"]
-    related_moves = search_refactoring(unsure_longname, unsure_param, unsure_filepath,
+    unsure_category = not_sure_line["category"]
+    if unsure_category == 'Variable':
+        return None
+    related_moves = search_refactoring(unsure_category, unsure_longname, unsure_param, unsure_filepath,
                                        refactor_data[str(commit)], str(commit))
+    print(unsure_longname)
     return related_moves if related_moves else None
 
 

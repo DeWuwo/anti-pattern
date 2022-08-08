@@ -1,6 +1,7 @@
 import os
 from utils import Command, FileCSV
-
+from collections import defaultdict
+from functools import partial
 
 class Test:
     p1: str
@@ -22,7 +23,6 @@ class Test:
     def test4(self, p2):
         self.p2 = p2
 
-
     def __str__(self):
         return self.p1 + '-' + self.p2
 
@@ -41,3 +41,8 @@ if __name__ == '__main__':
     print('.'.join(a))
     a = ['Move And Rename Method', 'Move Method', 'Rename Method']
     print("Rename Method" in a)
+    print(not 0 ^ 0)
+    a = {1: [1, 2], 2: [3, 4]}
+    for k, v in a.items():
+        print(k, v)
+    print(a)

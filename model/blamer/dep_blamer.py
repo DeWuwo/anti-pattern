@@ -207,11 +207,14 @@ def load_blame_dict(file_path: Path) -> Dict[Path, List[BlameObject]]:
         csv.field_size_limit(500 * 1024 * 1024)
         reader = csv.reader(file)
         for row in reader:
-            path = row[0]
-            entry_list = json.loads(row[1])
-            entry_list = [BlameObject(e[0], e[1], e[2]) for e in entry_list]
-            ret[Path(path)] = entry_list
-
+            try:
+                path = row[0]
+                entry_list = json.loads(row[1])
+                entry_list = [BlameObject(e[0], e[1], e[2]) for e in entry_list]
+                ret[Path(path)] = entry_list
+            except Exception:
+                pass
+    print('    load blame from cache success')
     return ret
 
 
@@ -297,13 +300,15 @@ def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str
         blame_dict = load_blame_dict(blame_dict_path)
 
     def is_accompany_file(f: Path):
-        return contain_commit(blame_dict[f], only_accompany_commits_set | old_base_commits_set)
-
-    accompany_file_set = set(filter(is_accompany_file, file_set))
+        try:
+            return contain_commit(blame_dict[f], only_accompany_commits_set | old_base_commits_set)
+        except Exception:
+            return False
+    filter_file_set = set(filter(is_accompany_file, file_set))
     blame = create_blamer(blame_dict)
     print(' get entities commits')
     for ent in ents:
-        if ent.path not in accompany_file_set:
+        if ent.path not in filter_file_set:
             continue
         ent_commits = blame(ent.path, ent.start_line, ent.end_line)
         ownership_data.append(EntOwnership(ent, ent_commits))

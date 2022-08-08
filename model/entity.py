@@ -15,12 +15,12 @@ class Entity:
     package_name: str
     not_aosp: int
     is_intrusive: int
+    intrusive_modify: dict
     is_decoupling: int
     bin_path: str
     entity_mapping: int
     modifiers: List[str]
     accessible: str
-    access_modify: str
     final: bool
     static: bool
     is_global: int
@@ -30,7 +30,6 @@ class Entity:
     end_line: int
     end_column: int
     hidden: List[str]
-    hidden_modify: str
     commits: List[str]
     refactor: List[dict]
     anonymous: int
@@ -44,7 +43,7 @@ class Entity:
         self.parentId = args['parentId']
         self.file_path = ""
         self.package_name = ""
-        self.not_aosp = -1
+        self.not_aosp = -2
         self.is_intrusive = 0
         self.entity_mapping = -1
         self.modifiers = []
@@ -52,8 +51,7 @@ class Entity:
         self.final = False
         self.accessible = 'null'
         self.is_decoupling = -1
-        self.access_modify = ''
-        self.hidden_modify = ''
+        self.intrusive_modify = {}
         self.bin_path = ''
         self.commits = []
         self.refactor = []
@@ -140,7 +138,12 @@ class Entity:
     def handle_to_modify(self):
         return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName,
                 'file_path': self.file_path, 'not_aosp': self.not_aosp, 'isIntrusive': self.is_intrusive,
-                'accessModify': self.access_modify, 'hiddenModify': self.hidden_modify, 'refactor': self.refactor}
+                'intrusiveModify': self.intrusive_modify, 'refactor': self.refactor}
+
+    def handle_to_facade(self):
+        return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName,
+                'file_path': self.file_path, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp,
+                'isIntrusive': self.is_intrusive}
 
     @classmethod
     def get_csv_header(cls):
@@ -165,18 +168,16 @@ class Entity:
             temp['rawType'] = self.raw_type
         if self.modifiers:
             temp['modifiers'] = " ".join(self.modifiers)
-        if self.access_modify:
-            temp['accessModify'] = self.access_modify
         if self.is_global != 2:
             temp['global'] = True if self.is_global else False
         if self.hidden:
             temp['hidden'] = " ".join(self.hidden)
-        if self.hidden_modify:
-            temp['hiddenModify'] = self.hidden_modify
         if self.commits:
             temp['commits'] = self.commits
         if self.refactor:
             temp['refactor'] = self.refactor
+        if self.intrusive_modify:
+            temp['intrusiveModify'] = self.intrusive_modify
         return temp
 
     def set_honor(self, not_aosp: int):
@@ -184,6 +185,9 @@ class Entity:
 
     def set_intrusive(self, intrusive: int):
         self.is_intrusive = intrusive
+
+    def set_intrusive_modify(self, intrusive_type: str, intrusive_value: str):
+        self.intrusive_modify[intrusive_type] = intrusive_value
 
     def set_entity_mapping(self, entity_id: int):
         self.entity_mapping = entity_id
@@ -214,7 +218,8 @@ class Entity:
         return self.category == Constant.E_file or self.category == Constant.E_package
 
     def is_core_entity(self):
-        return self.category == Constant.E_method or self.category == Constant.E_class
+        return self.category == Constant.E_method or self.category == Constant.E_class or self.category == Constant.E_interface or \
+               self.category == Constant.E_variable
 
 
 def set_package(entity: Entity, entities: List[Entity]):

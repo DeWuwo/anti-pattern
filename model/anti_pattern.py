@@ -16,7 +16,7 @@ class AntiPattern(PatternType):
                                     'attrs': {}},
                             'rel': {'type': Constant.inherit, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_class,
-                                     'attrs': {'final': True}},
+                                     'attrs': {'final': True, 'intrusive': True}},
                             'direction': '10'
                         }
                     ],
@@ -26,7 +26,7 @@ class AntiPattern(PatternType):
                                     'attrs': {}},
                             'rel': {'type': Constant.override, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
-                                     'attrs': {'final': True}},
+                                     'attrs': {'final': True, 'intrusive': True}},
                             'direction': '10'
                         },
                     ]
@@ -40,7 +40,7 @@ class AntiPattern(PatternType):
                                     'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_class,
-                                     'attrs': {'accessible_modify': True}},
+                                     'attrs': {'accessible_modify': True, 'intrusive': True}},
                             'direction': '00'
                         }
                     ],
@@ -50,7 +50,8 @@ class AntiPattern(PatternType):
                             'rel': {'type': Constant.define, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
                                      'attrs': {
-                                         'accessible': [Constant.accessible_list[2]], 'accessible_modify': True}
+                                         'accessible': [Constant.accessible_list[2]], 'accessible_modify': True,
+                                         'intrusive': True}
                                      },
                             'direction': '00'
                         },
@@ -61,7 +62,7 @@ class AntiPattern(PatternType):
                             'rel': {'type': Constant.define, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
                                      'attrs': {
-                                         'accessible_modify': True}
+                                         'accessible_modify': True, 'intrusive': True}
                                      },
                             'direction': '00'
                         },
@@ -123,7 +124,7 @@ class AntiPattern(PatternType):
                     [
                         {
                             'src': {'id': [-1], 'category': Constant.E_method,
-                                    'attrs': {},
+                                    'attrs': {'intrusive': True},
                                     'filter': {'accessible': ['public']}},
                             'rel': {'type': Constant.param, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_variable,

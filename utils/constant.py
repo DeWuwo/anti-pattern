@@ -1,3 +1,4 @@
+import re
 from typing import List
 
 
@@ -48,21 +49,27 @@ class Constant:
     # hidden api sign
     HD_blocked: str = 'blocked'
     HD_unsupported: str = 'unsupported'
-    HD_max_target: List[str] = ['max-target-o', 'max-target-q']
-
+    HD_max_target = re.compile('max-target-(.*)')
+    HD_sdk: str = 'sdk'
     HD_blacklist: str = 'blacklist'
-    HD_greylist: List[str] = ['greylist-max-o', 'greylist-max-q']
+    HD_greylist: str = 'greylist'
+    HD_greylist_max = re.compile('greylist-max-(.*)')
     HD_whitelist: str = 'whitelist'
+    HD_greylist_max_label = 'greylist-max-'
 
     @classmethod
     def hidden_map(cls, label: List[str]) -> str:
-        if cls.HD_blocked in label or cls.HD_unsupported in label or cls.HD_blacklist in label:
+        if cls.HD_blocked in label or cls.HD_blacklist in label:
             return cls.HD_blacklist
-        elif set(label) & set(cls.HD_max_target):
-            hd_index = cls.HD_max_target.index(list(set(label) & set(cls.HD_max_target))[0])
-            return cls.HD_greylist[hd_index]
-        elif set(label) & set(cls.HD_greylist):
-            hd_index = cls.HD_greylist.index(list(set(label) & set(cls.HD_greylist))[0])
-            return cls.HD_greylist[hd_index]
-        else:
+        elif cls.HD_unsupported in label or cls.HD_greylist in label:
+            return cls.HD_greylist
+        elif cls.HD_sdk in label or cls.HD_whitelist in label:
             return cls.HD_whitelist
+        else:
+            for max_label in label:
+                match = cls.HD_max_target.match(max_label)
+                if match:
+                    return cls.HD_greylist_max_label + match.group(1)
+                match = cls.HD_greylist_max.match(max_label)
+                if match:
+                    return max_label

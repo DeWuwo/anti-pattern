@@ -156,7 +156,7 @@ def get_param_from_sig(sig: str):
 if __name__ == '__main__':
     test = "public authenticateForOperation(cancel CancellationSignal, executor Executor, callback AuthenticationCallback, operationId long) : long"
     print(get_name_from_sig(test))
-    print(get_param_from_sig(test))
+    print(get_param_from_sig(test)[1] == '')
 
 
 def get_method_sig_from_code_elements(code_elements):
