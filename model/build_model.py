@@ -51,6 +51,7 @@ class BuildModel:
     refactor_entities: Dict[str, List[int]]
     facade_relations: List[Relation]
     facade_entities: List[Entity]
+    diff_relations: List[Relation]
     define_relations: List[Relation]
     reflect_relation: List[Relation]
     # query set
@@ -89,6 +90,7 @@ class BuildModel:
         }
         self.facade_relations = []
         self.facade_entities = []
+        self.diff_relations = []
         self.define_relations = []
         self.reflect_relation = []
         self.owner_proc = []
@@ -169,7 +171,7 @@ class BuildModel:
 
         # query set build
         print('get relation search dictionary')
-        self.query_map_build(self.facade_relations, self.define_relations)
+        self.query_map_build(self.diff_relations, self.define_relations)
 
         print('output facade info')
         self.out_facade_info()
@@ -186,9 +188,11 @@ class BuildModel:
             dest = self.entity_assi[relation.dest]
             if src.not_aosp == 1 or dest.not_aosp == 1:
                 relation.set_not_aosp(1)
-                self.facade_relations.append(relation)
-                facade_entities.add(src.id)
-                facade_entities.add(dest.id)
+                self.diff_relations.append(relation)
+                if src.not_aosp + dest.not_aosp == 1:
+                    self.facade_relations.append(relation)
+                    facade_entities.add(src.id)
+                    facade_entities.add(dest.id)
             elif relation.rel == Constant.define:
                 self.define_relations.append(relation)
         for e_id in facade_entities:
@@ -253,6 +257,8 @@ class BuildModel:
             'git_extension': 0,
             'git_any': 0,
             'refactor': 0,
+            'dep_native2git_pure_native': 0,
+            'dep_native2git_pure_native_c': [0, 0, 0, 0],
             'dep_native2git_native': 0,
             'dep_native2git_native_c': [0, 0, 0, 0],
             'dep_native2git_old_native': 0,
@@ -434,34 +440,6 @@ class BuildModel:
                 else:
                     ent.set_honor(1)
 
-            # if dep_diff_res > -1:
-            #     if ent.id in keys_old_native_entities or ent.id in keys_old_update_entities:
-            #         ent.set_honor(0)
-            #         ent.set_old_aosp(1)
-            #     elif ent.id in keys_intrusive_entities or ent.id in keys_old_intrusive_entities:
-            #         ent.set_honor(0)
-            #         ent.set_intrusive(1)
-            #     elif ent.id in keys_pure_accompany_entities:
-            #         ent.set_honor(0)
-            #         ent.set_intrusive(1)
-            #         # 修改覆盖所有行
-            #     else:
-            #         ent.set_honor(0)
-            # else:
-            #     if ent.id in keys_old_native_entities:
-            #         ent.set_honor(0)
-            #         ent.set_old_aosp(2)
-            #     elif ent.id in keys_old_update_entities:
-            #         ent.set_honor(0)
-            #         ent.set_old_aosp(1)
-            #     elif ent.id in keys_old_intrusive_entities:
-            #         ent.set_honor(0)
-            #         ent.set_intrusive(1)
-            #     elif ent.id in keys_pure_accompany_entities:
-            #         ent.set_honor(1)
-            #     else:
-            #         ent.set_honor(1)
-
         for entity in self.entity_assi:
             self.owner_proc[entity.id]['refactor'] = 'null'
             if entity.above_file_level():
@@ -586,7 +564,11 @@ class BuildModel:
 
         def get_intrusive_count():
             total_count = defaultdict(int)
-            header = ['access_modify', 'final_modify', 'param_modify']
+            header = ['access_modify', 'final_modify', 'param_modify', 'Move Class', 'Rename Class',
+                      'Move And Rename Class', 'Move Method', 'Rename Method',
+                      'Move And Rename Method', 'Extract Method', 'Extract And Move Method', 'Rename Parameter',
+                      'Add Parameter', 'Remove Parameter']
+
             file_total_count = defaultdict(partial(defaultdict, int))
             for entity_id in self.access_modify_entities:
                 if self.entity_assi[entity_id].is_intrusive:
@@ -636,11 +618,13 @@ class BuildModel:
                                     'modify')
 
     def out_facade_info(self):
-        facade_info = defaultdict(int)
-        facade_info['total_relations'] = len(self.relation_assi)
-        facade_info['total_entities'] = len(self.entity_assi)
-        facade_info['facade_relation'] = len(self.facade_relations)
-        facade_info['facade_entities'] = len(self.facade_entities)
+        facade_info = {'total_relations': len(self.relation_assi), 'total_entities': len(self.entity_assi),
+                       'facade_relation': len(self.facade_relations), 'facade_entities': len(self.facade_entities),
+                       'Define': 0, 'Call': 0, 'Parameter': 0, 'UseVar': 0, ' Contain': 0, 'Override': 0,
+                       'Implement': 0, 'Typed': 0, 'Set': 0, 'Reflect': 0, 'Inherit': 0, 'Import': 0, 'Modify': 0,
+                       'Annotate': 0, 'Cast': 0, 'Call non-dynamic': 0, 'Method': 0, 'Interface': 0, 'Class': 0,
+                       'Variable': 0, 'Annotation': 0, 'File': 0, 'Enum': 0, 'Enum Constant': 0,
+                       }
         for rel in self.facade_relations:
             facade_info[rel.rel] += 1
         for ent in self.facade_entities:

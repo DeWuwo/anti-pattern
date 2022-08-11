@@ -82,19 +82,19 @@ def get_entity_owner(base_commit: str, old_base_commits: str, only_accompany_com
 
     all_changes = []
     all_native_changes = []
-    pure_accompany_changes = []
     old_native_changes = []
     old_update_changes = []
     intrusive_changes = []
     old_intrusive_changes = []
+    pure_accompany_changes = []
 
     all_entities = {}
     all_native_entities = {}
-    pure_accompany_entities = {}
     old_native_entities = {}
     old_update_entities = {}
     intrusive_entities = {}
     old_intrusive_entities = {}
+    pure_accompany_entities = {}
 
     with open(ownership, "r") as file:
         reader = csv.DictReader(file, ["Entity", "category", "id", "param_names", "file path", "commits"])

@@ -82,19 +82,19 @@ class Match:
     def handle_hidden_modify(self, entity: Entity, hidden_modify: bool):
         return not hidden_modify ^ (entity.id in self.base_model.hidden_modify_entities)
 
+    def handle_obsolete(self, entity: Entity, obsolete: bool):
+        return not obsolete ^ (entity.old_aosp >= 1)
+
+    def handle_qualified_name(self, entity: Entity, qualified_name: str):
+        return qualified_name in entity.qualifiedName
+
     # 实体属性过滤
     def handle_entity_filter(self, entity: Entity, **kwargs):
         for key, val in kwargs.items():
-            method = getattr(self, f'handle_entity_filter_{key}', None)
-            if not method(entity, val):
+            method = getattr(self, f'handle_{key}', None)
+            if method(entity, val):
                 return True
         return False
-
-    def handle_entity_filter_qualified_name(self, entity: Entity, qualified_name: str):
-        return qualified_name in entity.qualifiedName
-
-    def handle_entity_filter_accessible(self, entity: Entity, accessible: List[str]):
-        return (not accessible) or entity.accessible in accessible
 
     # 依赖属性匹配
     def handle_relation_attr_match(self, relation: Relation, **kwargs):
@@ -366,10 +366,10 @@ class Match:
         headers.extend(patterns)
         FileCSV.write_to_csv(output_path, 'module-pattern', headers, self.statistic_modules)
 
-        # 输出维护成本
-        try:
-            left = os.path.join(self.output, Constant.file_mc)
-            right = os.path.join(output_path, 'file-pattern.csv')
-            FileCSV.merge_csv(left, right, ['filename'], self.output, pattern_type)
-        except FileNotFoundError as e:
-            print(e)
+        # # 输出维护成本
+        # try:
+        #     left = os.path.join(self.output, Constant.file_mc)
+        #     right = os.path.join(output_path, 'file-pattern.csv')
+        #     FileCSV.merge_csv(left, right, ['filename'], self.output, pattern_type)
+        # except FileNotFoundError as e:
+        #     print(e)

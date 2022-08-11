@@ -6,9 +6,7 @@ from typing import List
 class OpenOS:
     LineageOS: List
     CalyxOS: List
-    GraphneOs: List
     OmniROM: List
-    LA: List
     AOSPA: List
     test: List
     individualization: List
@@ -23,20 +21,15 @@ class OpenOS:
         self.LineageOS = [
             ['LineageOS', 'lineage-16.0', 'base', 'd56f59389212df5462b342be7600c1974d27c0d5',
              'ad31dbbdcd76091d7d2d1fc6c863ee17c3bfe87d', 'null', 'null'],
-            ['LineageOS', 'lineage-17.1', 'base', '44f7cdc0ef98074572a572b6aa78d1c0a23420f7',
-             'dff3deab5d25f8bbfd49abfb423043c9be47b7db', 'null', 'null'],
+            ['LineageOS', 'lineage-17.1', 'base', 'f5600fff5c1fe764b568c7c885eb1aee022a81ca',
+             '2cdeacfe733', 'null', 'null'],
             ['LineageOS', 'lineage-18.1', 'base', '7f7fc2562a95be630dbe609e8fb70383dcfada4f',
              '49d8b986dddd441df741698541788c5f3a9c465f', 'hiddenapi-flags-lineage18.csv', 'hiddenapi-flags-11.csv'],
             ['LineageOS', 'lineage-19.1', 'base', '484c59b972c1772f75a4b1b9fce7512eee517dcb',
              '9cdf73f7cbed891c433d278d533f0e0113d68efc', 'hiddenapi-flags-lineage19.csv', 'hiddenapi-flags-12.csv'],
         ]
 
-        self.GraphneOs = [
-            ['GraphneOs', '12.1', 'base', '12.1', '5870093533eb178488e36c465e84466864420947']
-        ]
-
         self.CalyxOS = [
-            # ['CalyxOS', 'android10', 'base', 'android10', '2cdeacfe733cc625462b93ddb312ecf3934b89b9'],
             ['CalyxOS', 'android11', 'base', '687846d3b443e9a740c73d628c60f3d725f4a95c', '49d8b986dddd', 'null',
              'null'],
             ['CalyxOS', 'android12', 'base', 'ca93c649fb376e572dc9fcc1242fd9ba316c37d7', '187a94cca708', 'null', 'null']
@@ -45,39 +38,43 @@ class OpenOS:
         self.OmniROM = [
             ['OmniROM', 'android-9', 'base', 'fb069e3b9c5744327bf62231dfc08e03d7e4502f', '988624eda2c5', 'null',
              'null'],
-            ['OmniROM', 'android-10', 'base', 'android-10', '2cdeacfe733cc625462b93ddb312ecf3934b89b9', 'null', 'null'],
-            ['OmniROM', 'android-11', 'base', 'android-11', 'ba595d5debf2a214e05a8a774be658b09b354d1a', 'null', 'null'],
-            ['OmniROM', 'android-12.0', 'base', 'android-12.0', '4bd4cf2ac7dd470de97c673f086133b7e7e4d5d3', 'null',
+            ['OmniROM', 'android-10', 'base', '8c60ca7c0b3fbe4fca6d3ec3137d76127cfe7c77',
+             '2cdeacfe733cc625462b93ddb312ecf3934b89b9', 'null', 'null'],
+            ['OmniROM', 'android-11', 'base', 'a362a5abfe0dbcf48877c5b02d1a8da8d9c504c6',
+             'ba595d5debf2a214e05a8a774be658b09b354d1a', 'null', 'null'],
+            ['OmniROM', 'android-12.0', 'base', 'c4f3170b13b0189af9b8addebf3587bd013576c6',
+             '4bd4cf2ac7dd470de97c673f086133b7e7e4d5d3', 'null',
              'null']
-        ]
-
-        self.LA = [
-            ['LA', 'LA.QSSI.12.0.r1-05800.01-qssi.0', 'base', 'LA.QSSI.12.0.r1-05800.01-qssi.0',
-             '6c2cb6876a30dee0b94d946ca529e06cd96b9642']
         ]
 
         self.AOSPA = [
             ['aospa', 'quartz-dev', 'base', '42d2107a29219428453ac8de3e4f46f270af763c', '823838e9efc3', 'null', 'null'],
             ['aospa', 'ruby-staging', 'base', '3b08012599a6b4fb556dddd1e1e8972b2a2730fe', 'ca05b4c5f776', 'null',
              'null'],
-            # ['aospa', 'sapphire', 'base', 'sapphire', '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null']
+            ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66', '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null']
         ]
 
         self.test = [
-            ['LineageOS', 'lineage-18.1', 'base', '7f7fc2562a95be630dbe609e8fb70383dcfada4f',
-             '49d8b986dddd441df741698541788c5f3a9c465f', 'hiddenapi-flags-lineage18.csv', 'hiddenapi-flags-11.csv'],
-            ['LineageOS', 'lineage-19.1', 'base', '484c59b972c1772f75a4b1b9fce7512eee517dcb',
-             '9cdf73f7cbed891c433d278d533f0e0113d68efc', 'hiddenapi-flags-lineage19.csv', 'hiddenapi-flags-12.csv'],
+            ['OmniROM', 'android-9', 'base', 'fb069e3b9c5744327bf62231dfc08e03d7e4502f', '988624eda2c5', 'null',
+             'null'],
+            ['OmniROM', 'android-10', 'base', '8c60ca7c0b3fbe4fca6d3ec3137d76127cfe7c77',
+             '2cdeacfe733cc625462b93ddb312ecf3934b89b9', 'null', 'null'],
+            ['OmniROM', 'android-11', 'base', 'a362a5abfe0dbcf48877c5b02d1a8da8d9c504c6',
+             'ba595d5debf2a214e05a8a774be658b09b354d1a', 'null', 'null'],
+            ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66',
+             '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null']
+
         ]
 
         self.individualization = [
-            ['aospa', 'sapphire', 'base', 'sapphire', '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null']
+            ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66',
+             '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null']
         ]
 
     # self.LA + self.LineageOS + self.GraphneOs + self.CalyxOS + self.OmniROM
     def get_all_os(self):
         return self.test
-        # return self.LineageOS + self.CalyxOS + self.OmniROM + self.AOSPA + self.individualization
+        # return self.LineageOS + self.CalyxOS + self.OmniROM + self.AOSPA
 
     def get_path(self, os_name: str, os_version: str, pkg: str, os_commit, aosp_commit: str, os_hidden: str,
                  aosp_hidden):

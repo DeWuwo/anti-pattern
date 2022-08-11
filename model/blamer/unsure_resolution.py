@@ -1,4 +1,5 @@
 import csv
+import sys
 import json
 from collections import defaultdict
 from pathlib import Path
@@ -47,7 +48,6 @@ def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, refactor_data:
         return None
     related_moves = search_refactoring(unsure_category, unsure_longname, unsure_param, unsure_filepath,
                                        refactor_data[str(commit)], str(commit))
-    print(unsure_longname)
     return related_moves if related_moves else None
 
 
@@ -119,7 +119,13 @@ def diff_re_divide_owner(repo_path: str, refactor_path: str, not_sure_rows: List
     move_list_write: Dict[int, dict] = {}
     move_list: Dict[int, list] = {}
 
+    i = 0
+    total = len(not_sure_rows)
     for row in not_sure_rows:
+        i += 1
+        print("\r", end="")
+        print(f"       Refactor detect: {i}/{total}", end="")
+        sys.stdout.flush()
         moves = resolve_unsure(repo_path, row, refactor_data)
         if moves:
             row_dict = dict()

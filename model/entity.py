@@ -129,7 +129,8 @@ class Entity:
 
     def to_owner(self):
         return {'id': self.id, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp, 'isIntrusive': self.is_intrusive,
-                'category': self.category, 'qualifiedName': self.qualifiedName, 'file_path': self.file_path, }
+                'category': self.category, 'qualifiedName': self.qualifiedName, 'file_path': self.file_path,
+                'mapping': self.entity_mapping}
 
     def handle_to_format(self, to_format: str):
         method = getattr(self, f'handle_to_{to_format}', None)

@@ -1,6 +1,6 @@
 import os
 import csv
-import pandas as pd
+# import pandas as pd
 from datetime import date
 from typing import Dict, List, Any
 from model.entity import Entity
@@ -17,6 +17,19 @@ class FileCSV:
                 return info
         except Exception as e:
             raise e
+
+    @classmethod
+    def read_dict_from_csv(cls, file_path: str):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            try:
+                res = []
+                reader = csv.DictReader(f)
+                next(reader)
+                for line in reader:
+                    res.append(line)
+                return res
+            except Exception as e:
+                raise e
 
     @classmethod
     def read_from_csv(cls, file_path: str):
@@ -53,6 +66,14 @@ class FileCSV:
             f_writer.writerow(res)
 
     @classmethod
+    def base_write_to_csv(cls, out_path: str, name: str, data: list):
+        file_path = os.path.join(out_path, name + '.csv')
+        with open(file_path, 'w', newline='') as f:
+            f_writer = csv.writer(f)
+            for d in data:
+                f_writer.writerow([d])
+
+    @classmethod
     def write_to_csv(cls, out_path: str, name: str, headers: list, statistic: Dict[Any, dict]):
         print(f'start write {name}')
         file_path = os.path.join(out_path, name + '.csv')
@@ -63,12 +84,12 @@ class FileCSV:
                 f_writer.writerow(statistic[key])
         print(f'write {name} success')
 
-    @classmethod
-    def merge_csv(cls, left: str, right: str, columns: List[str], output: str, name: str):
-        fl = pd.read_csv(left)
-        fr = pd.read_csv(right)
-        all_data = pd.merge(fl, fr, how='left', on=columns)
-        all_data.to_csv(os.path.join(output, 'file-mc-' + name + '.csv'))
+    # @classmethod
+    # def merge_csv(cls, left: str, right: str, columns: List[str], output: str, name: str):
+    #     fl = pd.read_csv(left)
+    #     fr = pd.read_csv(right)
+    #     all_data = pd.merge(fl, fr, how='left', on=columns)
+    #     all_data.to_csv(os.path.join(output, 'file-mc-' + name + '.csv'))
 
     @classmethod
     def dump_ent_commit_infos(cls, ent_commit_infos, file_name: str):
@@ -91,7 +112,6 @@ class FileCSV:
             f_writer.writeheader()
             f_writer.writerows(data)
         print(f'write {name} success')
-
 
     @classmethod
     def write_owner_to_csv(cls, out_path: str, name: str, data: List[Entity]):
