@@ -138,8 +138,8 @@ class Entity:
 
     def handle_to_modify(self):
         return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName,
-                'file_path': self.file_path, 'not_aosp': self.not_aosp, 'isIntrusive': self.is_intrusive,
-                'intrusiveModify': self.intrusive_modify, 'refactor': self.refactor}
+                'file_path': self.file_path, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp,
+                'isIntrusive': self.is_intrusive, 'intrusiveModify': self.intrusive_modify, 'refactor': self.refactor}
 
     def handle_to_facade(self):
         return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName,

@@ -9,7 +9,6 @@ class OpenOS:
     OmniROM: List
     AOSPA: List
     test: List
-    individualization: List
     source_code_path: str
     source_dep_path: str
     out_path: str
@@ -51,27 +50,14 @@ class OpenOS:
             ['aospa', 'quartz-dev', 'base', '42d2107a29219428453ac8de3e4f46f270af763c', '823838e9efc3', 'null', 'null'],
             ['aospa', 'ruby-staging', 'base', '3b08012599a6b4fb556dddd1e1e8972b2a2730fe', 'ca05b4c5f776', 'null',
              'null'],
-            ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66', '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null']
+            # ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66', '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null']
         ]
 
         self.test = [
-            ['OmniROM', 'android-9', 'base', 'fb069e3b9c5744327bf62231dfc08e03d7e4502f', '988624eda2c5', 'null',
-             'null'],
-            ['OmniROM', 'android-10', 'base', '8c60ca7c0b3fbe4fca6d3ec3137d76127cfe7c77',
-             '2cdeacfe733cc625462b93ddb312ecf3934b89b9', 'null', 'null'],
             ['OmniROM', 'android-11', 'base', 'a362a5abfe0dbcf48877c5b02d1a8da8d9c504c6',
              'ba595d5debf2a214e05a8a774be658b09b354d1a', 'null', 'null'],
-            ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66',
-             '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null']
-
         ]
 
-        self.individualization = [
-            ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66',
-             '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null']
-        ]
-
-    # self.LA + self.LineageOS + self.GraphneOs + self.CalyxOS + self.OmniROM
     def get_all_os(self):
         return self.test
         # return self.LineageOS + self.CalyxOS + self.OmniROM + self.AOSPA

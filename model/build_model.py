@@ -151,18 +151,10 @@ class BuildModel:
         print('get entity owner')
         # first get entity owner
         print('     first get entity owner')
-        not_sure_entities = self.first_owner(aosp_entity_set, assi_entity_set, all_entities, all_native_entities,
-                                             old_native_entities, old_update_entities, intrusive_entities,
-                                             old_intrusive_entities, pure_accompany_entities, refactor_list,
-                                             temp_define, temp_param)
-        # print('     output entities owner unsure')
-        # self.entity_owner.dump_ent_commit_infos(not_sure_entities)
-        # # assi entities owner re sure
-        # print('     get unsure entities refactoring info')
-        # move_list = self.entity_owner.re_divide_owner(not_sure_entities)
-        # print('     get refactoring entity owner')
-        # self.resign_owner(not_sure_entities, move_list, temp_param, temp_define, aosp_entity_set, assi_entity_set,
-        #                   intrusive_entities.keys())
+        self.first_owner(aosp_entity_set, assi_entity_set, all_entities, all_native_entities,
+                         old_native_entities, old_update_entities, intrusive_entities,
+                         old_intrusive_entities, pure_accompany_entities, refactor_list,
+                         temp_define, temp_param)
         print('  output entities owner and intrusive info')
         self.out_intrusive_info()
 
@@ -233,8 +225,7 @@ class BuildModel:
     def first_owner(self, aosp_entity_map, assi_entity_map, all_entities: dict, all_native_entities: dict,
                     old_native_entities: dict, old_update_entities: dict, intrusive_entities: dict,
                     old_intrusive_entities: dict, pure_accompany_entities: dict, refactor_list: Dict[int, list],
-                    child_define: Dict[int, List[Entity]], child_param: dict) -> List:
-        not_sure_entity_list = []
+                    child_define: Dict[int, List[Entity]], child_param: dict):
         keys_all_entities = all_entities.keys()
         keys_intrusive_entities = intrusive_entities.keys()
         keys_old_intrusive_entities = old_intrusive_entities.keys()
@@ -463,13 +454,15 @@ class BuildModel:
             else:
                 detect_ownership(entity, refactor_list, entity.qualifiedName, entity.parameter_names)
 
-        return not_sure_entity_list
-
     def load_owner_from_catch(self):
         owners = FileCSV.read_from_file_csv(os.path.join(self.entity_owner.out_path, 'final_ownership.csv'))
         for owner in owners:
             self.entity_assi[int(owner[0])].set_honor(int(owner[1]))
-            self.entity_assi[int(owner[0])].set_honor(int(owner[5]))
+            self.entity_assi[int(owner[0])].set_old_aosp(int(owner[2]))
+            self.entity_assi[int(owner[0])].set_intrusive(int(owner[3]))
+            if int(owner[3]) == 1:
+                self.entity_assi[int(owner[0])].set_entity_mapping(int(owner[7]))
+                self.get_entity_map(self.entity_assi[int(owner[0])], self.entity_android[int(owner[7])])
 
     # graph differ
     def graph_differ(self, entity: Entity, search_name: str, search_param: str, aosp_entity_set: defaultdict,
