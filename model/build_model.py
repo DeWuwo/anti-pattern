@@ -201,7 +201,8 @@ class BuildModel:
                     self.facade_relations.append(relation)
                     facade_entities.add(src.id)
                     facade_entities.add(dest.id)
-                    if src.category != Constant.E_method and dest.category == Constant.E_variable and relation.rel == Constant.define:
+                    if src.category != Constant.E_method and dest.category == Constant.E_variable and \
+                            relation.rel == Constant.define and dest.not_aosp == 1:
                         self.var_extensive_entities.append(dest.id)
             elif relation.rel == Constant.define:
                 self.define_relations.append(relation)
