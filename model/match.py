@@ -343,7 +343,7 @@ class Match:
                                     'facade')
         FileCSV.write_dict_to_csv(output_path, 'coupling_statistic', [
             {'coupling_relation': len(match_set_union_relation), 'total_relation': len(self.base_model.relation_assi),
-             'coupling_entity': len(match_set_union_entity), 'total_entity': len(self.base_model.entity_assi)}])
+             'coupling_entity': len(match_set_union_entity), 'total_entity': len(self.base_model.entity_assi)}], 'w')
 
     def output_statistic(self, pattern_type: str, patterns: List[str], simple_stat):
         output_path = os.path.join(self.output, pattern_type)

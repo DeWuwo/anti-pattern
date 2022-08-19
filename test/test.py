@@ -36,13 +36,4 @@ def test2():
 
 
 if __name__ == '__main__':
-    a = '1.2.3.4'.rsplit('.', 2)
-    a[1] = '4'
-    print('.'.join(a))
-    a = ['Move And Rename Method', 'Move Method', 'Rename Method']
-    print("Rename Method" in a)
-    print(not 0 ^ 0)
-    a = {1: [1, 2], 2: [3, 4]}
-    for k, v in a.items():
-        print(k, v)
-    print(a)
+    pass

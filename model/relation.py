@@ -1,5 +1,6 @@
-from typing import Dict
+from typing import Dict, List
 from utils import Constant
+from model.entity import Entity
 
 
 class Relation:
@@ -39,6 +40,9 @@ class Relation:
 
     def __str__(self):
         return str(self.src) + self.rel + str(self.dest)
+
+    def to_str(self, entities: List[Entity]):
+        return entities[self.src].qualifiedName + self.rel + entities[self.dest].qualifiedName
 
     def set_not_aosp(self, not_aosp):
         self.not_aosp = not_aosp

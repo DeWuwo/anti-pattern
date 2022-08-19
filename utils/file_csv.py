@@ -101,13 +101,13 @@ class FileCSV:
                 writer.writerow(row)
 
     @classmethod
-    def write_dict_to_csv(cls, out_path: str, name: str, data: List[dict]):
+    def write_dict_to_csv(cls, out_path: str, name: str, data: List[dict], mode: str):
         print(f'start write {name}')
         file_path = os.path.join(out_path, name + '.csv')
         headers = []
         if data:
             headers = [item for item in data[0].keys()]
-        with open(file_path, 'w', newline='') as f:
+        with open(file_path, mode, newline='') as f:
             f_writer = csv.DictWriter(f, headers)
             f_writer.writeheader()
             f_writer.writerows(data)

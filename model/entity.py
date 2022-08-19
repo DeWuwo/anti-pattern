@@ -34,6 +34,7 @@ class Entity:
     refactor: List[dict]
     anonymous: int
     old_aosp: int
+    is_param: int
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -56,6 +57,7 @@ class Entity:
         self.commits = []
         self.refactor = []
         self.old_aosp = -1
+        self.is_param = -1
         try:
             self.start_line = args['startLine']
             self.start_column = args['startColumn']
@@ -214,6 +216,9 @@ class Entity:
 
     def set_old_aosp(self, old_aosp: int):
         self.old_aosp = old_aosp
+
+    def set_is_param(self, is_param: int):
+        self.is_param = is_param
 
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package

@@ -67,7 +67,7 @@ class EntityOwner:
         print('   get refactor info')
         try:
             return diff_re_divide_owner(self.repo_path_accompany, self.get_path('ref.json'),
-                                        not_sure_rows, self.out_path)
+                                        self.get_path('unsure_resolution.json'), not_sure_rows, self.out_path)
         except Exception as e:
             print(e)
 

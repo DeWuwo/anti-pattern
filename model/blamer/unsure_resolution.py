@@ -30,24 +30,37 @@ def search_refactoring(category: str, longname: str, unsure_params: str, unsure_
     return ret
 
 
+def search_refactoring_by_id(refactor_data: List[dict]) -> List[MoveEdit]:
+    move_edits = distill_move_edit_list(refactor_data)
+    ret = []
+    for move in move_edits:
+        ret.append(move)
+
+    return ret
+
+
 OwnerShipData = Dict[str, str]
 
 
-def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, refactor_data: Dict[str, List[dict]]) \
+def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, refactor_data: Dict[str, List[dict]], flag: bool) \
         -> Optional[List[MoveEdit]]:
-    repo = git.Repo(repo_path)
-    third_party_commits = json.loads(not_sure_line["accompany commits"])
-    sorted_commits = list(sorted(third_party_commits,
-                                 key=lambda k: repo.commit(k).committed_datetime, reverse=False))
-    commit = repo.commit(sorted_commits[0])
-    unsure_longname = not_sure_line["Entity"]
-    unsure_filepath = not_sure_line["file path"]
-    unsure_param = not_sure_line["param_names"]
-    unsure_category = not_sure_line["category"]
-    if unsure_category == 'Variable':
-        return None
-    related_moves = search_refactoring(unsure_category, unsure_longname, unsure_param, unsure_filepath,
-                                       refactor_data[str(commit)], str(commit))
+    if flag:
+        unsure_id = not_sure_line['id']
+        related_moves = search_refactoring_by_id(refactor_data[unsure_id])
+    else:
+        repo = git.Repo(repo_path)
+        third_party_commits = json.loads(not_sure_line["accompany commits"])
+        sorted_commits = list(sorted(third_party_commits,
+                                     key=lambda k: repo.commit(k).committed_datetime, reverse=False))
+        commit = repo.commit(sorted_commits[0])
+        unsure_longname = not_sure_line["Entity"]
+        unsure_filepath = not_sure_line["file path"]
+        unsure_param = not_sure_line["param_names"]
+        unsure_category = not_sure_line["category"]
+        if unsure_category == 'Variable':
+            return None
+        related_moves = search_refactoring(unsure_category, unsure_longname, unsure_param, unsure_filepath,
+                                           refactor_data[str(commit)], str(commit))
     return related_moves if related_moves else None
 
 
@@ -59,6 +72,14 @@ def load_refactor_data(file_path: Path) -> RefactorData:
     ret = defaultdict(list)
     for r in refactor_obj["commits"]:
         ret[r["sha1"]] = r["refactorings"]
+    return ret
+
+
+def load_refactor_data_id(file_path: Path) -> RefactorData:
+    refactor_obj: dict = json.loads(file_path.read_text())
+    ret = defaultdict(list)
+    for k, v in refactor_obj.items():
+        ret[k] = v['Moves']
     return ret
 
 
@@ -108,12 +129,18 @@ def resolution_entry():
         json.dump(move_list, file, indent=4)
 
 
-def diff_re_divide_owner(repo_path: str, refactor_path: str, not_sure_rows: List[dict], out_path: str):
+def diff_re_divide_owner(repo_path: str, refactor_path: str, unsure_refactor: str, not_sure_rows: List[dict],
+                         out_path: str):
     refactor_path = Path(refactor_path)
     repo_path = Path(repo_path)
+    unsure_path = Path(unsure_refactor)
     # unsure_ownership = unsure_ownership
-
-    refactor_data = load_refactor_data(refactor_path)
+    refactor_cache = False
+    if unsure_path.exists():
+        refactor_data = load_refactor_data_id(unsure_path)
+        refactor_cache = True
+    else:
+        refactor_data = load_refactor_data(refactor_path)
     # not_sure_rows = load_not_sure_lines(Path(unsure_ownership))
 
     move_list_write: Dict[int, dict] = {}
@@ -126,7 +153,7 @@ def diff_re_divide_owner(repo_path: str, refactor_path: str, not_sure_rows: List
         print("\r", end="")
         print(f"       Refactor detect: {i}/{total}", end="")
         sys.stdout.flush()
-        moves = resolve_unsure(repo_path, row, refactor_data)
+        moves = resolve_unsure(repo_path, row, refactor_data, refactor_cache)
         if moves:
             row_dict = dict()
             for k, v in row.items():

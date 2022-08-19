@@ -48,6 +48,11 @@ class BuildModel:
     hidden_modify_entities: List[int]
     access_modify_entities: List[int]
     final_modify_entities: List[int]
+    var_extensive_entities: List[int]
+    var_modify_entities: List[int]
+    body_modify_entities: List[int]
+    import_extensive_relation: List[Relation]
+
     refactor_entities: Dict[str, List[int]]
     facade_relations: List[Relation]
     facade_entities: List[Entity]
@@ -75,6 +80,10 @@ class BuildModel:
         self.hidden_modify_entities = []
         self.access_modify_entities = []
         self.final_modify_entities = []
+        self.var_extensive_entities = []
+        self.var_modify_entities = []
+        self.body_modify_entities = []
+        self.import_extensive_relation = []
         self.refactor_entities = {
             "Move And Rename Method": [],
             "Move Method": [],
@@ -122,12 +131,13 @@ class BuildModel:
                 self.owner_proc.append(entity.to_csv())
         # init dep
         print("start init model deps")
-        relation_set = defaultdict(partial(defaultdict, partial(defaultdict, int)))
+        import_relation_set = defaultdict(int)
         print("     get aosp dep")
         for item in cells_android:
             relation = Relation(**item)
             self.relation_android.append(relation)
-            relation_set[item['src']][relation.rel][item['dest']] = 1
+            if relation.rel == Constant.R_import:
+                import_relation_set[relation.to_str(self.entity_android)] = 1
         print("     get assi dep")
         temp_param = defaultdict(list)
         temp_define = defaultdict(list)
@@ -136,8 +146,12 @@ class BuildModel:
             self.relation_assi.append(relation)
             if relation.rel == Constant.param:
                 temp_param[relation.src].append(self.entity_assi[relation.dest])
+                self.entity_assi[relation.dest].set_is_param(1)
             elif relation.rel == Constant.define:
                 temp_define[relation.src].append(self.entity_assi[relation.dest])
+            elif relation.rel == Constant.R_import:
+                if import_relation_set[relation.to_str(self.entity_assi)] != 1:
+                    self.import_extensive_relation.append(relation)
 
         # data get -- blame
         print('start init owner from blame')
@@ -155,15 +169,16 @@ class BuildModel:
                          old_native_entities, old_update_entities, intrusive_entities,
                          old_intrusive_entities, pure_accompany_entities, refactor_list,
                          temp_define, temp_param)
-        print('  output entities owner and intrusive info')
-        self.out_intrusive_info()
 
         print('get filter relation set')
-        self.set_dep_assi(relation_set)
+        self.set_dep_assi()
 
         # query set build
         print('get relation search dictionary')
         self.query_map_build(self.diff_relations, self.define_relations)
+
+        print('  output entities owner and intrusive info')
+        self.out_intrusive_info()
 
         print('output facade info')
         self.out_facade_info()
@@ -173,9 +188,10 @@ class BuildModel:
         return self.entity_owner.divide_owner()
 
     # get diff and extra useful aosp 'define' dep
-    def set_dep_assi(self, rel_set: defaultdict):
+    def set_dep_assi(self):
         facade_entities = set()
         for relation in self.relation_assi:
+
             src = self.entity_assi[relation.src]
             dest = self.entity_assi[relation.dest]
             if src.not_aosp == 1 or dest.not_aosp == 1:
@@ -185,6 +201,8 @@ class BuildModel:
                     self.facade_relations.append(relation)
                     facade_entities.add(src.id)
                     facade_entities.add(dest.id)
+                    if src.category != Constant.E_method and dest.category == Constant.E_variable and relation.rel == Constant.define:
+                        self.var_extensive_entities.append(dest.id)
             elif relation.rel == Constant.define:
                 self.define_relations.append(relation)
         for e_id in facade_entities:
@@ -427,7 +445,8 @@ class BuildModel:
             elif ent.id in keys_intrusive_entities or ent.id in keys_pure_accompany_entities:
                 if dep_diff_res > -1:
                     ent.set_honor(0)
-                    ent.set_intrusive(1)
+                    if ent.is_param != 1:
+                        ent.set_intrusive(1)
                 else:
                     ent.set_honor(1)
 
@@ -522,10 +541,16 @@ class BuildModel:
             assi_entity.set_intrusive_modify('final_modify',
                                              get_final(native_entity.final) + '-' + get_final(
                                                  assi_entity.final))
-        if assi_entity.category == Constant.E_method and assi_entity.parameter_names != native_entity.parameter_names:
-            self.params_modify_entities.append(assi_entity.id)
-            assi_entity.set_intrusive_modify('param_modify',
-                                             native_entity.parameter_names + '-' + assi_entity.parameter_names)
+        if assi_entity.category == Constant.E_method:
+            self.body_modify_entities.append(assi_entity.id)
+            assi_entity.set_intrusive_modify('body_modify', '-')
+            if assi_entity.parameter_names != native_entity.parameter_names:
+                self.params_modify_entities.append(assi_entity.id)
+                assi_entity.set_intrusive_modify('param_modify',
+                                                 native_entity.parameter_names + '-' + assi_entity.parameter_names)
+        if assi_entity.category == Constant.E_variable:
+            self.var_modify_entities.append(assi_entity.id)
+            assi_entity.set_intrusive_modify('var_modify', '-')
 
     # out intrusive entities info
     def out_intrusive_info(self):
@@ -557,7 +582,9 @@ class BuildModel:
 
         def get_intrusive_count():
             total_count = defaultdict(int)
-            header = ['access_modify', 'final_modify', 'param_modify', 'Move Class', 'Rename Class',
+            header = ['access_modify', 'final_modify', 'param_modify', 'import_extension', 'var_extension',
+                      'var_modify', 'body_modify',
+                      'Move Class', 'Rename Class',
                       'Move And Rename Class', 'Move Method', 'Rename Method',
                       'Move And Rename Method', 'Extract Method', 'Extract And Move Method', 'Rename Parameter',
                       'Add Parameter', 'Remove Parameter']
@@ -575,8 +602,25 @@ class BuildModel:
                 if self.entity_assi[entity_id].is_intrusive:
                     total_count['param_modify'] += 1
                     file_total_count[self.entity_assi[entity_id].file_path]['param_modify'] += 1
+            for rel in self.import_extensive_relation:
+                total_count['import_extension'] += 1
+                file_total_count[self.entity_assi[rel.src].file_path]['import_extension'] += 1
+
+            for entity_id in self.var_extensive_entities:
+                total_count['var_extension'] += 1
+                file_total_count[self.entity_assi[entity_id].file_path]['var_extension'] += 1
+
+            for entity_id in self.var_modify_entities:
+                if self.entity_assi[entity_id].is_intrusive:
+                    total_count['var_modify'] += 1
+                    file_total_count[self.entity_assi[entity_id].file_path]['var_modify'] += 1
+
+            for entity_id in self.body_modify_entities:
+                if self.entity_assi[entity_id].is_intrusive:
+                    total_count['body_modify'] += 1
+                    file_total_count[self.entity_assi[entity_id].file_path]['body_modify'] += 1
+
             for move_type, move_entity_list in self.refactor_entities.items():
-                header.append(str(move_type))
                 for entity_id in move_entity_list:
                     total_count[move_type] += 1
                     file_total_count[self.entity_assi[entity_id].file_path][move_type] += 1
@@ -586,14 +630,14 @@ class BuildModel:
         intrusive_count, file_intrusive_count, intrusive_keys = get_intrusive_count()
 
         FileCSV.write_owner_to_csv(self.entity_owner.out_path, 'final_ownership', self.entity_assi)
-        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'final_ownership_count', [ownership_count])
+        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'final_ownership_count', [ownership_count], 'w')
         FileCSV.write_file_to_csv(self.entity_owner.out_path, 'final_ownership_file_count', file_owner_count, 'file',
                                   owner_keys)
-        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'intrusive_count', [intrusive_count])
+        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'intrusive_count', [intrusive_count], 'w')
         FileCSV.write_file_to_csv(self.entity_owner.out_path, 'intrusive_file_count', file_intrusive_count, 'file',
                                   intrusive_keys)
-        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'owner_proc', self.owner_proc)
-        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'owner_proc_count', [self.owner_proc_count])
+        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'owner_proc', self.owner_proc, 'w')
+        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'owner_proc_count', [self.owner_proc_count], 'w')
         FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'param_modify_entities',
                                     [self.entity_assi[entity_id] for entity_id in self.params_modify_entities],
                                     'modify')
@@ -622,7 +666,9 @@ class BuildModel:
             facade_info[rel.rel] += 1
         for ent in self.facade_entities:
             facade_info[ent.category] += 1
-        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'facade_info', [facade_info])
+        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'facade_info', [facade_info], 'w')
+        FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'facade_info_entities',
+                                    self.facade_entities, 'modify')
 
 
 # valid entity map

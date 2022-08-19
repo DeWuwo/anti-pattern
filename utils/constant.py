@@ -22,6 +22,7 @@ class Constant:
     override: str = 'Override'
     typed: str = 'Typed'
     reflect: str = 'Reflect'
+    R_import: str = 'Import'
 
     # anti-pattern name
     ACM: str = "AOSPAccessModify"
