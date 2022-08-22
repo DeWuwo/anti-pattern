@@ -44,5 +44,9 @@ class Relation:
     def to_str(self, entities: List[Entity]):
         return entities[self.src].qualifiedName + self.rel + entities[self.dest].qualifiedName
 
+    def to_detail_json(self, entities: List[Entity]):
+        return {"src": entities[self.src].toJson(), "values": {self.rel: 1},
+                "dest": entities[self.dest].toJson()}
+
     def set_not_aosp(self, not_aosp):
         self.not_aosp = not_aosp

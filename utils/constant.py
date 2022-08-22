@@ -23,6 +23,8 @@ class Constant:
     typed: str = 'Typed'
     reflect: str = 'Reflect'
     R_import: str = 'Import'
+    R_cast: str = 'Cast'
+    R_annotate: str = 'Annotate'
 
     # anti-pattern name
     ACM: str = "AOSPAccessModify"

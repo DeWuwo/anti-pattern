@@ -4,7 +4,7 @@ from typing import List, Dict
 
 
 class FileJson:
-    outFile = ['diff.json', 'union.json', 'example.json', 'res.json', 'stat.json', 'test.json']
+    outFile = ['diff.json', 'facade.json', 'example.json', 'res.json', 'stat.json', 'test.json']
 
     @classmethod
     def read_base_json(cls, file_path: str):

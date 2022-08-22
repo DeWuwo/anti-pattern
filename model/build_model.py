@@ -6,7 +6,7 @@ from model.entity import Entity, set_package, set_parameters
 from model.relation import Relation
 from model.entity_owner import EntityOwner
 from model.blamer.entity_tracer import BaseState
-from utils import Constant, FileCSV
+from utils import Constant, FileCSV, FileJson
 
 MoveMethodRefactorings = [
     "Move And Rename Method",
@@ -50,6 +50,7 @@ class BuildModel:
     final_modify_entities: List[int]
     var_extensive_entities: List[int]
     var_modify_entities: List[int]
+    var_modify_method_entities: List[int]
     body_modify_entities: List[int]
     import_extensive_relation: List[Relation]
 
@@ -82,6 +83,7 @@ class BuildModel:
         self.final_modify_entities = []
         self.var_extensive_entities = []
         self.var_modify_entities = []
+        self.var_modify_method_entities = []
         self.body_modify_entities = []
         self.import_extensive_relation = []
         self.refactor_entities = {
@@ -550,8 +552,12 @@ class BuildModel:
                 assi_entity.set_intrusive_modify('param_modify',
                                                  native_entity.parameter_names + '-' + assi_entity.parameter_names)
         if assi_entity.category == Constant.E_variable:
-            self.var_modify_entities.append(assi_entity.id)
-            assi_entity.set_intrusive_modify('var_modify', '-')
+            if self.entity_assi[assi_entity.parentId].category == Constant.E_method:
+                self.var_modify_method_entities.append(assi_entity.id)
+                assi_entity.set_intrusive_modify('var_modify_method', '-')
+            else:
+                self.var_modify_entities.append(assi_entity.id)
+                assi_entity.set_intrusive_modify('var_modify', '-')
 
     # out intrusive entities info
     def out_intrusive_info(self):
@@ -584,7 +590,7 @@ class BuildModel:
         def get_intrusive_count():
             total_count = defaultdict(int)
             header = ['access_modify', 'final_modify', 'param_modify', 'import_extension', 'var_extension',
-                      'var_modify', 'body_modify',
+                      'var_modify', 'var_modify_method', 'body_modify',
                       'Move Class', 'Rename Class',
                       'Move And Rename Class', 'Move Method', 'Rename Method',
                       'Move And Rename Method', 'Extract Method', 'Extract And Move Method', 'Rename Parameter',
@@ -615,6 +621,11 @@ class BuildModel:
                 if self.entity_assi[entity_id].is_intrusive:
                     total_count['var_modify'] += 1
                     file_total_count[self.entity_assi[entity_id].file_path]['var_modify'] += 1
+
+            for entity_id in self.var_modify_method_entities:
+                if self.entity_assi[entity_id].is_intrusive:
+                    total_count['var_modify_method'] += 1
+                    file_total_count[self.entity_assi[entity_id].file_path]['var_modify_method'] += 1
 
             for entity_id in self.body_modify_entities:
                 if self.entity_assi[entity_id].is_intrusive:
@@ -656,20 +667,67 @@ class BuildModel:
                                     'modify')
 
     def out_facade_info(self):
-        facade_info = {'total_relations': len(self.relation_assi), 'total_entities': len(self.entity_assi),
-                       'facade_relation': len(self.facade_relations), 'facade_entities': len(self.facade_entities),
-                       'Define': 0, 'Call': 0, 'Parameter': 0, 'UseVar': 0, ' Contain': 0, 'Override': 0,
-                       'Implement': 0, 'Typed': 0, 'Set': 0, 'Reflect': 0, 'Inherit': 0, 'Import': 0, 'Modify': 0,
-                       'Annotate': 0, 'Cast': 0, 'Call non-dynamic': 0, 'Method': 0, 'Interface': 0, 'Class': 0,
-                       'Variable': 0, 'Annotation': 0, 'File': 0, 'Enum': 0, 'Enum Constant': 0,
-                       }
+        facade_base_info: dict = {'total_relations': len(self.relation_assi), 'total_entities': len(self.entity_assi),
+                                  'facade_relation': len(self.facade_relations),
+                                  'facade_entities': len(self.facade_entities),
+                                  'facade_n2e': 0, 'facade_e2n': 0,
+                                  }
+        facade_relation_info = {
+            'all_0': 0, 'all_1': 0,
+            'Call_0': 0, 'Call_1': 0, 'Define_0': 0, 'Define_1': 0, 'UseVar_0': 0, 'UseVar_1': 0,
+            'Aggregate_0': 0, 'Aggregate_1': 0, 'Typed_0': 0, 'Typed_1': 0, 'Set_0': 0, 'Set_1': 0,
+            'Modify_0': 0, 'Modify_1': 0,
+            'Annotate_0': 0, 'Annotate_1': 0, 'Parameter_0': 0, 'Parameter_1': 0, 'Reflect_0': 0, 'Reflect_1': 0,
+            'Override_0': 0, 'Override_1': 0, 'Implement_0': 0, 'Implement_1': 0, 'Inherit_0': 0, 'Inherit_1': 0,
+            'Cast_0': 0, 'Cast_1': 0, 'Call non-dynamic_0': 0, 'Call non-dynamic_1': 0, 'Define_e': 0, 'Parameter_e': 0,
+        }
+
+        facade_entity_info = {
+            'Method': [0, 0], 'Interface': [0, 0], 'Class': [0, 0], 'Variable': [0, 0], 'Annotation': [0, 0],
+            'File': [0, 0], 'Enum': [0, 0], 'Enum Constant': [0, 0],
+        }
+
+        # 临时反转annotate依赖
+        def get_index(relation: Relation) -> str:
+            if relation.rel == Constant.R_annotate:
+                return str(self.entity_assi[relation.dest].not_aosp)
+            elif relation.rel == Constant.define:
+                if self.entity_assi[relation.src].not_aosp:
+                    if self.entity_assi[relation.src].refactor:
+                        return str(self.entity_assi[relation.src].not_aosp)
+                    else:
+                        return 'e'
+            elif relation.rel == Constant.param and self.entity_assi[relation.src].not_aosp:
+                return 'e'
+            return str(self.entity_assi[relation.src].not_aosp)
+
+        # 临时添加 聚合 依赖
+        def get_key(relation: Relation) -> str:
+            rel_type = relation.rel
+            if relation.rel == Constant.typed:
+                if get_parent_entity(relation.src, self.entity_assi).category != Constant.E_method:
+                    rel_type = 'Aggregate'
+            return rel_type + '_' + get_index(relation)
+
+        facade_relations_divide_ownership = {'0': [], '1': [], 'e': []}
         for rel in self.facade_relations:
-            facade_info[rel.rel] += 1
+            facade_relation_info[get_key(rel)] += 1
+            facade_relations_divide_ownership[get_index(rel)].append(rel.to_detail_json(self.entity_assi))
+        facade_base_info['facade_n2e'] = len(facade_relations_divide_ownership['0'])
+        facade_base_info['facade_e2n'] = len(facade_relations_divide_ownership['1'])
+        facade_relation_info['all_0'] = facade_base_info['facade_n2e']
+        facade_relation_info['all_1'] = facade_base_info['facade_e2n']
+
         for ent in self.facade_entities:
-            facade_info[ent.category] += 1
-        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'facade_info', [facade_info], 'w')
+            facade_entity_info[ent.category][ent.not_aosp] += 1
+
+        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'facade_base_info_count', [facade_base_info], 'w')
+        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'facade_relation_info_count', [facade_relation_info], 'w')
+        FileCSV.write_dict_to_csv(self.entity_owner.out_path, 'facade_entity_info_count', [facade_entity_info],
+                                  'w')
         FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'facade_info_entities',
                                     self.facade_entities, 'modify')
+        FileJson.write_to_json(self.entity_owner.out_path, facade_relations_divide_ownership, 1)
 
 
 # valid entity map

@@ -56,3 +56,26 @@ class Script:
                 print(cmd)
                 Command.command_run(cmd)
 
+    def get_honor_command(self):
+        commands: List[str] = []
+        aosp_code_path = 'D:\\HONOR_code\\RAOSP\\base'
+        assi_code_path = 'D:\\HONOR_code\\RMagicUI\\base'
+        aosp_dep_path = 'D:\\merge\\res\\RAOSP\\base\\base-out-RAOSP.json'
+        assi_dep_path = 'D:\\merge\\res\\RMagicUI\\base\\base-out-Rmagic.json'
+        out_path = 'D:\\merge\\res\\RmagicUI\\base'
+        commands.append(
+            f'python main.py -ca {aosp_code_path} -cc {assi_code_path} -a {aosp_dep_path} -c {assi_dep_path} -ref {self.ref_path} -o {out_path}')
+        aosp_code_path = 'D:\\HONOR_code\\SAOSP\\base'
+        assi_code_path = 'D:\\HONOR_code\\SMagicUI\\base'
+        aosp_dep_path = 'D:\\merge\\res\\SAOSP\\base\\base-out-SAOSP.json'
+        assi_dep_path = 'D:\\merge\\res\\SMagicUI\\base\\base-out-Smagic.json'
+        out_path = 'D:\\merge\\res\\SmagicUI\\base'
+        commands.append(
+            f'python main.py -ca {aosp_code_path} -cc {assi_code_path} -a {aosp_dep_path} -c {assi_dep_path} -ref {self.ref_path} -o {out_path}')
+
+        return commands
+
+    def run_honor_command(self):
+        commands = self.get_honor_command()
+        for cmd in commands:
+            Command.command_run(cmd)

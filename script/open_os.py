@@ -54,13 +54,12 @@ class OpenOS:
         ]
 
         self.test = [
-            ['LineageOS', 'lineage-16.0', 'base', 'd56f59389212df5462b342be7600c1974d27c0d5',
-             'ad31dbbdcd76091d7d2d1fc6c863ee17c3bfe87d', 'null', 'null'],
+            ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66', '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null']
         ]
 
     def get_all_os(self):
-        # return self.test
-        return self.LineageOS + self.CalyxOS + self.OmniROM + self.AOSPA
+        return self.test
+        # return self.LineageOS + self.CalyxOS + self.OmniROM + self.AOSPA
 
     def get_path(self, os_name: str, os_version: str, pkg: str, os_commit, aosp_commit: str, os_hidden: str,
                  aosp_hidden):
