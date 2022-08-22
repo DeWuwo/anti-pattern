@@ -705,7 +705,9 @@ class BuildModel:
         def get_key(relation: Relation) -> str:
             rel_type = relation.rel
             if relation.rel == Constant.typed:
-                if get_parent_entity(relation.src, self.entity_assi).category != Constant.E_method:
+                parent_entity = get_parent_entity(relation.src, self.entity_assi)
+                if parent_entity.category != Constant.E_method and\
+                        parent_entity.not_aosp != self.entity_assi[relation.dest].not_aosp:
                     rel_type = 'Aggregate'
             return rel_type + '_' + get_index(relation)
 
