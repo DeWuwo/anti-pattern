@@ -35,6 +35,7 @@ class Entity:
     anonymous: int
     old_aosp: int
     is_param: int
+    typed: int
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -58,6 +59,7 @@ class Entity:
         self.refactor = []
         self.old_aosp = -1
         self.is_param = -1
+        self.typed = -1
         try:
             self.start_line = args['startLine']
             self.start_column = args['startColumn']
@@ -198,11 +200,8 @@ class Entity:
     def set_package_name(self, package_name: str):
         self.package_name = package_name
 
-    def set_access_modify(self, access_modify: str):
-        self.access_modify = access_modify
-
-    def set_hidden_modify(self, hidden_modify: str):
-        self.hidden_modify = hidden_modify
+    def set_typed(self, typed: int):
+        self.typed = typed
 
     def set_parent_param(self, parameter_types: str, parameter_names: str):
         self.parameter_types = parameter_types

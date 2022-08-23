@@ -154,7 +154,8 @@ class BuildModel:
             elif relation.rel == Constant.R_import:
                 if import_relation_set[relation.to_str(self.entity_assi)] != 1:
                     self.import_extensive_relation.append(relation)
-
+            elif relation.rel == Constant.typed:
+                self.entity_assi[relation.src].set_typed(relation.dest)
         # data get -- blame
         print('start init owner from blame')
         all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities = self.get_blame_data()
@@ -690,16 +691,16 @@ class BuildModel:
         # 临时反转annotate依赖
         def get_index(relation: Relation) -> str:
             if relation.rel == Constant.R_annotate:
-                return str(self.entity_assi[relation.dest].not_aosp)
+                return str(self.entity_assi[relation.src].not_aosp)
             elif relation.rel == Constant.define:
-                if self.entity_assi[relation.src].not_aosp:
-                    if self.entity_assi[relation.src].refactor:
-                        return str(self.entity_assi[relation.src].not_aosp)
+                if self.entity_assi[relation.dest].not_aosp:
+                    if self.entity_assi[relation.dest].refactor:
+                        return str(self.entity_assi[relation.dest].not_aosp)
                     else:
                         return 'e'
-            elif relation.rel == Constant.param and self.entity_assi[relation.src].not_aosp:
+            elif relation.rel == Constant.param and self.entity_assi[relation.dest].not_aosp:
                 return 'e'
-            return str(self.entity_assi[relation.src].not_aosp)
+            return str(self.entity_assi[relation.dest].not_aosp)
 
         # 临时添加 聚合 依赖
         def get_key(relation: Relation) -> str:
