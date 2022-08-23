@@ -55,6 +55,7 @@ class BuildModel:
     import_extensive_relation: List[Relation]
 
     refactor_entities: Dict[str, List[int]]
+    agg_relations: List[Relation]
     facade_relations: List[Relation]
     facade_entities: List[Entity]
     diff_relations: List[Relation]
@@ -99,6 +100,7 @@ class BuildModel:
             "Move Class": [],
             "Move And Rename Class": []
         }
+        self.agg_relations = []
         self.facade_relations = []
         self.facade_entities = []
         self.diff_relations = []
@@ -209,6 +211,14 @@ class BuildModel:
                         self.var_extensive_entities.append(dest.id)
             elif relation.rel == Constant.define:
                 self.define_relations.append(relation)
+            if relation.rel == Constant.define:
+                # 临时增加聚合依赖
+                if src.category == Constant.E_class and dest.category == Constant.E_variable:
+                    type_entity_id = dest.typed
+                    if type_entity_id != -1 and \
+                            self.entity_assi[type_entity_id].not_aosp != src.not_aosp:
+                        self.agg_relations.append(relation)
+
         for e_id in facade_entities:
             self.facade_entities.append(self.entity_assi[e_id])
 
@@ -674,13 +684,14 @@ class BuildModel:
                                   'facade_n2e': 0, 'facade_e2n': 0,
                                   }
         facade_relation_info = {
-            'all_0': 0, 'all_1': 0,
-            'Call_0': 0, 'Call_1': 0, 'Define_0': 0, 'Define_1': 0, 'UseVar_0': 0, 'UseVar_1': 0,
-            'Aggregate_0': 0, 'Aggregate_1': 0, 'Typed_0': 0, 'Typed_1': 0, 'Set_0': 0, 'Set_1': 0,
-            'Modify_0': 0, 'Modify_1': 0,
-            'Annotate_0': 0, 'Annotate_1': 0, 'Parameter_0': 0, 'Parameter_1': 0, 'Reflect_0': 0, 'Reflect_1': 0,
-            'Override_0': 0, 'Override_1': 0, 'Implement_0': 0, 'Implement_1': 0, 'Inherit_0': 0, 'Inherit_1': 0,
-            'Cast_0': 0, 'Cast_1': 0, 'Call non-dynamic_0': 0, 'Call non-dynamic_1': 0, 'Define_e': 0, 'Parameter_e': 0,
+            'all_e2n': 0, 'all_n2e': 0,
+            'Call_e2n': 0, 'Call_n2e': 0, 'Define_e2n': 0, 'Define_n2e': 0, 'UseVar_e2n': 0, 'UseVar_n2e': 0,
+            'Aggregate_e2n': 0, 'Aggregate_n2e': 0, 'Typed_e2n': 0, 'Typed_n2e': 0, 'Set_e2n': 0, 'Set_n2e': 0,
+            'Modify_e2n': 0, 'Modify_n2e': 0, 'Annotate_e2n': 0, 'Annotate_n2e': 0,
+            'Parameter_e2n': 0, 'Parameter_n2e': 0, 'Reflect_e2n': 0, 'Reflect_n2e': 0,
+            'Override_e2n': 0, 'Override_n2e': 0, 'Implement_e2n': 0, 'Implement_n2e': 0, 'Inherit_e2n': 0, 'Inherit_n2e': 0,
+            'Cast_e2n': 0, 'Cast_n2e': 0, 'Call non-dynamic_e2n': 0, 'Call non-dynamic_n2e': 0,
+            'Define_e': 0, 'Parameter_e': 0,
         }
 
         facade_entity_info = {
@@ -689,37 +700,45 @@ class BuildModel:
         }
 
         # 临时反转annotate依赖
-        def get_index(relation: Relation) -> str:
+        def get_index(relation: Relation, is_agg: bool) -> str:
+            def get_index_str(index: int):
+                if index:
+                    return 'e2n'
+                else:
+                    return 'n2e'
+            if is_agg:
+                return get_index_str(self.entity_assi[relation.src].not_aosp)
             if relation.rel == Constant.R_annotate:
-                return str(self.entity_assi[relation.src].not_aosp)
+                return get_index_str(self.entity_assi[relation.dest].not_aosp)
             elif relation.rel == Constant.define:
-                if self.entity_assi[relation.dest].not_aosp:
-                    if self.entity_assi[relation.dest].refactor:
-                        return str(self.entity_assi[relation.dest].not_aosp)
+                if self.entity_assi[relation.src].not_aosp:
+                    if self.entity_assi[relation.src].refactor:
+                        return get_index_str(self.entity_assi[relation.src].not_aosp)
                     else:
                         return 'e'
-            elif relation.rel == Constant.param and self.entity_assi[relation.dest].not_aosp:
+            elif relation.rel == Constant.param and self.entity_assi[relation.src].not_aosp:
                 return 'e'
-            return str(self.entity_assi[relation.dest].not_aosp)
+            return get_index_str(self.entity_assi[relation.src].not_aosp)
 
         # 临时添加 聚合 依赖
-        def get_key(relation: Relation) -> str:
+        def get_key(relation: Relation, is_agg: bool) -> str:
             rel_type = relation.rel
-            if relation.rel == Constant.typed:
-                parent_entity = get_parent_entity(relation.src, self.entity_assi)
-                if parent_entity.category != Constant.E_method and\
-                        parent_entity.not_aosp != self.entity_assi[relation.dest].not_aosp:
-                    rel_type = 'Aggregate'
-            return rel_type + '_' + get_index(relation)
+            if is_agg:
+                rel_type = 'Aggregate'
+            return rel_type + '_' + get_index(relation, is_agg)
 
-        facade_relations_divide_ownership = {'0': [], '1': [], 'e': []}
+        facade_relations_divide_ownership = {'e2n': [], 'n2e': [], 'e': []}
         for rel in self.facade_relations:
-            facade_relation_info[get_key(rel)] += 1
-            facade_relations_divide_ownership[get_index(rel)].append(rel.to_detail_json(self.entity_assi))
-        facade_base_info['facade_n2e'] = len(facade_relations_divide_ownership['0'])
-        facade_base_info['facade_e2n'] = len(facade_relations_divide_ownership['1'])
-        facade_relation_info['all_0'] = facade_base_info['facade_n2e']
-        facade_relation_info['all_1'] = facade_base_info['facade_e2n']
+            facade_relation_info[get_key(rel, False)] += 1
+            facade_relations_divide_ownership[get_index(rel, False)].append(rel.to_detail_json(self.entity_assi))
+        for rel in self.agg_relations:
+            facade_relation_info[get_key(rel, True)] += 1
+            facade_relations_divide_ownership[get_index(rel, True)].append(rel.to_detail_json(self.entity_assi))
+
+        facade_base_info['facade_n2e'] = len(facade_relations_divide_ownership['n2e'])
+        facade_base_info['facade_e2n'] = len(facade_relations_divide_ownership['e2n'])
+        facade_relation_info['all_e2n'] = facade_base_info['facade_e2n']
+        facade_relation_info['all_n2e'] = facade_base_info['facade_n2e']
 
         for ent in self.facade_entities:
             facade_entity_info[ent.category][ent.not_aosp] += 1
