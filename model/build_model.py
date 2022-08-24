@@ -298,6 +298,8 @@ class BuildModel:
             'dep_extension2git_extension_c': [0, 0, 0, 0],
             'dep_extension2git_native': 0,
             'dep_extension2git_native_c': [0, 0, 0, 0],
+            'dep_extension2git_pure_native': 0,
+            'dep_extension2git_pure_native_c': [0, 0, 0, 0],
             'dep_extension2git_old_native': 0,
             'dep_extension2git_old_native_c': [0, 0, 0, 0],
             'dep_extension2git_old_update': 0,

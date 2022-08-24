@@ -42,6 +42,12 @@ class FileJson:
             json.dump({'res': section}, o, ensure_ascii=False, indent=4)
 
     @classmethod
+    def write_data_to_json(cls, out_path: str, section, file_name: str):
+        os.makedirs(out_path, exist_ok=True)
+        with open(os.path.join(out_path, file_name), 'w+', encoding='utf-8') as o:
+            json.dump({'res': section}, o, ensure_ascii=False, indent=4)
+
+    @classmethod
     def write_match_mode(cls, out_path: str, match_set: List[Dict]):
         print('write match res')
         for item in match_set:

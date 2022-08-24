@@ -8,7 +8,7 @@ import sys
 import time
 
 if __name__ == '__main__':
-    # Script('D:\\Honor\\source_code\\utils\\bin').run_command()
+    Script('D:\\Honor\\source_code\\utils\\bin').run_honor_command()
     # ins_a = IntrusiveCompare()
     lineage = [('lineage-16.0', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-16.0'),
                ('lineage-17.1', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-17.1'),
@@ -35,8 +35,8 @@ if __name__ == '__main__':
     # 筛选切面依赖
     # for proj in lineage + calyx + omni + aospa:
     #     f_f = FacadeFilter(proj[1],
-    #                        [Constant.call, Constant.implement, Constant.inherit, Constant.override, Constant.R_cast,
-    #                         Constant.reflect, 'Annotate']).facade_filter()
+    #                        [Constant.implement, Constant.inherit, Constant.call, Constant.override, Constant.R_cast,
+    #                         Constant.R_annotate, Constant.reflect]).filter_hidden()
 
     # latex表格数据格式
-    ToLatex('E:\\2022ASE\\data.csv').to_latex()
+    # ToLatex('E:\\2022ASE\\data.csv').to_latex()
