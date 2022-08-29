@@ -13,7 +13,7 @@ class BlameField:
 
     def read_blame_field(self):
         try:
-            reader_res = FileCSV.read_from_file_csv(self.file_path)
+            reader_res = FileCSV.read_from_file_csv(self.file_path, True)
         except Exception as e:
             reader_res = {}
         for blame in reader_res:

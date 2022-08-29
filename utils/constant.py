@@ -25,7 +25,12 @@ class Constant:
     R_import: str = 'Import'
     R_cast: str = 'Cast'
     R_annotate: str = 'Annotate'
+    R_super_call: str = 'Call non-dynamic'
+    R_modify: str = 'Modify'
+    R_aggregate: str = 'Aggregate'
+    R_set: str = 'Set'
 
+    Relations: List[str] = [call, R_aggregate, use, define, typed, R_set, R_modify, R_annotate, param, reflect, override, inherit, implement, R_cast, R_super_call]
     # anti-pattern name
     ACM: str = "AOSPAccessModify"
     APM: str = "AOSPParameterModify"

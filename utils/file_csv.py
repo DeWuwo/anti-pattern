@@ -8,11 +8,12 @@ from model.entity import Entity
 
 class FileCSV:
     @classmethod
-    def read_from_file_csv(cls, file_path: str) -> list:
+    def read_from_file_csv(cls, file_path: str, ign_head: bool) -> list:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 reader = csv.reader(f)
-                next(reader)
+                if ign_head:
+                    next(reader)
                 info = [line for line in reader]
                 return info
         except Exception as e:
@@ -67,11 +68,13 @@ class FileCSV:
 
     @classmethod
     def base_write_to_csv(cls, out_path: str, name: str, data: list):
+        print(f'start write {name}')
         file_path = os.path.join(out_path, name + '.csv')
         with open(file_path, 'w', newline='') as f:
             f_writer = csv.writer(f)
             for d in data:
                 f_writer.writerow([d])
+        print(f'write {name} success')
 
     @classmethod
     def write_to_csv(cls, out_path: str, name: str, headers: list, statistic: Dict[Any, dict]):

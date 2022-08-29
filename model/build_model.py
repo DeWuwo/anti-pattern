@@ -48,10 +48,16 @@ class BuildModel:
     hidden_modify_entities: List[int]
     access_modify_entities: List[int]
     final_modify_entities: List[int]
-    var_extensive_entities: List[int]
-    var_modify_entities: List[int]
-    var_modify_method_entities: List[int]
-    body_modify_entities: List[int]
+    class_body_modify_entities: List[int]
+    inner_extensive_class_entities: List[int]
+    class_var_extensive_entities: List[int]
+    class_var_modify_entities: List[int]
+
+    method_extensive_entities: List[int]
+    method_body_modify_entities: List[int]
+    method_var_extensive_entities: List[int]
+    method_var_modify_entities: List[int]
+
     import_extensive_relation: List[Relation]
 
     refactor_entities: Dict[str, List[int]]
@@ -82,10 +88,15 @@ class BuildModel:
         self.hidden_modify_entities = []
         self.access_modify_entities = []
         self.final_modify_entities = []
-        self.var_extensive_entities = []
-        self.var_modify_entities = []
-        self.var_modify_method_entities = []
-        self.body_modify_entities = []
+        self.class_body_modify_entities = []
+        self.inner_extensive_class_entities = []
+        self.class_var_extensive_entities = []
+        self.class_var_modify_entities = []
+
+        self.method_extensive_entities = []
+        self.method_body_modify_entities = []
+        self.method_var_extensive_entities = []
+        self.method_var_modify_entities = []
         self.import_extensive_relation = []
         self.refactor_entities = {
             "Move And Rename Method": [],
@@ -113,6 +124,7 @@ class BuildModel:
         print("start init model entities")
         aosp_entity_set = defaultdict(partial(defaultdict, list))
         assi_entity_set = defaultdict(partial(defaultdict, list))
+        file_set_android = set()
         # aosp entities
         print('     get aosp entities')
         for item in entities_android:
@@ -121,7 +133,8 @@ class BuildModel:
                 set_parameters(entity, self.entity_android)
                 self.entity_android.append(entity)
                 aosp_entity_set[entity.category][entity.qualifiedName].append(entity.id)
-
+                if entity.category == Constant.E_file:
+                    file_set_android.add(entity.file_path)
         # assi entities
         print('     get assi entities')
         for item in entities_assi:
@@ -154,7 +167,8 @@ class BuildModel:
             elif relation.rel == Constant.define:
                 temp_define[relation.src].append(self.entity_assi[relation.dest])
             elif relation.rel == Constant.R_import:
-                if import_relation_set[relation.to_str(self.entity_assi)] != 1:
+                if import_relation_set[relation.to_str(self.entity_assi)] != 1 and \
+                        self.entity_assi[relation.src].file_path in file_set_android:
                     self.import_extensive_relation.append(relation)
             elif relation.rel == Constant.typed:
                 self.entity_assi[relation.src].set_typed(relation.dest)
@@ -206,9 +220,18 @@ class BuildModel:
                     self.facade_relations.append(relation)
                     facade_entities.add(src.id)
                     facade_entities.add(dest.id)
-                    if src.category != Constant.E_method and dest.category == Constant.E_variable and \
-                            relation.rel == Constant.define and dest.not_aosp == 1:
-                        self.var_extensive_entities.append(dest.id)
+                    if relation.rel == Constant.define and dest.not_aosp == 1:
+                        if dest.category == Constant.E_class:
+                            if dest.name != Constant.anonymous_class and src.category != Constant.E_file:
+                                self.inner_extensive_class_entities.append(dest.id)
+                        elif dest.category == Constant.E_method:
+                            self.method_extensive_entities.append(dest.id)
+                        elif dest.category == Constant.E_variable:
+                            if src.category != Constant.E_method:
+                                self.class_var_extensive_entities.append(dest.id)
+                            else:
+                                self.method_var_extensive_entities.append(dest.id)
+
             elif relation.rel == Constant.define:
                 self.define_relations.append(relation)
             if relation.rel == Constant.define:
@@ -490,7 +513,7 @@ class BuildModel:
                 detect_ownership(entity, refactor_list, entity.qualifiedName, entity.parameter_names)
 
     def load_owner_from_catch(self):
-        owners = FileCSV.read_from_file_csv(os.path.join(self.entity_owner.out_path, 'final_ownership.csv'))
+        owners = FileCSV.read_from_file_csv(os.path.join(self.entity_owner.out_path, 'final_ownership.csv'), True)
         for owner in owners:
             self.entity_assi[int(owner[0])].set_honor(int(owner[1]))
             self.entity_assi[int(owner[0])].set_old_aosp(int(owner[2]))
@@ -542,35 +565,36 @@ class BuildModel:
         assi_entity.set_entity_mapping(native_entity.id)
         native_entity.set_entity_mapping(assi_entity.id)
         # storage special entities
-        if assi_entity.hidden:
-            source_hd = Constant.hidden_map(native_entity.hidden)
-            update_hd = Constant.hidden_map(assi_entity.hidden)
-            if source_hd and update_hd and source_hd != update_hd:
-                self.hidden_modify_entities.append(assi_entity.id)
-                assi_entity.set_intrusive_modify('hidden_modify', source_hd + '-' + update_hd)
-        if assi_entity.accessible != native_entity.accessible:
-            self.access_modify_entities.append(assi_entity.id)
-            assi_entity.set_intrusive_modify('access_modify',
-                                             native_entity.accessible + '-' + assi_entity.accessible)
-        if assi_entity.final != native_entity.final:
-            self.final_modify_entities.append(assi_entity.id)
-            assi_entity.set_intrusive_modify('final_modify',
-                                             get_final(native_entity.final) + '-' + get_final(
-                                                 assi_entity.final))
-        if assi_entity.category == Constant.E_method:
-            self.body_modify_entities.append(assi_entity.id)
-            assi_entity.set_intrusive_modify('body_modify', '-')
-            if assi_entity.parameter_names != native_entity.parameter_names:
-                self.params_modify_entities.append(assi_entity.id)
-                assi_entity.set_intrusive_modify('param_modify',
-                                                 native_entity.parameter_names + '-' + assi_entity.parameter_names)
-        if assi_entity.category == Constant.E_variable:
-            if self.entity_assi[assi_entity.parentId].category == Constant.E_method:
-                self.var_modify_method_entities.append(assi_entity.id)
-                assi_entity.set_intrusive_modify('var_modify_method', '-')
-            else:
-                self.var_modify_entities.append(assi_entity.id)
-                assi_entity.set_intrusive_modify('var_modify', '-')
+        # if assi_entity.hidden:
+        #     source_hd = Constant.hidden_map(native_entity.hidden)
+        #     update_hd = Constant.hidden_map(assi_entity.hidden)
+        #     if source_hd and update_hd and source_hd != update_hd:
+        #         self.hidden_modify_entities.append(assi_entity.id)
+        #         assi_entity.set_intrusive_modify('hidden_modify', source_hd + '-' + update_hd)
+        # if assi_entity.accessible != native_entity.accessible:
+        #     self.access_modify_entities.append(assi_entity.id)
+        #     assi_entity.set_intrusive_modify('access_modify',
+        #                                      native_entity.accessible + '-' + assi_entity.accessible)
+        # if assi_entity.final != native_entity.final:
+        #     self.final_modify_entities.append(assi_entity.id)
+        #     assi_entity.set_intrusive_modify('final_modify',
+        #                                      get_final(native_entity.final) + '-' + get_final(
+        #                                          assi_entity.final))
+        # if assi_entity.category in [Constant.E_class, Constant.E_interface]:
+        #     self.class_body_modify_entities.append(assi_entity.id)
+        #     assi_entity.set_intrusive_modify('class_body_modify', '-')  # possible modify
+        # if assi_entity.category == Constant.E_method:
+        #     if assi_entity.parameter_names != native_entity.parameter_names:
+        #         self.params_modify_entities.append(assi_entity.id)
+        #         assi_entity.set_intrusive_modify('param_modify',
+        #                                          native_entity.parameter_names + '-' + assi_entity.parameter_names)
+        # if assi_entity.category == Constant.E_variable:
+        #     if self.entity_assi[assi_entity.parentId].category == Constant.E_method:
+        #         self.method_var_modify_entities.append(assi_entity.id)
+        #         assi_entity.set_intrusive_modify('method_var_modify', '-')  # possible modify
+        #     else:
+        #         self.class_var_modify_entities.append(assi_entity.id)
+        #         assi_entity.set_intrusive_modify('class_var_modify', '-')  # possible modify
 
     # out intrusive entities info
     def out_intrusive_info(self):
@@ -601,49 +625,89 @@ class BuildModel:
                                                    'unsure']
 
         def get_intrusive_count():
-            total_count = defaultdict(int)
-            header = ['access_modify', 'final_modify', 'param_modify', 'import_extension', 'var_extension',
-                      'var_modify', 'var_modify_method', 'body_modify',
+            total_count = {}
+            header = ['access_modify', 'final_modify', 'param_modify', 'import_extensive',
+                      'class_body_modify', 'inner_extensive_class', 'class_var_extensive', 'class_var_modify',
+                      'method_body_modify', 'method_extensive', 'method_var_extensive', 'method_var_modify',
                       'Move Class', 'Rename Class',
                       'Move And Rename Class', 'Move Method', 'Rename Method',
                       'Move And Rename Method', 'Extract Method', 'Extract And Move Method', 'Rename Parameter',
                       'Add Parameter', 'Remove Parameter']
+            for int_type in header:
+                total_count.update({int_type: 0})
 
             file_total_count = defaultdict(partial(defaultdict, int))
-            for entity_id in self.access_modify_entities:
-                if self.entity_assi[entity_id].is_intrusive:
-                    total_count['access_modify'] += 1
-                    file_total_count[self.entity_assi[entity_id].file_path]['access_modify'] += 1
-            for entity_id in self.final_modify_entities:
-                if self.entity_assi[entity_id].is_intrusive:
-                    total_count['final_modify'] += 1
-                    file_total_count[self.entity_assi[entity_id].file_path]['final_modify'] += 1
-            for entity_id in self.params_modify_entities:
-                if self.entity_assi[entity_id].is_intrusive:
-                    total_count['param_modify'] += 1
-                    file_total_count[self.entity_assi[entity_id].file_path]['param_modify'] += 1
+            for assi_entity in self.entity_assi:
+                if assi_entity.is_intrusive and assi_entity.entity_mapping != -1:
+                    native_entity = self.entity_android[assi_entity.entity_mapping]
+                    if assi_entity.hidden:
+                        source_hd = Constant.hidden_map(native_entity.hidden)
+                        update_hd = Constant.hidden_map(assi_entity.hidden)
+                        if source_hd and update_hd and source_hd != update_hd:
+                            self.hidden_modify_entities.append(assi_entity.id)
+                            assi_entity.set_intrusive_modify('hidden_modify', source_hd + '-' + update_hd)
+                    if assi_entity.accessible != native_entity.accessible:
+                        self.access_modify_entities.append(assi_entity.id)
+                        assi_entity.set_intrusive_modify('access_modify',
+                                                         native_entity.accessible + '-' + assi_entity.accessible)
+                        total_count['access_modify'] += 1
+                        file_total_count[assi_entity.file_path]['access_modify'] += 1
+
+                    if assi_entity.final != native_entity.final:
+                        self.final_modify_entities.append(assi_entity.id)
+                        assi_entity.set_intrusive_modify('final_modify',
+                                                         get_final(native_entity.final) + '-' + get_final(
+                                                             assi_entity.final))
+                        total_count['final_modify'] += 1
+                        file_total_count[assi_entity.file_path]['final_modify'] += 1
+
+                    if assi_entity.category in [Constant.E_class, Constant.E_interface]:
+                        self.class_body_modify_entities.append(assi_entity.id)
+                        assi_entity.set_intrusive_modify('class_body_modify', '-')
+                        total_count['class_body_modify'] += 1
+                        file_total_count[assi_entity.file_path]['class_body_modify'] += 1
+                    if assi_entity.category == Constant.E_method:
+                        self.method_body_modify_entities.append(assi_entity.id)
+                        assi_entity.set_intrusive_modify('method_body_modify', '-')
+                        total_count['method_body_modify'] += 1
+                        file_total_count[assi_entity.file_path]['method_body_modify'] += 1
+                        if assi_entity.parameter_names != native_entity.parameter_names:
+                            self.params_modify_entities.append(assi_entity.id)
+                            assi_entity.set_intrusive_modify('param_modify',
+                                                             native_entity.parameter_names + '-' + assi_entity.parameter_names)
+                            total_count['param_modify'] += 1
+                            file_total_count[assi_entity.file_path]['param_modify'] += 1
+                    if assi_entity.category == Constant.E_variable:
+                        if self.entity_assi[assi_entity.parentId].category == Constant.E_method:
+                            self.method_var_modify_entities.append(assi_entity.id)
+                            assi_entity.set_intrusive_modify('method_var_modify', '-')
+                            total_count['method_var_modify'] += 1
+                            file_total_count[assi_entity.file_path]['method_var_modify'] += 1
+                        else:
+                            self.class_var_modify_entities.append(assi_entity.id)
+                            assi_entity.set_intrusive_modify('class_var_modify', '-')
+                            total_count['class_var_modify'] += 1
+                            file_total_count[assi_entity.file_path]['class_var_modify'] += 1
+
             for rel in self.import_extensive_relation:
-                total_count['import_extension'] += 1
-                file_total_count[self.entity_assi[rel.src].file_path]['import_extension'] += 1
+                total_count['import_extensive'] += 1
+                file_total_count[self.entity_assi[rel.src].file_path]['import_extensive'] += 1
 
-            for entity_id in self.var_extensive_entities:
-                total_count['var_extension'] += 1
-                file_total_count[self.entity_assi[entity_id].file_path]['var_extension'] += 1
+            for entity_id in self.inner_extensive_class_entities:
+                total_count['inner_extensive_class'] += 1
+                file_total_count[self.entity_assi[entity_id].file_path]['inner_extensive_class'] += 1
 
-            for entity_id in self.var_modify_entities:
-                if self.entity_assi[entity_id].is_intrusive:
-                    total_count['var_modify'] += 1
-                    file_total_count[self.entity_assi[entity_id].file_path]['var_modify'] += 1
+            for entity_id in self.class_var_extensive_entities:
+                total_count['class_var_extensive'] += 1
+                file_total_count[self.entity_assi[entity_id].file_path]['class_var_extensive'] += 1
 
-            for entity_id in self.var_modify_method_entities:
-                if self.entity_assi[entity_id].is_intrusive:
-                    total_count['var_modify_method'] += 1
-                    file_total_count[self.entity_assi[entity_id].file_path]['var_modify_method'] += 1
+            for entity_id in self.method_extensive_entities:
+                total_count['method_extensive'] += 1
+                file_total_count[self.entity_assi[entity_id].file_path]['method_extensive'] += 1
 
-            for entity_id in self.body_modify_entities:
-                if self.entity_assi[entity_id].is_intrusive:
-                    total_count['body_modify'] += 1
-                    file_total_count[self.entity_assi[entity_id].file_path]['body_modify'] += 1
+            for entity_id in self.method_var_extensive_entities:
+                total_count['method_var_extensive'] += 1
+                file_total_count[self.entity_assi[entity_id].file_path]['method_var_extensive'] += 1
 
             for move_type, move_entity_list in self.refactor_entities.items():
                 for entity_id in move_entity_list:
@@ -672,6 +736,19 @@ class BuildModel:
         FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'final_modify_entities',
                                     [self.entity_assi[entity_id] for entity_id in self.final_modify_entities],
                                     'modify')
+        FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'class_var_modify_entities',
+                                    [self.entity_assi[entity_id] for entity_id in self.class_var_modify_entities],
+                                    'modify')
+        FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'method_var_modify_entities',
+                                    [self.entity_assi[entity_id] for entity_id in self.method_var_modify_entities],
+                                    'modify')
+        FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'class_var_extensive_entities',
+                                    [self.entity_assi[entity_id] for entity_id in self.class_var_extensive_entities],
+                                    'modify')
+        FileJson.write_data_to_json(self.entity_owner.out_path,
+                                    [rel.to_detail_json(self.entity_assi) for rel in self.import_extensive_relation],
+                                    'add_import.json')
+
         temp_ref = set()
         for _, v in self.refactor_entities.items():
             temp_ref.update(v)
@@ -691,7 +768,8 @@ class BuildModel:
             'Aggregate_e2n': 0, 'Aggregate_n2e': 0, 'Typed_e2n': 0, 'Typed_n2e': 0, 'Set_e2n': 0, 'Set_n2e': 0,
             'Modify_e2n': 0, 'Modify_n2e': 0, 'Annotate_e2n': 0, 'Annotate_n2e': 0,
             'Parameter_e2n': 0, 'Parameter_n2e': 0, 'Reflect_e2n': 0, 'Reflect_n2e': 0,
-            'Override_e2n': 0, 'Override_n2e': 0, 'Implement_e2n': 0, 'Implement_n2e': 0, 'Inherit_e2n': 0, 'Inherit_n2e': 0,
+            'Override_e2n': 0, 'Override_n2e': 0, 'Implement_e2n': 0, 'Implement_n2e': 0, 'Inherit_e2n': 0,
+            'Inherit_n2e': 0,
             'Cast_e2n': 0, 'Cast_n2e': 0, 'Call non-dynamic_e2n': 0, 'Call non-dynamic_n2e': 0,
             'Define_e': 0, 'Parameter_e': 0,
         }
@@ -708,6 +786,7 @@ class BuildModel:
                     return 'e2n'
                 else:
                     return 'n2e'
+
             if is_agg:
                 return get_index_str(self.entity_assi[relation.src].not_aosp)
             if relation.rel == Constant.R_annotate:
