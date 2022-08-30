@@ -21,7 +21,9 @@ class ToLatex:
                 if '%' in data:
                     format_str = data.split('%')[0] + '\\%'
                 if index == len(line):
-                    format_str += '\\\\\n'
+                    format_str = ':,'.format(int(format_str)) + '\\\\\n'
+                if int(data) == 0:
+                    format_str = '\\cellcolor{gray}' + format_str
                 else:
                     format_str += ' &'
                 print(format_str, end='')

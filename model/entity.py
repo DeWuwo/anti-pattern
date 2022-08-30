@@ -36,6 +36,9 @@ class Entity:
     old_aosp: int
     is_param: int
     typed: int
+    annotations: List[str]
+    parent_class: str
+    parent_interface: List[str]
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -60,6 +63,9 @@ class Entity:
         self.old_aosp = -1
         self.is_param = -1
         self.typed = -1
+        self.annotations = []
+        self.parent_class = ''
+        self.parent_interface = []
         try:
             self.start_line = args['startLine']
             self.start_column = args['startColumn']
@@ -200,6 +206,9 @@ class Entity:
     def set_package_name(self, package_name: str):
         self.package_name = package_name
 
+    def set_annotations(self, annotation: str):
+        self.annotations.append(annotation)
+
     def set_typed(self, typed: int):
         self.typed = typed
 
@@ -218,6 +227,12 @@ class Entity:
 
     def set_is_param(self, is_param: int):
         self.is_param = is_param
+
+    def set_parent_class(self, parent_class: str):
+        self.parent_class = parent_class
+
+    def set_parent_interface(self, parent_interface: str):
+        self.parent_interface.append(parent_interface)
 
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package

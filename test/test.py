@@ -36,4 +36,6 @@ def test2():
 
 
 if __name__ == '__main__':
-    pass
+    a = [1, 4, 2 ,6]
+    b = [1, 6, 6, 2 , 2,]
+    print(set(a) == set(b))

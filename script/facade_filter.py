@@ -73,8 +73,8 @@ class FacadeFilter:
         e2n: List[dict] = facade_info['res']['e2n']
         heads_hd_rel = []
         heads_hd_intrusive = []
-        hidden_level = [Constant.HD_whitelist, Constant.HD_greylist,
-                        Constant.HD_blacklist] + Constant.HD_greylist_max_list
+        hidden_level = [Constant.HD_blacklist, Constant.HD_greylist,
+                        Constant.HD_whitelist] + Constant.HD_greylist_max_list
         for label in hidden_level:
             for rel in Constant.Relations:
                 heads_hd_rel.append(f'{label}_{rel}')
@@ -106,7 +106,7 @@ class FacadeFilter:
                         hidden_flag in [Constant.HD_blacklist,
                                         Constant.HD_greylist, Constant.HD_whitelist] + Constant.HD_greylist_max_list:
                     res[dest_e['qualifiedName']][hidden_flag + '_' + rel_type] += 1
-                    if rel_type != Constant.typed:
+                    if rel_type == Constant.call:
                         intrusive_res[f'{hidden_flag}_{is_intrusive}'] += 1
                     hidden_json[hidden_flag + '_' + rel_type + '_e2n'].append(rel)
             except KeyError:

@@ -6,7 +6,7 @@ from model.entity import Entity, set_package, set_parameters
 from model.relation import Relation
 from model.entity_owner import EntityOwner
 from model.blamer.entity_tracer import BaseState
-from utils import Constant, FileCSV, FileJson
+from utils import Constant, FileCSV, FileJson, Compare
 
 MoveMethodRefactorings = [
     "Move And Rename Method",
@@ -48,6 +48,12 @@ class BuildModel:
     hidden_modify_entities: List[int]
     access_modify_entities: List[int]
     final_modify_entities: List[int]
+    annotation_modify_entities: List[int]
+    return_type_modify_entities: List[int]
+
+    parent_class_modify_entities: List[int]
+    parent_interface_modify_entities: List[int]
+
     class_body_modify_entities: List[int]
     inner_extensive_class_entities: List[int]
     class_var_extensive_entities: List[int]
@@ -88,6 +94,12 @@ class BuildModel:
         self.hidden_modify_entities = []
         self.access_modify_entities = []
         self.final_modify_entities = []
+        self.annotation_modify_entities: List[int] = []
+        self.return_type_modify_entities: List[int] = []
+
+        self.parent_class_modify_entities: List[int] = []
+        self.parent_interface_modify_entities: List[int] = []
+
         self.class_body_modify_entities = []
         self.inner_extensive_class_entities = []
         self.class_var_extensive_entities = []
@@ -155,6 +167,15 @@ class BuildModel:
             self.relation_android.append(relation)
             if relation.rel == Constant.R_import:
                 import_relation_set[relation.to_str(self.entity_android)] = 1
+            elif relation.rel == Constant.typed:
+                self.entity_android[relation.src].set_typed(relation.dest)
+            elif relation.rel == Constant.R_annotate:
+                self.entity_android[relation.dest].set_annotations(self.entity_android[relation.src].qualifiedName)
+            elif relation.rel == Constant.inherit:
+                self.entity_android[relation.src].set_parent_class(self.entity_android[relation.dest].qualifiedName)
+            elif relation.rel == Constant.implement:
+                self.entity_android[relation.src].set_parent_interface(self.entity_android[relation.dest].qualifiedName)
+
         print("     get assi dep")
         temp_param = defaultdict(list)
         temp_define = defaultdict(list)
@@ -172,6 +193,12 @@ class BuildModel:
                     self.import_extensive_relation.append(relation)
             elif relation.rel == Constant.typed:
                 self.entity_assi[relation.src].set_typed(relation.dest)
+            elif relation.rel == Constant.R_annotate:
+                self.entity_assi[relation.dest].set_annotations(self.entity_assi[relation.src].qualifiedName)
+            elif relation.rel == Constant.inherit:
+                self.entity_assi[relation.src].set_parent_class(self.entity_assi[relation.dest].qualifiedName)
+            elif relation.rel == Constant.implement:
+                self.entity_assi[relation.src].set_parent_interface(self.entity_assi[relation.dest].qualifiedName)
         # data get -- blame
         print('start init owner from blame')
         all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities = self.get_blame_data()
@@ -626,7 +653,8 @@ class BuildModel:
 
         def get_intrusive_count():
             total_count = {}
-            header = ['access_modify', 'final_modify', 'param_modify', 'import_extensive',
+            header = ['access_modify', 'final_modify', 'annotation_modify', 'param_modify', 'import_extensive',
+                      'parent_class_modify', 'parent_interface_modify',
                       'class_body_modify', 'inner_extensive_class', 'class_var_extensive', 'class_var_modify',
                       'method_body_modify', 'method_extensive', 'method_var_extensive', 'method_var_modify',
                       'Move Class', 'Rename Class',
@@ -660,7 +688,30 @@ class BuildModel:
                                                              assi_entity.final))
                         total_count['final_modify'] += 1
                         file_total_count[assi_entity.file_path]['final_modify'] += 1
+                    if not Compare.compare_list(assi_entity.annotations, native_entity.annotations):
+                        self.annotation_modify_entities.append(assi_entity.id)
+                        assi_entity.set_intrusive_modify('annotation_modify',
+                                                         f'{native_entity.annotations}-{assi_entity.annotations}')
+                        total_count['annotation_modify'] += 1
+                        file_total_count[assi_entity.file_path]['annotation_modify'] += 1
 
+                    if assi_entity.category == Constant.E_method and assi_entity.raw_type != native_entity.raw_type:
+                        self.return_type_modify_entities.append(assi_entity.id)
+                        assi_entity.set_intrusive_modify('return_type_modify',
+                                                         native_entity.raw_type + '-' + assi_entity.raw_type)
+
+                    if assi_entity.parent_class != native_entity.parent_class:
+                        self.parent_class_modify_entities.append(assi_entity.id)
+                        assi_entity.set_intrusive_modify('parent_class_modify',
+                                                         f'{native_entity.parent_class}-{assi_entity.parent_class}')
+                        total_count['parent_class_modify'] += 1
+                        file_total_count[assi_entity.file_path]['parent_class_modify'] += 1
+                    if not Compare.compare_list(native_entity.parent_interface, assi_entity.parent_interface):
+                        self.parent_interface_modify_entities.append(assi_entity.id)
+                        assi_entity.set_intrusive_modify('parent_interface_modify',
+                                                         f'{native_entity.parent_interface}-{assi_entity.parent_interface}')
+                        total_count['parent_interface_modify'] += 1
+                        file_total_count[assi_entity.file_path]['parent_interface_modify'] += 1
                     if assi_entity.category in [Constant.E_class, Constant.E_interface]:
                         self.class_body_modify_entities.append(assi_entity.id)
                         assi_entity.set_intrusive_modify('class_body_modify', '-')
@@ -744,6 +795,21 @@ class BuildModel:
                                     'modify')
         FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'class_var_extensive_entities',
                                     [self.entity_assi[entity_id] for entity_id in self.class_var_extensive_entities],
+                                    'modify')
+        FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'annotation_modify_entities',
+                                    [self.entity_assi[entity_id] for entity_id in self.annotation_modify_entities],
+                                    'modify')
+
+        FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'parent_class_modify_entities',
+                                    [self.entity_assi[entity_id] for entity_id in self.parent_class_modify_entities],
+                                    'modify')
+
+        FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'parent_interface_modify_entities',
+                                    [self.entity_assi[entity_id] for entity_id in
+                                     self.parent_interface_modify_entities],
+                                    'modify')
+        FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'return_type_modify_entities',
+                                    [self.entity_assi[entity_id] for entity_id in self.return_type_modify_entities],
                                     'modify')
         FileJson.write_data_to_json(self.entity_owner.out_path,
                                     [rel.to_detail_json(self.entity_assi) for rel in self.import_extensive_relation],
