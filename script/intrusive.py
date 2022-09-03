@@ -10,7 +10,7 @@ class IntrusiveCompare:
 
     def __init__(self):
         self.file_name = 'final_ownership_file_count.csv'
-        self.dimension = ['native', 'absolutely native', 'intrusive', 'extensive']
+        self.dimension = ['native', 'obsoletely native', 'intrusive', 'extensive']
         self.out_path = "D:\\Honor\\match_res\\intrusive_analysis"
 
     def get_top_files(self, projects: List[tuple[str, str]], dim: int, top: float):

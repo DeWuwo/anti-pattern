@@ -626,7 +626,7 @@ class BuildModel:
     # out intrusive entities info
     def out_intrusive_info(self):
         def get_count_ownership():
-            total_count = {'total': 0, 'native': 0, 'absolutely native': 0, 'intrusive': 0, 'extensive': 0, 'unsure': 0}
+            total_count = {'total': 0, 'native': 0, 'obsoletely native': 0, 'intrusive': 0, 'extensive': 0, 'unsure': 0}
             file_total_count = defaultdict(partial(defaultdict, int))
             for entity in self.entity_assi:
                 if entity.is_core_entity():
@@ -640,15 +640,15 @@ class BuildModel:
                             total_count['native'] += 1
                             file_total_count[entity.file_path]['native'] += 1
                         elif entity.old_aosp >= 1:
-                            total_count['absolutely native'] += 1
-                            file_total_count[entity.file_path]['absolutely native'] += 1
+                            total_count['obsoletely native'] += 1
+                            file_total_count[entity.file_path]['obsoletely native'] += 1
                         else:
                             total_count['unsure'] += 1
                             file_total_count[entity.file_path]['unsure'] += 1
                     elif entity.not_aosp == 1:
                         total_count['extensive'] += 1
                         file_total_count[entity.file_path]['extensive'] += 1
-            return total_count, file_total_count, ['total', 'native', 'absolutely native', 'intrusive', 'extensive',
+            return total_count, file_total_count, ['total', 'native', 'obsoletely native', 'intrusive', 'extensive',
                                                    'unsure']
 
         def get_intrusive_count():
