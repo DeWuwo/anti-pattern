@@ -67,9 +67,13 @@ def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, refactor_data:
 RefactorData = Dict[str, List[dict]]
 
 
-def load_refactor_data(file_path: Path) -> RefactorData:
-    refactor_obj = json.loads(file_path.read_text())
+def load_refactor_data(file_path: Path, ref_data) -> RefactorData:
     ret = defaultdict(list)
+    if ref_data:
+        for r in ref_data:
+            ret[r["sha1"]] = r["refactorings"]
+        return ret
+    refactor_obj = json.loads(file_path.read_text())
     for r in refactor_obj["commits"]:
         ret[r["sha1"]] = r["refactorings"]
     return ret
@@ -129,8 +133,8 @@ def resolution_entry():
         json.dump(move_list, file, indent=4)
 
 
-def diff_re_divide_owner(repo_path: str, refactor_path: str, unsure_refactor: str, not_sure_rows: List[dict],
-                         out_path: str):
+def diff_re_divide_owner(repo_path: str, refactor_path: str, ref_data: List, unsure_refactor: str,
+                         not_sure_rows: List[dict], out_path: str):
     refactor_path = Path(refactor_path)
     repo_path = Path(repo_path)
     unsure_path = Path(unsure_refactor)
@@ -140,7 +144,7 @@ def diff_re_divide_owner(repo_path: str, refactor_path: str, unsure_refactor: st
         refactor_data = load_refactor_data_id(unsure_path)
         refactor_cache = True
     else:
-        refactor_data = load_refactor_data(refactor_path)
+        refactor_data = load_refactor_data(refactor_path, ref_data)
     # not_sure_rows = load_not_sure_lines(Path(unsure_ownership))
 
     move_list_write: Dict[int, dict] = {}

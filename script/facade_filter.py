@@ -152,12 +152,16 @@ class FacadeFilter:
         return e2n, n2e
 
     def get_facade_conf(self, project: str):
-        conf_file_set = set()
+        conf_file_set = []
+        inter_set = []
         conf_info = FileCSV.read_from_file_csv(os.path.join(self.file_path, 'conf_files.csv'), False)
         for line in conf_info:
             for file_name in line:
-                conf_file_set.add(file_name)
+                conf_file_set.append(file_name)
         facade_file_set = self.get_facade_files()
-        inter_set = facade_file_set & conf_file_set
+        for conf in conf_file_set:
+            if conf in facade_file_set:
+                inter_set.append(conf)
+        # inter_set = facade_file_set & conf_file_set
         return {'project': project, 'conf_files': len(conf_file_set), 'facade_files': len(facade_file_set),
                 'inter_set': len(inter_set), 'rate': float(len(inter_set)/len(conf_file_set)),'files': list(inter_set)}

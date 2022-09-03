@@ -54,7 +54,8 @@ class OpenOS:
         ]
 
         self.test = [
-            ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66', '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null']
+            ['testos', 'lineage-16.0', 'base', 'd56f59389212df5462b342be7600c1974d27c0d5',
+             'ad31dbbdcd76091d7d2d1fc6c863ee17c3bfe87d', 'null', 'null'],
         ]
 
     def get_all_os(self):

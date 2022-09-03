@@ -1,11 +1,14 @@
 import os
 import csv
+import json
+from typing import List
+from pathlib import Path
 from model.blamer.commit_diff import entry_get_commits
 from model.blamer.dep_blamer import get_entity_commits
 from model.blamer.tagging_ownership import get_entity_owner
 from model.blamer.unsure_resolution import diff_re_divide_owner
 from model.blamer.refactor_format import get_name_from_sig
-from utils import Command
+from utils import Command, FileJson
 
 
 class EntityOwner:
@@ -14,6 +17,7 @@ class EntityOwner:
     accompany_relation_path: str
     refactor_miner: str
     out_path: str
+    ref_miner_data: List
 
     def __init__(self, repo_path_base: str, repo_path_accompany: str, accompany_relation_path: str, refactor_miner: str,
                  out_path: str):
@@ -30,14 +34,15 @@ class EntityOwner:
     def pre_run(self):
         os.makedirs(self.out_path, exist_ok=True)
         print('start get all commits')
-        self.get_commits()
+        self.get_commits_and_ref()
         print('start get all entities\' commits')
         self.get_entity_commits()
-        print('run refactoring miner')
-        self.get_refactor()
 
-    def get_commits(self):
-        entry_get_commits(self.repo_path_base, self.repo_path_accompany, self.out_path)
+    def get_commits_and_ref(self):
+        extension_commits = entry_get_commits(self.repo_path_base, self.repo_path_accompany, self.out_path)
+        print('run refactoring miner')
+        ref_res = self.get_refactor(extension_commits)
+        self.ref_miner_data = ref_res
 
     def get_entity_commits(self):
         try:
@@ -54,19 +59,35 @@ class EntityOwner:
 
         return all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities
 
-    def get_refactor(self):
+    def get_refactor(self, commits: List[str]):
         ref_tool = os.path.abspath(os.path.join(self.refactor_miner, 'RefactoringMiner'))
         repo_path = self.repo_path_accompany
         ref_cache = self.get_path('ref.json')
+        ref_temp_cache = self.get_path('ref_temp.json')
         if os.path.exists(ref_cache):
-            return
-        cmd = f'{ref_tool} -a {repo_path} -json {ref_cache}'
-        Command.command_run(cmd)
+            return []
+        ref_miner_res = []
+        for commit in commits:
+            cmd = f'{ref_tool} -c {repo_path} {commit} -json {ref_temp_cache}'
+            try:
+                Command.command_run(cmd)
+                refactor_obj = json.loads(Path(ref_temp_cache).read_text())
+                ref_miner_res.append(refactor_obj['commits'][0])
+            except:
+                pass
+            if os.path.exists(ref_temp_cache):
+                del_temp = f'del {ref_temp_cache}'
+                Command.command_run(del_temp)
+        try:
+            FileJson.base_write_to_json(self.out_path, 'commits', ref_miner_res, 'ref.json', 'w')
+            return []
+        except:
+            return ref_miner_res
 
     def re_divide_owner(self, not_sure_rows):
         print('   get refactor info')
         try:
-            return diff_re_divide_owner(self.repo_path_accompany, self.get_path('ref.json'),
+            return diff_re_divide_owner(self.repo_path_accompany, self.get_path('ref.json'), self.ref_miner_data,
                                         self.get_path('unsure_resolution.json'), not_sure_rows, self.out_path)
         except Exception as e:
             print(e)

@@ -36,6 +36,12 @@ class FileJson:
             raise e
 
     @classmethod
+    def base_write_to_json(cls, out_path: str, key: str, data, file_name: str, mode: str):
+        os.makedirs(out_path, exist_ok=True)
+        with open(os.path.join(out_path, file_name), mode, encoding='utf-8') as o:
+            json.dump({key: data}, o, ensure_ascii=False, indent=4)
+
+    @classmethod
     def write_to_json(cls, out_path: str, section, mode):
         os.makedirs(out_path, exist_ok=True)
         with open(os.path.join(out_path, cls.outFile[mode]), 'w+', encoding='utf-8') as o:
