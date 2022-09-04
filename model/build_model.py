@@ -666,7 +666,7 @@ class BuildModel:
 
             file_total_count = defaultdict(partial(defaultdict, int))
             for assi_entity in self.entity_assi:
-                if assi_entity.is_intrusive and assi_entity.entity_mapping != -1:
+                if assi_entity.is_intrusive and assi_entity.entity_mapping != -1 and assi_entity.not_aosp == 0:
                     native_entity = self.entity_android[assi_entity.entity_mapping]
                     if assi_entity.hidden:
                         source_hd = Constant.hidden_map(native_entity.hidden)
