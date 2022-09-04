@@ -814,6 +814,9 @@ class BuildModel:
         FileJson.write_data_to_json(self.entity_owner.out_path,
                                     [rel.to_detail_json(self.entity_assi) for rel in self.import_extensive_relation],
                                     'add_import.json')
+        FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'inner_extensive_class_entities',
+                                    [self.entity_assi[entity_id] for entity_id in self.inner_extensive_class_entities],
+                                    'modify')
 
         temp_ref = set()
         for _, v in self.refactor_entities.items():
@@ -826,7 +829,7 @@ class BuildModel:
         facade_base_info: dict = {'total_relations': len(self.relation_assi), 'total_entities': len(self.entity_assi),
                                   'facade_relation': len(self.facade_relations),
                                   'facade_entities': len(self.facade_entities),
-                                  'facade_n2e': 0, 'facade_e2n': 0,
+                                  'facade_e2n': 0, 'facade_n2e': 0,
                                   }
         facade_relation_info = {
             'all_e2n': 0, 'all_n2e': 0,
@@ -884,6 +887,7 @@ class BuildModel:
 
         facade_base_info['facade_n2e'] = len(facade_relations_divide_ownership['n2e'])
         facade_base_info['facade_e2n'] = len(facade_relations_divide_ownership['e2n'])
+        facade_base_info['facade_relation'] = facade_base_info['facade_n2e'] + facade_base_info['facade_e2n']
         facade_relation_info['all_e2n'] = facade_base_info['facade_e2n']
         facade_relation_info['all_n2e'] = facade_base_info['facade_n2e']
 

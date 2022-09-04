@@ -16,6 +16,17 @@ class Compare:
         patterns = left.keys()
         return left, right, patterns
 
+    def compare_ref(self):
+        left: dict = FileJson.read_base_json(self.left)
+        right: dict = FileJson.read_base_json(self.right)
+        left_ref = set([int(l) for l in left.keys()])
+        right_ref = set([int(r) for r in right.keys()])
+        print(len(left_ref), len(right_ref))
+        print(left_ref - right_ref)
+        print('------------')
+        print(right_ref - left_ref)
+        print('------------')
+
 
 def compare(left: dict, right: dict, patterns):
     repeat_count: dict = {}
@@ -44,6 +55,6 @@ def compare(left: dict, right: dict, patterns):
 
 
 if __name__ == '__main__':
-    cp = Compare('D:\\Honor\\match_res\\LineageOS\\base\\lineage-17.1\\coupling-patterns\\res.json',
-                 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-18.1\\coupling-patterns\\res.json')
-    compare(*cp.get_anti_res())
+    cp = Compare('D:\\Honor\\match_res\\LineageOS\\base\\lineage-16.0\\unsure_resolution.json',
+                 'D:\\Honor\\match_res\\testos\\base\\lineage-16.0\\unsure_resolution.json')
+    cp.compare_ref()
