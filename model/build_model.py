@@ -7,6 +7,7 @@ from model.relation import Relation
 from model.entity_owner import EntityOwner
 from model.blamer.entity_tracer import BaseState
 from utils import Constant, FileCSV, FileJson, Compare
+from script.facade_filter import FacadeFilter
 
 MoveMethodRefactorings = [
     "Move And Rename Method",
@@ -267,7 +268,11 @@ class BuildModel:
                     type_entity_id = dest.typed
                     if type_entity_id != -1 and \
                             self.entity_assi[type_entity_id].not_aosp != src.not_aosp:
-                        self.agg_relations.append(relation)
+                        agg_rel = Relation(
+                            **{'src': relation.src, 'values': {
+                                Constant.R_aggregate: 1
+                            }, 'dest': type_entity_id})
+                        self.agg_relations.append(agg_rel)
 
         for e_id in facade_entities:
             self.facade_entities.append(self.entity_assi[e_id])
@@ -877,13 +882,15 @@ class BuildModel:
                 rel_type = 'Aggregate'
             return rel_type + '_' + get_index(relation, is_agg)
 
-        facade_relations_divide_ownership = {'e2n': [], 'n2e': [], 'e': []}
+        facade_relations_divide_ownership = {'e2n': [], 'n2e': []}
         for rel in self.facade_relations:
             facade_relation_info[get_key(rel, False)] += 1
-            facade_relations_divide_ownership[get_index(rel, False)].append(rel.to_detail_json(self.entity_assi))
+            if get_index(rel, False) != 'e':
+                facade_relations_divide_ownership[get_index(rel, False)].append(rel.to_detail_json(self.entity_assi))
         for rel in self.agg_relations:
             facade_relation_info[get_key(rel, True)] += 1
-            facade_relations_divide_ownership[get_index(rel, True)].append(rel.to_detail_json(self.entity_assi))
+            if get_index(rel, False) != 'e':
+                facade_relations_divide_ownership[get_index(rel, True)].append(rel.to_detail_json(self.entity_assi))
 
         facade_base_info['facade_n2e'] = len(facade_relations_divide_ownership['n2e'])
         facade_base_info['facade_e2n'] = len(facade_relations_divide_ownership['e2n'])
@@ -901,6 +908,10 @@ class BuildModel:
         FileCSV.write_entity_to_csv(self.entity_owner.out_path, 'facade_info_entities',
                                     self.facade_entities, 'modify')
         FileJson.write_to_json(self.entity_owner.out_path, facade_relations_divide_ownership, 1)
+
+        FacadeFilter(self.entity_owner.out_path, 'facade.json',
+                     [Constant.R_aggregate, Constant.implement, Constant.inherit, Constant.call, Constant.override,
+                      Constant.R_annotate, Constant.reflect]).facade_filter()
 
 
 # valid entity map

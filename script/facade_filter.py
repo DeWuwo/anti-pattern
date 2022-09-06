@@ -17,6 +17,8 @@ class FacadeFilter:
 
     def facade_filter(self):
         res = {}
+        res_d2u = {}
+        res_u2d = {}
         file_res = defaultdict(partial(defaultdict, int))
         facade_info = FileJson.read_base_json(self.file_name)
         n2e: List[dict] = facade_info['res']['n2e']
@@ -24,6 +26,8 @@ class FacadeFilter:
         for rel_type in self.relation_types:
             res[rel_type + '_e2n'] = 0
             res[rel_type + '_n2e'] = 0
+            res_d2u[rel_type] = 0
+            res_u2d[rel_type] = 0
         for rel in e2n:
             src_e = rel['src']
             dest_e = rel['dest']
@@ -38,6 +42,7 @@ class FacadeFilter:
                     file_res[dest_e['File']]['e2n_e'] += 1
                     file_res[src_e['File']]['e2n_n'] += 1
                 res[rel_type + '_e2n'] += 1
+                res_d2u[rel_type] += 1
                 file_res[src_e['File']]['e2n_e'] += 1
                 file_res[dest_e['File']]['e2n_n'] += 1
         for rel in n2e:
@@ -51,15 +56,18 @@ class FacadeFilter:
                 if rel_type == Constant.R_annotate:
                     if dest_e['category'] == Constant.E_variable:
                         continue
-                    if src_e['qualifiedName'] in ["com.android.internal.annotations.GuardedBy",
-                                                  "android.telephony.data.ApnSetting.ApnType"]:
-                        continue
+                    # if src_e['qualifiedName'] in ["com.android.internal.annotations.GuardedBy",
+                    #                               "android.telephony.data.ApnSetting.ApnType"]:
+                    #     continue
                     file_res[dest_e['File']]['n2e_n'] += 1
                     file_res[src_e['File']]['n2e_e'] += 1
                 res[rel_type + '_n2e'] += 1
+                res_u2d[rel_type] += 1
                 file_res[src_e['File']]['n2e_n'] += 1
                 file_res[dest_e['File']]['n2e_e'] += 1
         FileCSV.write_dict_to_csv(self.file_path, 'facade_filter', [res], 'w')
+        FileCSV.write_dict_to_csv(self.file_path, 'interface_level_facade_d2u', [res_d2u], 'w')
+        FileCSV.write_dict_to_csv(self.file_path, 'interface_level_facade_u2d', [res_u2d], 'w')
         FileCSV.write_file_to_csv(self.file_path, 'facade_file_filter', file_res, 'file',
                                   ['e2n_e', 'e2n_n', 'n2e_n', 'n2e_e'])
 

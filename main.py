@@ -54,14 +54,14 @@ def dispatch(args):
         base_model = BuildModel(entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp,
                                 entities_stat_aosp, entity_owner)
 
-        pattern_match = Match(base_model, args.output, module_blame)
-        # match coupling pattern
-        coupling_pattern = CouplingPattern()
-        pattern_match.start_match_pattern(coupling_pattern)
-
-        # match anti pattern
-        special_anti_pattern = AntiPattern()
-        pattern_match.start_match_pattern(special_anti_pattern)
+        # pattern_match = Match(base_model, args.output, module_blame)
+        # # match coupling pattern
+        # coupling_pattern = CouplingPattern()
+        # pattern_match.start_match_pattern(coupling_pattern)
+        #
+        # # match anti pattern
+        # special_anti_pattern = AntiPattern()
+        # pattern_match.start_match_pattern(special_anti_pattern)
     except FileNotFoundError as e:
         print(e)
     except Exception as e:

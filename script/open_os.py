@@ -54,8 +54,8 @@ class OpenOS:
         ]
 
         self.test = [
-            ['testos', 'lineage-16.0', 'base', 'd56f59389212df5462b342be7600c1974d27c0d5',
-             'ad31dbbdcd76091d7d2d1fc6c863ee17c3bfe87d', 'null', 'null'],
+            ['testos', 'lineage-18.1', 'base', '7f7fc2562a95be630dbe609e8fb70383dcfada4f',
+             '49d8b986dddd441df741698541788c5f3a9c465f', 'hiddenapi-flags-lineage18.csv', 'hiddenapi-flags-11.csv'],
         ]
 
     def get_all_os(self):
