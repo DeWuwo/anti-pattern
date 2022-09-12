@@ -8,10 +8,10 @@ class IntrusiveCompare:
     file_name: str
     out_path: str
 
-    def __init__(self):
+    def __init__(self, out_path):
         self.file_name = 'final_ownership_file_count.csv'
         self.dimension = ['native', 'obsoletely native', 'intrusive', 'extensive']
-        self.out_path = "D:\\Honor\\match_res\\intrusive_analysis"
+        self.out_path = out_path
 
     def get_top_files(self, projects: List[tuple[str, str]], dim: int, top: float):
 
@@ -75,7 +75,7 @@ def get_num(str_num: str):
 
 
 if __name__ == '__main__':
-    ins_a = IntrusiveCompare()
+    ins_a = IntrusiveCompare('D\\Honor\\match_res\\intrusive_type')
     projects = [('lineage-16.0', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-16.0'),
                 ('lineage-17.1', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-17.1'),
                 ('lineage-18.1', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-18.1'),
