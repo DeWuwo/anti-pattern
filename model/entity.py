@@ -161,8 +161,8 @@ class Entity:
         return ['id', 'category', 'qualifiedName']
 
     def toJson(self):
-        temp = {'id': self.id, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp, 'category': self.category,
-                'qualifiedName': self.qualifiedName, 'name': self.name, 'isIntrusive': self.is_intrusive}
+        temp = {'id': self.id, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp, 'isIntrusive': self.is_intrusive,
+                'category': self.category, 'qualifiedName': self.qualifiedName, 'name': self.name}
         if self.file_path != "":
             temp['File'] = self.file_path
         if self.package_name != "":
@@ -220,6 +220,14 @@ class Entity:
         self.commits = commits
 
     def set_refactor(self, refactor: dict):
+        def to_string(ref: dict):
+            to_str = ''
+            for k, v in ref.items():
+                to_str += str(v)
+
+        for ref in self.refactor:
+            if to_string(refactor) == to_string(ref):
+                return
         self.refactor.append(refactor)
 
     def set_old_aosp(self, old_aosp: int):

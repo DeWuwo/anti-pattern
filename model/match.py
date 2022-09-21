@@ -85,8 +85,11 @@ class Match:
     def handle_obsolete(self, entity: Entity, obsolete: bool):
         return not obsolete ^ (entity.old_aosp >= 1)
 
-    def handle_qualified_name(self, entity: Entity, qualified_name: str):
-        return qualified_name in entity.qualifiedName
+    def handle_qualified_name(self, entity: Entity, qualified_name: List[str]):
+        for name in qualified_name:
+            if name in entity.qualifiedName:
+                return True
+        return False
 
     # 实体属性过滤
     def handle_entity_filter(self, entity: Entity, **kwargs):

@@ -4,6 +4,7 @@ from utils import Constant
 
 class CouplingPattern(PatternType):
     def __init__(self):
+        filter_list = []
         ident = 'coupling-patterns'
         patterns = ['FinalDel', 'AccessibilityModify',
                     'HiddenApi', 'HiddenModify',
@@ -89,7 +90,8 @@ class CouplingPattern(PatternType):
                             'rel': {'type': Constant.call, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
                                      'attrs': {'hidden': [Constant.HD_blacklist,
-                                                          Constant.HD_greylist] + Constant.HD_greylist_max_list}},
+                                                          Constant.HD_greylist] + Constant.HD_greylist_max_list},
+                                     'filter': {'qualifiedName': filter_list}},
                             'direction': '10'
                         }
                     ],
@@ -100,7 +102,8 @@ class CouplingPattern(PatternType):
                             'rel': {'type': Constant.use, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_variable,
                                      'attrs': {'hidden': [Constant.HD_blacklist,
-                                                          Constant.HD_greylist] + Constant.HD_greylist_max_list}},
+                                                          Constant.HD_greylist] + Constant.HD_greylist_max_list},
+                                     'filter': {'qualifiedName': filter_list}},
                             'direction': '10'
                         }
 
