@@ -23,9 +23,9 @@ class Relation:
             if key == 'bindVar':
                 self.bind_var = kwargs['values'][key]
             elif key == 'modifyAccessible':
-                self.setAccessible = 1 if kwargs['values'][key] else 0
+                self.setAccessible = 1
             elif key == 'invoke':
-                self.invoke = 1 if kwargs['values'][key] else 0
+                self.invoke = 1
             else:
                 self.rel = key
 
@@ -34,7 +34,7 @@ class Relation:
         if self.bind_var != -1:
             relation['bindVar'] = self.bind_var
         if self.rel == Constant.reflect:
-            relation['setAccessible'] = True if self.setAccessible else False
+            relation['modifyAccessible'] = True if self.setAccessible else False
             relation['invoke'] = True if self.invoke else False
         return {"src": self.src, "values": relation, "dest": self.dest}
 
@@ -45,7 +45,13 @@ class Relation:
         return entities[self.src].qualifiedName + self.rel + entities[self.dest].qualifiedName
 
     def to_detail_json(self, entities: List[Entity]):
-        return {"src": entities[self.src].toJson(), "values": {self.rel: 1},
+        relation = {self.rel: 1}
+        if self.bind_var != -1:
+            relation['bindVar'] = self.bind_var
+        if self.rel == Constant.reflect:
+            relation['modifyAccessible'] = True if self.setAccessible else False
+            relation['invoke'] = True if self.invoke else False
+        return {"src": entities[self.src].toJson(), "values": relation,
                 "dest": entities[self.dest].toJson()}
 
     def set_not_aosp(self, not_aosp):

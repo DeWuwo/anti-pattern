@@ -67,10 +67,10 @@ class Entity:
         self.parent_class = ''
         self.parent_interface = []
         try:
-            self.start_line = args['startLine']
-            self.start_column = args['startColumn']
-            self.end_line = args['endLine']
-            self.end_column = args['endColumn']
+            self.start_line = args['location']['startLine']
+            self.start_column = args['location']['startColumn']
+            self.end_line = args['location']['endLine']
+            self.end_column = args['location']['endColumn']
         except KeyError:
             self.start_line = -1
             self.start_column = -1
@@ -160,19 +160,31 @@ class Entity:
     def get_csv_header(cls):
         return ['id', 'category', 'qualifiedName']
 
+    def get_ownership(self):
+        if self.is_intrusive == 1:
+            return 'intrusive native'
+        elif self.not_aosp == 1:
+            return 'extensive'
+        elif self.old_aosp == 1:
+            return 'obsoletely native'
+        else:
+            return 'actively native'
+
     def toJson(self):
         temp = {'id': self.id, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp, 'isIntrusive': self.is_intrusive,
-                'category': self.category, 'qualifiedName': self.qualifiedName, 'name': self.name}
+                'ownership': self.get_ownership(), 'category': self.category, 'qualifiedName': self.qualifiedName,
+                'name': self.name}
         if self.file_path != "":
             temp['File'] = self.file_path
         if self.package_name != "":
             temp['packageName'] = self.package_name
         if self.start_line != -1:
-            temp['startLine'] = self.start_line
-            temp['startColumn'] = self.start_column
-            temp['endLine'] = self.end_line
-            temp['endColumn'] = self.end_column
-        if self.parameter_types != 'null':
+            temp['location'] = {}
+            temp['location']['startLine'] = self.start_line
+            temp['location']['startColumn'] = self.start_column
+            temp['location']['endLine'] = self.end_line
+            temp['location']['endColumn'] = self.end_column
+        if self.parameter_types != 'null' and self.category == Constant.E_method:
             temp['parameterTypes'] = self.parameter_types
             temp['parameterNames'] = self.parameter_names
         if self.raw_type != 'null':

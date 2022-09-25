@@ -28,8 +28,7 @@ class CouplingPattern(PatternType):
                                     'attrs': {}},
                             'rel': {'type': Constant.inherit, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_class,
-                                     'attrs': {'final': True, 'intrusive': True},
-                                     'filter': {'obsolete': True}},
+                                     'attrs': {'final': True, 'intrusive': True}},
                             'direction': '10'
                         }
                     ],
@@ -39,8 +38,7 @@ class CouplingPattern(PatternType):
                                     'attrs': {}},
                             'rel': {'type': Constant.override, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
-                                     'attrs': {'final': True, 'intrusive': True},
-                                     'filter': {'obsolete': True}},
+                                     'attrs': {'final': True, 'intrusive': True}},
                             'direction': '10'
                         },
                     ]
@@ -57,25 +55,24 @@ class CouplingPattern(PatternType):
                             'direction': '00'
                         }
                     ],
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
-                            'rel': {'type': Constant.define, 'attrs': {}},
-                            'dest': {'id': [-1], 'category': Constant.E_method,
-                                     'attrs': {
-                                         'accessible': [Constant.accessible_list[2]], 'accessible_modify': True,
-                                         'intrusive': True}
-                                     },
-                            'direction': '00'
-                        },
-                    ],
+                    # [
+                    #     {
+                    #         'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
+                    #         'rel': {'type': Constant.define, 'attrs': {}},
+                    #         'dest': {'id': [-1], 'category': Constant.E_method,
+                    #                  'attrs': {
+                    #                      'accessible': [Constant.accessible_list[2]], 'accessible_modify': True,
+                    #                      'intrusive': True}
+                    #                  },
+                    #         'direction': '00'
+                    #     },
+                    # ],
                     [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
-                                     'attrs': {'accessible_modify': True, 'intrusive': True},
-                                     'filter': {'obsolete': True}},
+                                     'attrs': {'accessible_modify': True, 'intrusive': True}},
                             'direction': '00'
                         },
                     ]
@@ -91,7 +88,7 @@ class CouplingPattern(PatternType):
                             'dest': {'id': [-1], 'category': Constant.E_method,
                                      'attrs': {'hidden': [Constant.HD_blacklist,
                                                           Constant.HD_greylist] + Constant.HD_greylist_max_list},
-                                     'filter': {'qualifiedName': filter_list}},
+                                     'filter': {'qualified_name': filter_list}},
                             'direction': '10'
                         }
                     ],
@@ -103,7 +100,7 @@ class CouplingPattern(PatternType):
                             'dest': {'id': [-1], 'category': Constant.E_variable,
                                      'attrs': {'hidden': [Constant.HD_blacklist,
                                                           Constant.HD_greylist] + Constant.HD_greylist_max_list},
-                                     'filter': {'qualifiedName': filter_list}},
+                                     'filter': {'qualified_name': filter_list}},
                             'direction': '10'
                         }
 
@@ -371,11 +368,11 @@ class CouplingPattern(PatternType):
                             'src': {'id': ['id', 2, 1], 'category': Constant.E_variable,
                                     'attrs': {}},
                             'rel': {'type': Constant.typed, 'attrs': {}},
-                            'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_interface, 'attrs': {}},
                             'direction': '10'
                         },
                         {
-                            'src': {'id': ['id', 3, 1], 'category': Constant.E_class,
+                            'src': {'id': ['id', 3, 1], 'category': Constant.E_interface,
                                     'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
                             'dest': {'id': ['id', 1, 1], 'category': Constant.E_method,
@@ -409,18 +406,19 @@ class CouplingPattern(PatternType):
                             'src': {'id': ['id', 2, 1], 'category': Constant.E_variable,
                                     'attrs': {}},
                             'rel': {'type': Constant.typed, 'attrs': {}},
-                            'dest': {'id': [-1], 'category': Constant.E_interface, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                             'direction': '10'
                         },
                         {
-                            'src': {'id': ['id', 3, 1], 'category': Constant.E_interface,
+                            'src': {'id': ['id', 3, 1], 'category': Constant.E_class,
                                     'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
                             'dest': {'id': ['id', 1, 1], 'category': Constant.E_method,
                                      'attrs': {}},
                             'direction': '00'
                         },
-                    ]
+                    ],
+
                 ]
             },
             {
@@ -450,9 +448,9 @@ class CouplingPattern(PatternType):
                     ],
                     [
                         {
-                            'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
+                            'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
                             'rel': {'type': Constant.reflect, 'attrs': {}},
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                             'direction': '10'
                         }
                     ],
