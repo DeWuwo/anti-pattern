@@ -39,3 +39,4 @@ if __name__ == '__main__':
     a = [1, 4, 2 ,6]
     b = [1, 6, 6, 2 , 2,]
     print(set(a) == set(b))
+    print("android.os.ServiceManager.getService".startswith('android.os.'))

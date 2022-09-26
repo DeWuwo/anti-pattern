@@ -87,7 +87,7 @@ class Match:
 
     def handle_qualified_name(self, entity: Entity, qualified_name: List[str]):
         for name in qualified_name:
-            if name in entity.qualifiedName:
+            if entity.qualifiedName.startswith(name):
                 return True
         return False
 
@@ -131,7 +131,7 @@ class Match:
                         self.handle_entity_attr_match(self.base_model.entity_assi[item.dest], **dest_attr) and \
                         self.handle_relation_attr_match(item, **rel_attr):
                     if self.handle_entity_filter(self.base_model.entity_assi[item.src], **src_filter) or \
-                            self.handle_entity_filter(self.base_model.entity_assi[item.src], **dest_filter):
+                            self.handle_entity_filter(self.base_model.entity_assi[item.dest], **dest_filter):
                         filter_map[item.src].append(item)
                     else:
                         flag_map[item.src].append(item)

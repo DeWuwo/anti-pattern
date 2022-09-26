@@ -4,7 +4,11 @@ from utils import Constant
 
 class CouplingPattern(PatternType):
     def __init__(self):
-        filter_list = []
+        filter_list = ['android.util', 'android.os.Message', 'com.android.internal.logging',
+                       'com.android.internal.os', 'android.os', 'com.android.server.utils',
+                       'hihonor.android.utils', 'android.os.ServiceManager', 'com.android.server.LocalServices',
+                       'android.provider.Settings.Secure', 'android.provider.Settings.System',
+                       'com.android.telephony.Rlog']
         ident = 'coupling-patterns'
         patterns = ['FinalDel', 'AccessibilityModify',
                     'HiddenApi', 'HiddenModify',
