@@ -4,7 +4,7 @@ from typing import List, Dict
 
 
 class FileJson:
-    outFile = ['diff.json', 'facade.json', 'example.json', 'res.json', 'stat.json', 'test.json']
+    outFile = ['diff.json', 'facade.json', 'example.json', 'res.json', 'stat.json', 'test.json', 'res_filter.json']
 
     @classmethod
     def read_base_json(cls, file_path: str):
@@ -42,10 +42,10 @@ class FileJson:
             json.dump({key: data}, o, ensure_ascii=False, indent=4)
 
     @classmethod
-    def write_to_json(cls, out_path: str, section, mode):
+    def write_to_json(cls, out_path: str, data, mode):
         os.makedirs(out_path, exist_ok=True)
         with open(os.path.join(out_path, cls.outFile[mode]), 'w+', encoding='utf-8') as o:
-            json.dump({'res': section}, o, ensure_ascii=False, indent=4)
+            json.dump({'res': data}, o, ensure_ascii=False, indent=4)
 
     @classmethod
     def write_data_to_json(cls, out_path: str, section, file_name: str):

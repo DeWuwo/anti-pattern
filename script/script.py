@@ -65,11 +65,11 @@ class Script:
         out_path = 'D:\\merge\\res\\RmagicUI\\base'
         commands.append(
             f'python main.py -ca {aosp_code_path} -cc {assi_code_path} -a {aosp_dep_path} -c {assi_dep_path} -ref {self.ref_path} -o {out_path}')
-        aosp_code_path = 'D:\\HONOR_code\\SAOSP\\base'
-        assi_code_path = 'D:\\HONOR_code\\SMagicUI\\base'
-        aosp_dep_path = 'D:\\merge\\res\\SAOSP\\base\\base-out-SAOSP.json'
-        assi_dep_path = 'D:\\merge\\res\\SMagicUI\\base\\base-out-Smagic.json'
-        out_path = 'D:\\merge\\res\\SmagicUI\\base'
+        aosp_code_path = 'D:\\HONOR_code_final\\SAOSP_r2\\base'
+        assi_code_path = 'D:\\HONOR_code_final\\SMagicUI\\base'
+        aosp_dep_path = 'D:\\HONOR_code_final\\S_result_final\\base\\base-out_SAOSP_r2.json'
+        assi_dep_path = 'D:\\HONOR_code_final\\S_result_final\\base\\base-out_SmagicUI.json'
+        out_path = 'D:\\HONOR_code_final\\S_result_final\\base\\'
         commands.append(
             f'python main.py -ca {aosp_code_path} -cc {assi_code_path} -a {aosp_dep_path} -c {assi_dep_path} -ref {self.ref_path} -o {out_path}')
 

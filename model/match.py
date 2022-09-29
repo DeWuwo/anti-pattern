@@ -264,10 +264,13 @@ class Match:
         total_count = 0
         res['modeCount'] = len(self.match_result)
         res['values'] = {}
+        res_filter = {'modeCount': len(self.match_result), 'values': {}}
         for item in self.match_result:
             for mode in item:
                 anti_temp = []
+                anti_temp_filter = []
                 pattern_count = 0
+                pattern_count_filter = 0
                 for style in item[mode]:
                     style_res = {}
                     res_temp = []
@@ -297,14 +300,19 @@ class Match:
                     style_res['filter'] = filter_temp
                     pattern_count += style_res['resCount']
                     pattern_count += style_res['filterCount']
+                    pattern_count_filter += style_res['resCount']
                     anti_temp.append(style_res)
+                    anti_temp_filter.append({'resCount': style_res['resCount'], 'res': style_res['res']})
                 total_count += pattern_count
                 match_set.append({mode: anti_temp})
                 res['values'][mode] = {}
                 res['values'][mode]['count'] = pattern_count
                 res['values'][mode]['res'] = anti_temp
+                res_filter['values'][mode] = {}
+                res_filter['values'][mode]['count'] = pattern_count_filter
+                res_filter['values'][mode]['res'] = anti_temp_filter
         res['totalCount'] = total_count
-        return match_set, union_temp_relation, union_temp_entities, res
+        return match_set, union_temp_relation, union_temp_entities, res, res_filter
 
     def to_detail_json(self, relation: Relation):
         return {"src": self.base_model.entity_assi[relation.src].toJson(), "values": {relation.rel: 1},
@@ -330,17 +338,19 @@ class Match:
         for th in threads:
             th.join()
         simple_stat = self.get_statistics()
-        match_set, match_set_union_relation, match_set_union_entity, match_set_json_res = self.deal_res_for_output()
-        self.output_res(pattern.ident, match_set, match_set_union_relation, match_set_union_entity, match_set_json_res)
+        match_set, match_set_union_relation, match_set_union_entity, match_set_json_res, match_set_json_res_filter = \
+            self.deal_res_for_output()
+        self.output_res(pattern.ident, match_set, match_set_union_relation, match_set_union_entity, match_set_json_res, match_set_json_res_filter)
         self.output_statistic(pattern.ident, pattern.patterns, simple_stat)
 
     def output_res(self, pattern_type: str, match_set, match_set_union_relation, match_set_union_entity,
-                   match_set_json_res):
+                   match_set_json_res, match_set_json_res_filter):
         output_path = os.path.join(self.output, pattern_type)
         print(f'output {pattern_type} match res')
         FileJson.write_match_mode(output_path, match_set)
         FileJson.write_to_json(output_path, match_set_union_relation, 1)
         FileJson.write_to_json(output_path, match_set_json_res, 3)
+        FileJson.write_to_json(output_path, match_set_json_res_filter, 6)
         FileCSV.write_entity_to_csv(output_path, 'coupling_entities',
                                     [self.base_model.entity_assi[entity_id] for entity_id in match_set_union_entity],
                                     'facade')
@@ -353,9 +363,9 @@ class Match:
 
         # 输出检测结果
         FileJson.write_to_json(output_path, self.match_result_base_statistic, 4)
-        FileCSV.write_stat_to_csv('D:\\Honor\\match_res', pattern_type, datetime.now(), self.output.rsplit('\\', 4)[1],
-                                  self.output.rsplit('\\', 4)[2],
-                                  self.output.rsplit('\\', 4)[3], simple_stat)
+        # FileCSV.write_stat_to_csv('D:\\Honor\\match_res', pattern_type, datetime.now(), self.output.rsplit('\\', 4)[1],
+        #                           self.output.rsplit('\\', 4)[2],
+        #                           self.output.rsplit('\\', 4)[3], simple_stat)
         # 输出实体粒度统计
         headers = Entity.get_csv_header()
         headers.extend(patterns)
