@@ -26,7 +26,6 @@ def search_refactoring(category: str, longname: str, unsure_params: str, unsure_
                 Path(move.to_state.file_path) == Path(unsure_filepath) and \
                 (unsure_params == "null" or to_state.get_param() == unsure_params):
             ret.append(move)
-
     return ret
 
 
@@ -50,17 +49,24 @@ def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, refactor_data:
     else:
         repo = git.Repo(repo_path)
         third_party_commits = json.loads(not_sure_line["accompany commits"])
-        sorted_commits = list(sorted(third_party_commits,
-                                     key=lambda k: repo.commit(k).committed_datetime, reverse=False))
-        commit = repo.commit(sorted_commits[0])
         unsure_longname = not_sure_line["Entity"]
         unsure_filepath = not_sure_line["file path"]
         unsure_param = not_sure_line["param_names"]
         unsure_category = not_sure_line["category"]
         if unsure_category == 'Variable':
             return None
-        related_moves = search_refactoring(unsure_category, unsure_longname, unsure_param, unsure_filepath,
-                                           refactor_data[str(commit)], str(commit))
+        sorted_commits = list(sorted(third_party_commits,
+                                     key=lambda k: repo.commit(k).committed_datetime, reverse=False))
+        commit = repo.commit(sorted_commits[0])
+        try:
+            refactor_info = refactor_data[str(commit)]
+        except KeyError:
+            refactor_info = {}
+        if refactor_info:
+            related_moves = search_refactoring(unsure_category, unsure_longname, unsure_param, unsure_filepath,
+                                               refactor_data[str(commit)], str(commit))
+        else:
+            return None
     return related_moves if related_moves else None
 
 
@@ -133,7 +139,7 @@ def resolution_entry():
         json.dump(move_list, file, indent=4)
 
 
-def diff_re_divide_owner(repo_path: str, refactor_path: str, ref_data: List, unsure_refactor: str,
+def load_entity_refactor(repo_path: str, refactor_path: str, ref_data: List, unsure_refactor: str,
                          not_sure_rows: List[dict], out_path: str):
     refactor_path = Path(refactor_path)
     repo_path = Path(repo_path)

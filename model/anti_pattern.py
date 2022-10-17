@@ -4,6 +4,11 @@ from utils import Constant
 
 class AntiPattern(PatternType):
     def __init__(self):
+        filter_list = ['android.util', 'android.os.Message', 'com.android.internal.logging',
+                       'com.android.internal.os', 'android.os', 'com.android.server.utils',
+                       'hihonor.android.utils', 'android.os.ServiceManager', 'com.android.server.LocalServices',
+                       'android.provider.Settings.Secure', 'android.provider.Settings.System',
+                       'com.android.telephony.Rlog']
         ident = 'anti-patterns'
         patterns = ['FinalDel', 'AccessibilityModify', 'HiddenApi', 'HiddenModify',
                     'ParamListModify', 'InheritDestroy', 'ReflectUse']
@@ -78,7 +83,8 @@ class AntiPattern(PatternType):
                             'rel': {'type': Constant.call, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_method,
                                      'attrs': {'hidden': [Constant.HD_blacklist,
-                                                          Constant.HD_greylist] + Constant.HD_greylist_max_list}},
+                                                          Constant.HD_greylist] + Constant.HD_greylist_max_list},
+                                     'filter': {'qualified_name': filter_list}},
                             'direction': '10'
                         }
                     ],
@@ -89,7 +95,8 @@ class AntiPattern(PatternType):
                             'rel': {'type': Constant.use, 'attrs': {}},
                             'dest': {'id': [-1], 'category': Constant.E_variable,
                                      'attrs': {'hidden': [Constant.HD_blacklist,
-                                                          Constant.HD_greylist] + Constant.HD_greylist_max_list}},
+                                                          Constant.HD_greylist] + Constant.HD_greylist_max_list},
+                                     'filter': {'qualified_name': filter_list}},
                             'direction': '10'
                         }
 
@@ -183,4 +190,4 @@ class AntiPattern(PatternType):
                 ]
             }
         ]
-        PatternType.__init__(self, ident, patterns, rules)
+        PatternType.__init__(self, ident, patterns, rules, filter_list)

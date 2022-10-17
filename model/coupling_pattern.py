@@ -462,4 +462,4 @@ class CouplingPattern(PatternType):
             }
         ]
 
-        PatternType.__init__(self, ident, patterns, rules)
+        PatternType.__init__(self, ident, patterns, rules, filter_list)

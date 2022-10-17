@@ -4,18 +4,18 @@ from model.build_model import BuildModel
 from model.anti_pattern import AntiPattern
 from model.coupling_pattern import CouplingPattern
 from model.match import Match
-from model.entity_owner import EntityOwner
+from model.git_history import GitHistory
 
 access_map = {'': '0', 'Private': '1', 'Protected': '2', 'Public': '3'}
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--code_honor', '-cc', action='store', dest='code_honor',
+    parser.add_argument('--code_honor', '-re', action='store', dest='code_honor',
                         help='code path of honor')
-    parser.add_argument('--code_android', '-ca', action='store', dest='code_android',
+    parser.add_argument('--code_android', '-ra', action='store', dest='code_android',
                         help='code path of android')
-    parser.add_argument('--honor', '-c', action='store', dest='honor',
+    parser.add_argument('--honor', '-e', action='store', dest='honor',
                         help='root json file of honor')
     parser.add_argument('--android', '-a', action='store', dest='android',
                         help='root json file of android')
@@ -45,14 +45,14 @@ def dispatch(args):
         entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp, entities_stat_aosp = \
             FileJson.read_from_json(args.android, args.honor)
         # 读取模块责任田
-        module_blame = {}
+        module_blame = ''
 
         # build base model
-        entity_owner = EntityOwner(args.code_android, args.code_honor, args.honor, args.refactor_miner,
+        git_history = GitHistory(args.code_android, args.code_honor, args.honor, args.refactor_miner,
                                    args.output)
 
         base_model = BuildModel(entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp,
-                                entities_stat_aosp, entity_owner)
+                                entities_stat_aosp, git_history, args.output)
 
         pattern_match = Match(base_model, args.output, module_blame)
         # match coupling pattern

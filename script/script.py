@@ -39,7 +39,7 @@ class Script:
             dep_commands = []
 
         detect_commands: List[str] = [
-            f'python main.py -ca {aosp_code_path} -cc {assi_code_path} -a {aosp_dep_path} -c {assi_dep_path} -ref {self.ref_path} -o {out_path}'
+            f'python main.py -ra {aosp_code_path} -re {assi_code_path} -a {aosp_dep_path} -e {assi_dep_path} -ref {self.ref_path} -o {out_path}'
         ]
         return branch_checkout_commands, dep_commands, detect_commands
 
@@ -64,14 +64,14 @@ class Script:
         assi_dep_path = 'D:\\merge\\res\\RMagicUI\\base\\base-out-Rmagic.json'
         out_path = 'D:\\merge\\res\\RmagicUI\\base'
         commands.append(
-            f'python main.py -ca {aosp_code_path} -cc {assi_code_path} -a {aosp_dep_path} -c {assi_dep_path} -ref {self.ref_path} -o {out_path}')
+            f'python main.py -ra {aosp_code_path} -re {assi_code_path} -a {aosp_dep_path} -e {assi_dep_path} -ref {self.ref_path} -o {out_path}')
         aosp_code_path = 'D:\\HONOR_code_final\\SAOSP_r2\\base'
         assi_code_path = 'D:\\HONOR_code_final\\SMagicUI\\base'
         aosp_dep_path = 'D:\\HONOR_code_final\\S_result_final\\base\\base-out_SAOSP_r2.json'
         assi_dep_path = 'D:\\HONOR_code_final\\S_result_final\\base\\base-out_SmagicUI.json'
         out_path = 'D:\\HONOR_code_final\\S_result_final\\base\\'
         commands.append(
-            f'python main.py -ca {aosp_code_path} -cc {assi_code_path} -a {aosp_dep_path} -c {assi_dep_path} -ref {self.ref_path} -o {out_path}')
+            f'python main.py -ra {aosp_code_path} -re {assi_code_path} -a {aosp_dep_path} -e {assi_dep_path} -ref {self.ref_path} -o {out_path}')
 
         return commands
 

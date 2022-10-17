@@ -6,12 +6,12 @@ from pathlib import Path
 from model.blamer.commit_diff import entry_get_commits
 from model.blamer.dep_blamer import get_entity_commits
 from model.blamer.tagging_ownership import get_entity_owner
-from model.blamer.unsure_resolution import diff_re_divide_owner
+from model.blamer.unsure_resolution import load_entity_refactor
 from model.blamer.refactor_format import get_name_from_sig
 from utils import Command, FileJson
 
 
-class EntityOwner:
+class GitHistory:
     repo_path_base: str
     repo_path_accompany: str
     accompany_relation_path: str
@@ -84,11 +84,11 @@ class EntityOwner:
         except:
             return ref_miner_res
 
-    def re_divide_owner(self, not_sure_rows):
+    def load_refactor_entity(self, entity_possible_refactor):
         print('   get refactor info')
         try:
-            return diff_re_divide_owner(self.repo_path_accompany, self.get_path('ref.json'), self.ref_miner_data,
-                                        self.get_path('unsure_resolution.json'), not_sure_rows, self.out_path)
+            return load_entity_refactor(self.repo_path_accompany, self.get_path('ref.json'), self.ref_miner_data,
+                                        self.get_path('unsure_resolution.json'), entity_possible_refactor, self.out_path)
         except Exception as e:
             print(e)
 

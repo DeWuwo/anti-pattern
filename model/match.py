@@ -8,28 +8,33 @@ from model.entity import Entity
 from model.build_model import BuildModel
 from model.pattern_type import PatternType
 from utils import FileJson, FileCSV, Constant
+from model.blame_field import BlameField
 
 
 class Match:
     base_model: BuildModel
     output: str
+    out_path: str
     match_result: List[Dict[str, List[Dict[str, List[List[Relation]]]]]]
     match_result_base_statistic: Dict[str, Dict[str, int]]
     # 不同粒度数量统计
+    statistic_pkgs: Dict[str, Dict[str, int]]
     statistic_files: Dict[str, Dict[str, int]]
     statistic_entities: Dict[int, Dict[str, int]]
     statistic_modules: Dict[str, Dict[str, int]]
     module_blame: defaultdict
 
-    def __init__(self, model: BuildModel, output: str, module_blame):
-        self.base_model = model
+    def __init__(self, build_model: BuildModel, output: str, blame_path: str):
+        self.base_model = build_model
         self.output = output
+        self.out_path = output
         self.match_result = []
         self.match_result_base_statistic = {}
         self.statistic_files = {}
+        self.statistic_pkgs = {}
         self.statistic_entities = {}
         self.statistic_modules = {}
-        self.module_blame = module_blame
+        self.module_blame = BlameField(blame_path).read_blame_field()
 
     # 命令中实体属性解析
     def entity_rule(self, entity_stack: List[Relation], entity: dict):
@@ -127,11 +132,11 @@ class Match:
             flag_map = defaultdict(list)
             filter_map = defaultdict(list)
             for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
-                if self.handle_entity_attr_match(self.base_model.entity_assi[item.src], **src_attr) and \
-                        self.handle_entity_attr_match(self.base_model.entity_assi[item.dest], **dest_attr) and \
+                if self.handle_entity_attr_match(self.base_model.entity_extensive[item.src], **src_attr) and \
+                        self.handle_entity_attr_match(self.base_model.entity_extensive[item.dest], **dest_attr) and \
                         self.handle_relation_attr_match(item, **rel_attr):
-                    if self.handle_entity_filter(self.base_model.entity_assi[item.src], **src_filter) or \
-                            self.handle_entity_filter(self.base_model.entity_assi[item.dest], **dest_filter):
+                    if self.handle_entity_filter(self.base_model.entity_extensive[item.src], **src_filter) or \
+                            self.handle_entity_filter(self.base_model.entity_extensive[item.dest], **dest_filter):
                         filter_map[item.src].append(item)
                     else:
                         flag_map[item.src].append(item)
@@ -141,8 +146,8 @@ class Match:
                 filter_set.append(filter_map[item])
         else:
             for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
-                if self.handle_entity_attr_match(self.base_model.entity_assi[item.src], **src_attr) and \
-                        self.handle_entity_attr_match(self.base_model.entity_assi[item.dest], **dest_attr) and \
+                if self.handle_entity_attr_match(self.base_model.entity_extensive[item.src], **src_attr) and \
+                        self.handle_entity_attr_match(self.base_model.entity_extensive[item.dest], **dest_attr) and \
                         self.handle_relation_attr_match(item, **rel_attr) and \
                         str(item.src) + str(item.dest) not in flag:
                     next_stack = example_stack[:]
@@ -174,19 +179,20 @@ class Match:
         self.match_result = []
         self.match_result_base_statistic = {}
         self.statistic_files = {}
+        self.statistic_pkgs = {}
         self.statistic_entities = {}
         self.statistic_modules = {}
 
     # 统计
     def get_root_file(self, entity_id: int) -> Entity:
-        temp = self.base_model.entity_assi[entity_id]
+        temp = self.base_model.entity_extensive[entity_id]
         while temp.category != 'File':
-            temp = self.base_model.entity_assi[temp.parentId]
+            temp = self.base_model.entity_extensive[temp.parentId]
         return temp
 
     # 模块统计
     def get_module_blame(self, entity_id: int) -> str:
-        temp = self.base_model.entity_assi[entity_id]
+        temp = self.base_model.entity_extensive[entity_id]
         blame_path = os.path.join(temp.bin_path, temp.file_path)
         blame_path.replace('\\', '/')
         for content in self.module_blame:
@@ -197,13 +203,14 @@ class Match:
     def get_statistics(self):
         print('get statistics')
         simple_stat = {}
-        self.match_result_base_statistic['Total'] = {'files_count': self.base_model.statistics_assi['File']}
+        self.match_result_base_statistic['Total'] = {'files_count': self.base_model.statistics_extensive['File']}
         for item in self.match_result:
             for pattern in item:
                 self.match_result_base_statistic[pattern] = {}
                 pattern_files_set = defaultdict(int)
                 pattern_entities_set = defaultdict(int)
                 pattern_module_set = defaultdict(int)
+                pattern_pkgs_set = defaultdict(int)
                 pattern_res: List[List[Relation]] = []
                 for style in item[pattern]:
                     pattern_res.extend(style['res'])
@@ -213,6 +220,7 @@ class Match:
                     temp_file_set = set()
                     temp_entity_set = set()
                     temp_module_set = set()
+                    temp_pkg_set = set()
                     for rel in exa:
                         temp_entity_set.add(rel.src)
                         temp_entity_set.add(rel.dest)
@@ -222,12 +230,17 @@ class Match:
                         temp_file_set.add(dest_file)
                         temp_module_set.add(self.get_module_blame(rel.src))
                         temp_module_set.add(self.get_module_blame(rel.dest))
+                        temp_pkg_set.add(self.base_model.entity_extensive[rel.src].package_name)
+                        temp_pkg_set.add(self.base_model.entity_extensive[rel.dest].package_name)
+
                     for file_name in temp_file_set:
                         pattern_files_set[file_name] += 1
                     for entity_id in temp_entity_set:
                         pattern_entities_set[entity_id] += 1
                     for module_blame in temp_module_set:
                         pattern_module_set[module_blame] += 1
+                    for pkg in temp_pkg_set:
+                        pattern_pkgs_set[pkg] += 1
                 self.match_result_base_statistic[pattern] = {'example_count': len(item[pattern]),
                                                              'entities_count': len(pattern_entities_set),
                                                              'entities': pattern_entities_set,
@@ -243,7 +256,7 @@ class Match:
                     try:
                         self.statistic_entities[entity_id][pattern] = pattern_entities_set[entity_id]
                     except KeyError:
-                        self.statistic_entities[entity_id] = self.base_model.entity_assi[entity_id].to_csv()
+                        self.statistic_entities[entity_id] = self.base_model.entity_extensive[entity_id].to_csv()
                         self.statistic_entities[entity_id][pattern] = pattern_entities_set[entity_id]
                 for module_blame in pattern_module_set:
                     try:
@@ -251,10 +264,15 @@ class Match:
                     except KeyError:
                         self.statistic_modules[module_blame] = {'module_blame': module_blame}
                         self.statistic_modules[module_blame][pattern] = pattern_module_set[module_blame]
-
+                for pkg in pattern_pkgs_set:
+                    try:
+                        self.statistic_pkgs[pkg][pattern] = pattern_pkgs_set[pkg]
+                    except KeyError:
+                        self.statistic_pkgs[pkg] = {'packagename': pkg}
+                        self.statistic_pkgs[pkg][pattern] = pattern_pkgs_set[pkg]
         return simple_stat
 
-    def deal_res_for_output(self):
+    def deal_res_for_output(self, filter_list: List[str]):
         print('ready for write')
         match_set = []
         union_temp_relation: List = []
@@ -265,6 +283,22 @@ class Match:
         res['modeCount'] = len(self.match_result)
         res['values'] = {}
         res_filter = {'modeCount': len(self.match_result), 'values': {}}
+
+        self.out_path = self.output
+        # 'com.android.server.pm'
+        if filter_list and 'filter' not in self.output:
+            self.out_path = os.path.join(self.output, 'filter')
+
+        # 筛选输出希望实例
+        def handle_filter(exa: List[Relation], filter_list: List[str]):
+            if filter_list:
+                for rel in exa:
+                    if self.handle_qualified_name(self.base_model.entity_extensive[rel.src], filter_list) or \
+                            self.handle_qualified_name(self.base_model.entity_extensive[rel.dest], filter_list):
+                        return True
+                return False
+            return True
+
         for item in self.match_result:
             for mode in item:
                 anti_temp = []
@@ -276,24 +310,26 @@ class Match:
                     res_temp = []
                     filter_temp = []
                     for exa in style['res']:
-                        res_temp.append(self.show_details(exa))
-                        for rel in exa:
-                            s2d = str(rel.src) + '-' + str(rel.dest)
-                            union_temp_entities.add(rel.src)
-                            union_temp_entities.add(rel.dest)
-                            if re_map[s2d] == 0:
-                                re_map[s2d] = 1
-                                union_temp_relation.append(self.to_detail_json(rel))
+                        if handle_filter(exa, filter_list):
+                            res_temp.append(self.show_details(exa))
+                            for rel in exa:
+                                s2d = str(rel.src) + '-' + str(rel.dest)
+                                union_temp_entities.add(rel.src)
+                                union_temp_entities.add(rel.dest)
+                                if re_map[s2d] == 0:
+                                    re_map[s2d] = 1
+                                    union_temp_relation.append(self.to_detail_json(rel))
 
                     for exa in style['filter']:
-                        filter_temp.append(self.show_details(exa))
-                        for rel in exa:
-                            s2d = str(rel.src) + '-' + str(rel.dest)
-                            union_temp_entities.add(rel.src)
-                            union_temp_entities.add(rel.dest)
-                            if re_map[s2d] == 0:
-                                re_map[s2d] = 1
-                                union_temp_relation.append(self.to_detail_json(rel))
+                        if handle_filter(exa, filter_list):
+                            filter_temp.append(self.show_details(exa))
+                            for rel in exa:
+                                s2d = str(rel.src) + '-' + str(rel.dest)
+                                union_temp_entities.add(rel.src)
+                                union_temp_entities.add(rel.dest)
+                                if re_map[s2d] == 0:
+                                    re_map[s2d] = 1
+                                    union_temp_relation.append(self.to_detail_json(rel))
                     style_res['resCount'] = len(res_temp)
                     style_res['filterCount'] = len(filter_temp)
                     style_res['res'] = res_temp
@@ -315,8 +351,8 @@ class Match:
         return match_set, union_temp_relation, union_temp_entities, res, res_filter
 
     def to_detail_json(self, relation: Relation):
-        return {"src": self.base_model.entity_assi[relation.src].toJson(), "values": {relation.rel: 1},
-                "dest": self.base_model.entity_assi[relation.dest].toJson()}
+        return {"src": self.base_model.entity_extensive[relation.src].toJson(), "values": {relation.rel: 1},
+                "dest": self.base_model.entity_extensive[relation.dest].toJson()}
 
     def show_details(self, section: List[Relation]):
         temp = []
@@ -339,27 +375,36 @@ class Match:
             th.join()
         simple_stat = self.get_statistics()
         match_set, match_set_union_relation, match_set_union_entity, match_set_json_res, match_set_json_res_filter = \
-            self.deal_res_for_output()
-        self.output_res(pattern.ident, match_set, match_set_union_relation, match_set_union_entity, match_set_json_res, match_set_json_res_filter)
+            self.deal_res_for_output([])
+        self.output_res(pattern.ident, match_set, match_set_union_relation, match_set_union_entity, match_set_json_res,
+                        match_set_json_res_filter)
+        self.output_statistic(pattern.ident, pattern.patterns, simple_stat)
+        match_set, match_set_union_relation, match_set_union_entity, match_set_json_res, match_set_json_res_filter = \
+            self.deal_res_for_output(['com.android.server.pm'])
+        self.output_res(pattern.ident, match_set, match_set_union_relation, match_set_union_entity, match_set_json_res,
+                        match_set_json_res_filter)
         self.output_statistic(pattern.ident, pattern.patterns, simple_stat)
 
     def output_res(self, pattern_type: str, match_set, match_set_union_relation, match_set_union_entity,
                    match_set_json_res, match_set_json_res_filter):
-        output_path = os.path.join(self.output, pattern_type)
+        output_path = os.path.join(self.out_path, pattern_type)
         print(f'output {pattern_type} match res')
         FileJson.write_match_mode(output_path, match_set)
         FileJson.write_to_json(output_path, match_set_union_relation, 1)
         FileJson.write_to_json(output_path, match_set_json_res, 3)
         FileJson.write_to_json(output_path, match_set_json_res_filter, 6)
         FileCSV.write_entity_to_csv(output_path, 'coupling_entities',
-                                    [self.base_model.entity_assi[entity_id] for entity_id in match_set_union_entity],
+                                    [self.base_model.entity_extensive[entity_id] for entity_id in
+                                     match_set_union_entity],
                                     'facade')
         FileCSV.write_dict_to_csv(output_path, 'coupling_statistic', [
-            {'coupling_relation': len(match_set_union_relation), 'total_relation': len(self.base_model.relation_assi),
-             'coupling_entity': len(match_set_union_entity), 'total_entity': len(self.base_model.entity_assi)}], 'w')
+            {'coupling_relation': len(match_set_union_relation),
+             'total_relation': len(self.base_model.relation_extensive),
+             'coupling_entity': len(match_set_union_entity), 'total_entity': len(self.base_model.entity_extensive)}],
+                                  'w')
 
     def output_statistic(self, pattern_type: str, patterns: List[str], simple_stat):
-        output_path = os.path.join(self.output, pattern_type)
+        output_path = os.path.join(self.out_path, pattern_type)
 
         # 输出检测结果
         FileJson.write_to_json(output_path, self.match_result_base_statistic, 4)
@@ -374,6 +419,11 @@ class Match:
         headers = ['filename']
         headers.extend(patterns)
         FileCSV.write_to_csv(output_path, 'file-pattern', headers, self.statistic_files)
+        # 输出文件粒度统计
+        headers = ['packagename']
+        headers.extend(patterns)
+        FileCSV.write_to_csv(output_path, 'package-pattern', headers, self.statistic_pkgs)
+
         # 输出模块粒度统计
         headers = ['module_blame']
         headers.extend(patterns)
