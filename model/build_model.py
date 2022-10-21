@@ -429,6 +429,9 @@ class BuildModel:
                 self.owner_proc_count[dep_count + '2' + owner_str + '_c'][get_index(ent.category)] += 1
 
         def detect_ownership(ent: Entity, all_refactor_info: Dict[int, list], src_name: str, src_param: str):
+            if all_refactor_info is None:
+                detect_un_refactor_entities(ent, src_name, src_param)
+                return
             try:
                 ent_refactor_info = all_refactor_info[ent.id][1]
                 detect_refactor_entities(ent, ent_refactor_info, all_refactor_info)
@@ -460,6 +463,8 @@ class BuildModel:
                 source_state: BaseState = move[1]
                 dest_state: BaseState = move[2]
                 print('    ', move_type, source_state.longname(), dest_state.longname())
+
+                # 对扩展重构
                 dep_diff_res = self.graph_differ(ent, source_state.longname(), source_state.get_param(),
                                                  aosp_entity_map, extensive_entity_map)
                 if dep_diff_res == -1 and ent.id in keys_pure_accompany_entities:
@@ -489,10 +494,17 @@ class BuildModel:
                     detect_refactor_entities_son(child_define[ent.id], source_state.longname(),
                                                  source_state.get_param())
                 elif move_type in MoveMethodParamRefactorings:
-                    ent.set_honor(0)
-                    ent.set_intrusive(1)
-                    detect_refactor_entities_son(child_define[ent.id] + child_param[ent.id], source_state.longname(),
-                                                 source_state.get_param())
+                    if ent.category == Constant.E_method:
+                        ent.set_honor(0)
+                        ent.set_intrusive(1)
+                        detect_refactor_entities_son(child_define[ent.id] + child_param[ent.id], source_state.longname(),
+                                                     source_state.get_param())
+                    else:
+                        if move_type == MoveMethodParamRefactorings[0]:
+                            ent.set_honor(0)
+                            ent.set_intrusive(1)
+                        elif move_type == MoveMethodParamRefactorings[1]:
+                            ent.set_honor(1)
                 else:
                     ent.set_honor(0)
                     ent.set_intrusive(1)

@@ -380,7 +380,7 @@ class Match:
                         match_set_json_res_filter)
         self.output_statistic(pattern.ident, pattern.patterns, simple_stat)
         match_set, match_set_union_relation, match_set_union_entity, match_set_json_res, match_set_json_res_filter = \
-            self.deal_res_for_output(['com.android.server.pm'])
+            self.deal_res_for_output(['com.android.server.pm', 'com.android.server.am'])
         self.output_res(pattern.ident, match_set, match_set_union_relation, match_set_union_entity, match_set_json_res,
                         match_set_json_res_filter)
         self.output_statistic(pattern.ident, pattern.patterns, simple_stat)
