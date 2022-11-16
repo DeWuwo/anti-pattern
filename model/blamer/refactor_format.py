@@ -104,6 +104,9 @@ MoveAttributePattern = [(MAPattern, 1, 2, 3, 4),
 SignatureFormat = "(private|public|package|protected) (.*)\\((.*)\\)"
 SignaturePattern = re.compile(SignatureFormat)
 
+ParamSignatureFormat = "(.*) : (.*)"
+ParamSignaturePattern = re.compile(ParamSignatureFormat)
+
 
 def get_rename_method(sig: str) -> str:
     matched = RMPattern.match(sig)
@@ -139,9 +142,9 @@ def get_param_from_sig(sig: str):
     matched = SignaturePattern.match(sig)
     if matched:
         method_params = matched.group(3)
-        params = method_params.split(", ")
         if method_params == "":
             return "", ""
+        params = method_params.split(", ")
         param_types = []
         param_names = []
         for param in params:
@@ -151,6 +154,16 @@ def get_param_from_sig(sig: str):
     else:
         print('get params error')
         assert False
+
+
+def get_param_from_param_sig(sig: str):
+    matched = ParamSignaturePattern.match(sig)
+    if matched:
+        param_type = matched.group(2)
+        param_name = matched.group(1)
+        return param_type, param_name
+    else:
+        return '', ''
 
 
 if __name__ == '__main__':
@@ -166,15 +179,24 @@ def get_method_sig_from_code_elements(code_elements):
     assert False
 
 
+def get_variable_sig_from_code_elements(code_elements):
+    for ce in code_elements:
+        if ce["codeElementType"] == "SINGLE_VARIABLE_DECLARATION":
+            return ce["codeElement"]
+    assert False
+
+
 def get_rename_parameter(refactor_obj):
     description = refactor_obj["description"]
     matched = RPPattern.match(description)
     if matched:
+        from_param = matched.group(1)
+        to_param = matched.group(2)
         to_method = matched.group(3)
         to_class = matched.group(4)
         from_method = get_method_sig_from_code_elements(refactor_obj["leftSideLocations"])
         from_class = to_class
-        return from_method, from_class, to_method, to_class
+        return from_param, from_method, from_class, to_param, to_method, to_class
     return None
 
 
@@ -184,9 +206,11 @@ def get_add_parameter(refactor_obj):
     if matched:
         to_class = matched.group(3)
         to_method = get_method_sig_from_code_elements(refactor_obj["rightSideLocations"])
+        to_param = get_variable_sig_from_code_elements(refactor_obj["rightSideLocations"])
+        from_param = 'null'
         from_method = get_method_sig_from_code_elements(refactor_obj["leftSideLocations"])
         from_class = to_class
-        return from_method, from_class, to_method, to_class
+        return from_param, from_method, from_class, to_param, to_method, to_class
     return None
 
 
@@ -198,7 +222,9 @@ def get_remove_parameter(refactor_obj):
         from_class = to_class
         from_method = get_method_sig_from_code_elements(refactor_obj["leftSideLocations"])
         to_method = get_method_sig_from_code_elements(refactor_obj["rightSideLocations"])
-        return from_method, from_class, to_method, to_class
+        from_param = get_method_sig_from_code_elements(refactor_obj["leftSideLocations"])
+        to_param = 'null'
+        return from_param, from_method, from_class, to_param, to_method, to_class
     return None
 
 

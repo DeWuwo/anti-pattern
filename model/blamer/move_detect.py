@@ -5,7 +5,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Set, Dict, List, Union, Tuple, overload, TextIO
 
-from model.blamer.entity_tracer import BaseState, MethodState
+from model.blamer.entity_tracer import BaseState, MethodState, ParamState
 from model.blamer.refactor_format import MoveMethodPatterns, SpecialMoveMethodGetters, MoveClassPatterns
 from model.blamer.refactoring_analysis import RefactorData
 
@@ -13,11 +13,14 @@ MoveMethodRefactorings = [
     "Move And Rename Method",
     "Move Method",
     "Rename Method",
+    "Extract Method",
+    "Extract And Move Method"
+]
+
+MoveParamRefactorings = [
     "Rename Parameter",
     "Add Parameter",
     "Remove Parameter",
-    "Extract Method",
-    "Extract And Move Method"
 ]
 
 MoveClassRefactoring = [
@@ -155,9 +158,10 @@ def extract_methods(code_elements: List[dict]) -> List[Tuple[str, FilePath]]:
 def extract_classes(code_elements: List[dict]) -> List[Tuple[str, FilePath]]:
     return extract_related_code_elements("TYPE_DECLARATION", code_elements)
 
+
 def extract_method_move(description: str,
                         left_side: List[dict],
-                        right_side: List[dict]) -> Tuple[Set[BaseState], Set[BaseState]]:
+                        right_side: List[dict]) -> List[Tuple[BaseState, BaseState]]:
     for pattern in MoveMethodPatterns:
         matched = pattern[0].match(description)
         if matched:
@@ -167,64 +171,113 @@ def extract_method_move(description: str,
             to_class = matched.group(to_class_index)
             src_method, src_path = extract_methods(left_side)[0]
             to_method, to_path = extract_methods(right_side)[0]
-            return {MethodState(src_class, src_path, src_method)}, {MethodState(to_class, to_path, to_method)}
+            # return {MethodState(src_class, src_path, src_method)}, {MethodState(to_class, to_path, to_method)}
+            return [(MethodState(src_class, src_path, src_method), MethodState(to_class, to_path, to_method))]
 
+    # for getter in SpecialMoveMethodGetters:
+    #     if matched := getter({
+    #         "description": description,
+    #         "leftSideLocations": left_side,
+    #         "rightSideLocations": right_side,
+    #     }):
+    #         _, src_class, _, to_class = matched
+    #         src_method, src_path = extract_methods(left_side)[0]
+    #         to_method, to_path = extract_methods(right_side)[0]
+    #         return {MethodState(src_class, src_path, src_method)}, {MethodState(to_class, to_path, to_method)}
+    return []
+
+
+def extract_param_move(description: str,
+                       left_side: List[dict],
+                       right_side: List[dict]) -> List[Tuple[BaseState, BaseState]]:
     for getter in SpecialMoveMethodGetters:
         if matched := getter({
             "description": description,
             "leftSideLocations": left_side,
             "rightSideLocations": right_side,
         }):
-            _, src_class, _, to_class = matched
+            from_param, from_method, src_class, to_param, to_method, to_class = matched
             src_method, src_path = extract_methods(left_side)[0]
             to_method, to_path = extract_methods(right_side)[0]
-            return {MethodState(src_class, src_path, src_method)}, {MethodState(to_class, to_path, to_method)}
-    return set(), set()
+            return [
+                (ParamState(src_class, src_path, src_method, from_param),
+                 ParamState(to_class, to_path, to_method, to_param)),
+                (MethodState(src_class, src_path, src_method),
+                 MethodState(to_class, to_path, to_method))
+            ]
+    return []
 
+
+# def extract_class_move(description: str,
+#                        left_side: List[dict],
+#                        right_side: List[dict]) -> Tuple[Set[BaseState], Set[BaseState]]:
+#     src_classes = extract_classes(left_side)
+#     to_classes = extract_classes(right_side)
+#     src_states = {BaseState(longname, path) for longname, path in src_classes}
+#     to_classes = {BaseState(longname, path) for longname, path in to_classes}
+#     return src_states, to_classes
 
 def extract_class_move(description: str,
                        left_side: List[dict],
-                       right_side: List[dict]) -> Tuple[Set[BaseState], Set[BaseState]]:
-    src_classes = extract_classes(left_side)
-    to_classes = extract_classes(right_side)
-    src_states = {BaseState(longname, path) for longname, path in src_classes}
-    to_classes = {BaseState(longname, path) for longname, path in to_classes}
-    return src_states, to_classes
+                       right_side: List[dict]) -> List[Tuple[BaseState, BaseState]]:
+    src_class = extract_classes(left_side)[0]
+    to_class = extract_classes(right_side)[0]
+    src_state = BaseState(src_class[0], src_class[1])
+    to_state = BaseState(to_class[0], to_class[1])
+    return [(src_state, to_state)]
 
 
 def extract_state(refactor_kind: str,
                   description: str,
                   left_side: List[dict],
-                  right_side: List[dict]) -> Tuple[Set[BaseState], Set[BaseState]]:
+                  right_side: List[dict]) -> List[Tuple[BaseState, BaseState]]:
+    # if refactor_kind in MoveMethodRefactorings:
+    #     src_methods, to_methods = extract_method_move(description, left_side, right_side)
+    #     return src_methods, to_methods
+    # elif refactor_kind in MoveClassRefactoring:
+    #     src_classes, to_classes = extract_class_move(description, left_side, right_side)
+    #     return src_classes, to_classes
     if refactor_kind in MoveMethodRefactorings:
-        src_methods, to_methods = extract_method_move(description, left_side, right_side)
-        return src_methods, to_methods
+        return extract_method_move(description, left_side, right_side)
+    elif refactor_kind in MoveParamRefactorings:
+        return extract_param_move(description, left_side, right_side)
     elif refactor_kind in MoveClassRefactoring:
-        src_classes, to_classes = extract_class_move(description, left_side, right_side)
-        return src_classes, to_classes
+        return extract_class_move(description, left_side, right_side)
 
 
 def distill_move_edit(refactor_obj: dict) -> List[MoveEdit]:
     refactor_kind = refactor_obj["type"]
     description = refactor_obj["description"]
-    if refactor_kind not in MoveMethodRefactorings and refactor_kind not in MoveClassRefactoring:
+    if refactor_kind not in MoveMethodRefactorings and refactor_kind not in MoveClassRefactoring and refactor_kind not in MoveParamRefactorings:
         return []
-    src_states, to_states = extract_state(refactor_kind,
-                                          description,
-                                          refactor_obj["leftSideLocations"],
-                                          refactor_obj["rightSideLocations"])
+    states = extract_state(refactor_kind,
+                           description,
+                           refactor_obj["leftSideLocations"],
+                           refactor_obj["rightSideLocations"])
     ret = []
-    for src in src_states:
-        for to in to_states:
-            ret.append(MoveEdit(src, to, refactor_obj))
+    for state in states:
+        ret.append(MoveEdit(state[0], state[1], refactor_obj))
+    # for src in src_states:
+    #     for to in to_states:
+    #         ret.append(MoveEdit(src, to, refactor_obj))
 
     return ret
 
 
-def distill_move_edit_list(refactor_objs: List[dict]) -> List[MoveEdit]:
-    ret = []
+def distill_move_edit_list(refactor_objs: List[dict]) -> Dict[str, List[MoveEdit]]:
+    # ret = []
+    # for refactor_obj in refactor_objs:
+    #     ret.extend(distill_move_edit((refactor_obj)))
+    # return ret
+    ret = {}
     for refactor_obj in refactor_objs:
-        ret.extend(distill_move_edit((refactor_obj)))
+        moves = distill_move_edit(refactor_obj)
+        for move in moves:
+            try:
+                ret[move.to_state.get_category() + move.to_state.longname()].append(move)
+            except KeyError:
+                ret[move.to_state.get_category() + move.to_state.longname()] = []
+                ret[move.to_state.get_category() + move.to_state.longname()].append(move)
     return ret
 
 

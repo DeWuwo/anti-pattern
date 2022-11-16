@@ -9,7 +9,7 @@ import git
 
 from model.blamer.move_detect import distill_move_edit_list, MoveEdit
 
-refactor_move_cache: Dict[str, List[MoveEdit]] = {}
+refactor_move_cache: Dict[str, Dict[str, List[MoveEdit]]] = {}
 
 
 def search_refactoring(category: str, longname: str, unsure_params: str, unsure_filepath: str,
@@ -20,21 +20,28 @@ def search_refactoring(category: str, longname: str, unsure_params: str, unsure_
         move_edits = distill_move_edit_list(refactor_data)
         refactor_move_cache[commit] = move_edits
     ret = []
-    for move in move_edits:
-        to_state = move.to_state
-        if category == to_state.get_category() and to_state.longname() == longname and \
-                Path(move.to_state.file_path) == Path(unsure_filepath) and \
-                (unsure_params == "null" or to_state.get_param() == unsure_params):
-            ret.append(move)
+
+    try:
+        for move in move_edits[category + longname]:
+            to_state = move.to_state
+            if unsure_params == "null" or to_state.get_param() == unsure_params:
+                ret.append(move)
+    except KeyError:
+        return ret
     return ret
 
 
-def search_refactoring_by_id(refactor_data: List[dict]) -> List[MoveEdit]:
+def search_refactoring_by_id(category: str, longname: str, unsure_params: str, unsure_filepath: str,
+                             refactor_data: List[dict]) -> List[MoveEdit]:
     move_edits = distill_move_edit_list(refactor_data)
     ret = []
-    for move in move_edits:
-        ret.append(move)
-
+    try:
+        for move in move_edits[category + longname]:
+            to_state = move.to_state
+            if unsure_params == "null" or to_state.get_param() == unsure_params:
+                ret.append(move)
+    except KeyError:
+        return ret
     return ret
 
 
@@ -43,18 +50,23 @@ OwnerShipData = Dict[str, str]
 
 def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, refactor_data: Dict[str, List[dict]], flag: bool) \
         -> Optional[List[MoveEdit]]:
+    unsure_longname = not_sure_line["Entity"]
+    unsure_filepath = not_sure_line["file path"]
+    unsure_param = not_sure_line["param_names"]
+    unsure_category = not_sure_line["category"]
     if flag:
         unsure_id = not_sure_line['id']
-        related_moves = search_refactoring_by_id(refactor_data[unsure_id])
+        try:
+            related_moves = search_refactoring_by_id(unsure_category, unsure_longname, unsure_param,
+                                                     unsure_filepath, refactor_data[unsure_id])
+        except KeyError:
+            return None
     else:
         repo = git.Repo(repo_path)
         third_party_commits = json.loads(not_sure_line["accompany commits"])
-        unsure_longname = not_sure_line["Entity"]
-        unsure_filepath = not_sure_line["file path"]
-        unsure_param = not_sure_line["param_names"]
-        unsure_category = not_sure_line["category"]
-        if unsure_category == 'Variable':
-            return None
+
+        # if unsure_category == 'Variable' and unsure_longname.rsplit('.', 1)[1] not in unsure_param:
+        #     return None
         sorted_commits = list(sorted(third_party_commits,
                                      key=lambda k: repo.commit(k).committed_datetime, reverse=False))
         commit = repo.commit(sorted_commits[0])

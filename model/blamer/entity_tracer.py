@@ -7,7 +7,7 @@ import git
 
 from model.blamer.commit_dag import CommitDAG, SHA, commit_dag_generator, CommitNode
 from model.blamer.refactor_format import MoveAttributePattern, MoveMethodPatterns, SpecialMoveMethodGetters, \
-    MoveClassPatterns, get_name_from_sig, get_param_from_sig
+    MoveClassPatterns, get_name_from_sig, get_param_from_sig, get_param_from_param_sig
 from model.blamer.refactoring_analysis import RefactorData
 
 
@@ -41,6 +41,30 @@ class MethodState(BaseState):
 
     def get_category(self):
         return 'Method'
+
+
+@dataclass(frozen=True)
+class ParamState(BaseState):
+    method_state: str
+    param_state: str
+
+    def __str__(self) -> str:
+        return f"(\n {self.param_state},\n {self.method_state},\n {self.class_state}, \n{self.file_path})"
+
+    def longname(self):
+        param = get_param_from_param_sig(self.param_state)[1]
+        if param == '':
+            longname = self.class_state + "." + get_name_from_sig(self.method_state)
+        else:
+            longname = self.class_state + "." + get_name_from_sig(self.method_state) + "." + get_param_from_param_sig(
+                self.param_state)[1]
+        return longname
+
+    def get_param(self):
+        return get_param_from_sig(self.method_state)[1]
+
+    def get_category(self):
+        return 'Variable'
 
 
 @dataclass(frozen=True)
