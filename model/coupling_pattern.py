@@ -25,8 +25,8 @@ class CouplingPattern(PatternType):
                     'ReflectUse']
         rules = [
             {
-                'FinalDel': [
-                    [
+                'FinalDel': {
+                    'style1': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class,
                                     'attrs': {}},
@@ -36,7 +36,7 @@ class CouplingPattern(PatternType):
                             'direction': '10'
                         }
                     ],
-                    [
+                    'style2': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_method,
                                     'attrs': {}},
@@ -45,12 +45,22 @@ class CouplingPattern(PatternType):
                                      'attrs': {'final': True, 'intrusive': True}},
                             'direction': '10'
                         },
+                    ],
+                    'style3': [
+                        {
+                            'src': {'id': [-1], 'category': Constant.E_class,
+                                    'attrs': {}},
+                            'rel': {'type': Constant.define, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_method,
+                                     'attrs': {'final': True, 'intrusive': True}},
+                            'direction': '00'
+                        },
                     ]
-                ]
+                }
             },
             {
-                'AccessibilityModify': [
-                    [
+                'AccessibilityModify': {
+                    'style1': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
@@ -72,7 +82,7 @@ class CouplingPattern(PatternType):
                     #         'direction': '00'
                     #     },
                     # ],
-                    [
+                    'style2': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
@@ -82,11 +92,11 @@ class CouplingPattern(PatternType):
                             'direction': '00'
                         },
                     ]
-                ]
+                }
             },
             {
-                'HiddenApi': [
-                    [
+                'HiddenApi': {
+                    'style1': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_method,
                                     'attrs': {}},
@@ -98,7 +108,7 @@ class CouplingPattern(PatternType):
                             'direction': '10'
                         }
                     ],
-                    [
+                    'style2': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_method,
                                     'attrs': {}},
@@ -111,36 +121,36 @@ class CouplingPattern(PatternType):
                         }
 
                     ]
-                ]
+                }
             },
+            # {
+            #     'HiddenModify': [
+            #         [
+            #             {
+            #                 'src': {'id': [-1], 'category': Constant.E_method,
+            #                         'attrs': {}},
+            #                 'rel': {'type': Constant.call, 'attrs': {}},
+            #                 'dest': {'id': [-1], 'category': Constant.E_method,
+            #                          'attrs': {'hidden_modify': True}},
+            #                 'direction': '10'
+            #             }
+            #         ],
+            #         [
+            #             {
+            #                 'src': {'id': [-1], 'category': Constant.E_method,
+            #                         'attrs': {}},
+            #                 'rel': {'type': Constant.use, 'attrs': {}},
+            #                 'dest': {'id': [-1], 'category': Constant.E_variable,
+            #                          'attrs': {'hidden_modify': True}},
+            #                 'direction': '10'
+            #             }
+            #
+            #         ]
+            #     ]
+            # },
             {
-                'HiddenModify': [
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_method,
-                                    'attrs': {}},
-                            'rel': {'type': Constant.call, 'attrs': {}},
-                            'dest': {'id': [-1], 'category': Constant.E_method,
-                                     'attrs': {'hidden_modify': True}},
-                            'direction': '10'
-                        }
-                    ],
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_method,
-                                    'attrs': {}},
-                            'rel': {'type': Constant.use, 'attrs': {}},
-                            'dest': {'id': [-1], 'category': Constant.E_variable,
-                                     'attrs': {'hidden_modify': True}},
-                            'direction': '10'
-                        }
-
-                    ]
-                ]
-            },
-            {
-                'ParameterListModifyDep': [
-                    [
+                'ParameterListModifyDep': {
+                    'add_parameter': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {'intrusive': True},
                                     'filter': {'qualified_name': filter_list}},
@@ -150,11 +160,11 @@ class CouplingPattern(PatternType):
                             'direction': '01'
                         }
                     ]
-                ]
+                }
             },
             {
-                'InnerExtensionClassUseDep': [
-                    [
+                'InnerExtensionClassUseDep': {
+                    'style1': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {},
                                     'filter': {'qualified_name': filter_list}},
@@ -173,7 +183,8 @@ class CouplingPattern(PatternType):
                             'src': {'id': ['id', 1, 1], 'category': Constant.E_method,
                                     'attrs': {}},
                             'rel': {'type': Constant.call, 'attrs': {}},
-                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
+                            'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {},
+                                     'filter': {'accessible': [Constant.accessible_list[2]]}},
                             'direction': '10'
                         },
                         {
@@ -186,11 +197,11 @@ class CouplingPattern(PatternType):
                         },
                     ]
 
-                ]
+                }
             },
             {
-                'InheritExtension': [
-                    [
+                'InheritExtension': {
+                    'style2': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class,
                                     'attrs': {'accessible': []}, 'filter': {'qualified_name': filter_list}},
@@ -199,11 +210,11 @@ class CouplingPattern(PatternType):
                                      'attrs': {'accessible': []}},
                             'direction': '01'
                         }]
-                ]
+                }
             },
             {
-                'ImplementExtension': [
-                    [
+                'ImplementExtension': {
+                    'style2': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class,
                                     'attrs': {'accessible': []}, 'filter': {'qualified_name': filter_list}},
@@ -212,11 +223,11 @@ class CouplingPattern(PatternType):
                                      'attrs': {'accessible': []}},
                             'direction': '01'
                         }]
-                ]
+                }
             },
             {
-                'AggregationExtensionInterfaceClassDep': [
-                    [
+                'AggregationExtensionInterfaceClassDep': {
+                    'style2': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
@@ -255,7 +266,7 @@ class CouplingPattern(PatternType):
                             'direction': '11'
                         }
                     ],
-                    [
+                    'style3': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
@@ -295,11 +306,11 @@ class CouplingPattern(PatternType):
                         }
                     ]
 
-                ]
+                }
             },
             {
-                'InheritanceNative': [
-                    [
+                'InheritanceNative': {
+                    'style2': [
                         {
                             'src': {'id': [-1], 'category': 'Class',
                                     'attrs': {'accessible': []}},
@@ -334,11 +345,11 @@ class CouplingPattern(PatternType):
                             'direction': '00'
                         }
                     ]
-                ]
+                }
             },
             {
-                'ImplementNative': [
-                    [
+                'ImplementNative': {
+                    'style2': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class,
                                     'attrs': {'accessible': []}},
@@ -347,11 +358,11 @@ class CouplingPattern(PatternType):
                                      'attrs': {'accessible': []}, 'filter': {'qualified_name': filter_list}},
                             'direction': '10'
                         }]
-                ]
+                }
             },
             {
-                'AggregationAOSPClassDep': [
-                    [
+                'AggregationAOSPClassDep': {
+                    'class': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
@@ -390,7 +401,7 @@ class CouplingPattern(PatternType):
                             'direction': '00'
                         },
                     ],
-                    [
+                    'interface': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
@@ -430,11 +441,11 @@ class CouplingPattern(PatternType):
                         },
                     ],
 
-                ]
+                }
             },
             {
-                'PublicInterfaceUseDep': [
-                    [
+                'PublicInterfaceUseDep': {
+                    'style2': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
                             'rel': {'type': Constant.call, 'attrs': {}},
@@ -446,11 +457,11 @@ class CouplingPattern(PatternType):
                             'direction': '10'
                         },
                     ]
-                ]
+                }
             },
             {
-                'ReflectUse': [
-                    [
+                'ReflectUse': {
+                    'style2': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
                             'rel': {'type': Constant.reflect, 'attrs': {}},
@@ -459,7 +470,7 @@ class CouplingPattern(PatternType):
                             'direction': '10'
                         }
                     ],
-                    [
+                    'style3': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
                             'rel': {'type': Constant.reflect, 'attrs': {}},
@@ -468,7 +479,7 @@ class CouplingPattern(PatternType):
                             'direction': '10'
                         }
                     ],
-                ]
+                }
             }
         ]
 

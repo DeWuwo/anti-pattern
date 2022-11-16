@@ -14,8 +14,8 @@ class AntiPattern(PatternType):
                     'ParamListModify', 'InheritDestroy', 'ReflectUse']
         rules = [
             {
-                'FinalDel': [
-                    [
+                'FinalDel': {
+                    'style1': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class,
                                     'attrs': {}},
@@ -26,7 +26,7 @@ class AntiPattern(PatternType):
                             'direction': '10'
                         }
                     ],
-                    [
+                    'style2': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_method,
                                     'attrs': {}},
@@ -37,11 +37,11 @@ class AntiPattern(PatternType):
                             'direction': '10'
                         },
                     ]
-                ]
+                }
             },
             {
-                'AccessibilityModify': [
-                    [
+                'AccessibilityModify': {
+                    'style1': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_class,
                                     'attrs': {}},
@@ -52,7 +52,7 @@ class AntiPattern(PatternType):
                             'direction': '00'
                         }
                     ],
-                    [
+                    'style2':[
                         {
                             'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
@@ -65,7 +65,7 @@ class AntiPattern(PatternType):
                             'direction': '00'
                         },
                     ],
-                    [
+                    'style3':[
                         {
                             'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                             'rel': {'type': Constant.define, 'attrs': {}},
@@ -77,11 +77,11 @@ class AntiPattern(PatternType):
                             'direction': '00'
                         },
                     ]
-                ]
+                }
             },
             {
-                'HiddenApi': [
-                    [
+                'HiddenApi': {
+                    'style1': [
                         {
                             'src': {'id': [-1], 'category': Constant.E_method,
                                     'attrs': {}},
@@ -93,7 +93,7 @@ class AntiPattern(PatternType):
                             'direction': '10'
                         }
                     ],
-                    [
+                    'style2':[
                         {
                             'src': {'id': [-1], 'category': Constant.E_method,
                                     'attrs': {}},
@@ -106,36 +106,36 @@ class AntiPattern(PatternType):
                         }
 
                     ]
-                ]
+                }
             },
+            # {
+            #     'HiddenModify': [
+            #         [
+            #             {
+            #                 'src': {'id': [-1], 'category': Constant.E_method,
+            #                         'attrs': {}},
+            #                 'rel': {'type': Constant.call, 'attrs': {}},
+            #                 'dest': {'id': [-1], 'category': Constant.E_method,
+            #                          'attrs': {'hidden_modify': True}},
+            #                 'direction': '10'
+            #             }
+            #         ],
+            #         [
+            #             {
+            #                 'src': {'id': [-1], 'category': Constant.E_method,
+            #                         'attrs': {}},
+            #                 'rel': {'type': Constant.use, 'attrs': {}},
+            #                 'dest': {'id': [-1], 'category': Constant.E_variable,
+            #                          'attrs': {'hidden_modify': True}},
+            #                 'direction': '10'
+            #             }
+            #
+            #         ]
+            #     ]
+            # },
             {
-                'HiddenModify': [
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_method,
-                                    'attrs': {}},
-                            'rel': {'type': Constant.call, 'attrs': {}},
-                            'dest': {'id': [-1], 'category': Constant.E_method,
-                                     'attrs': {'hidden_modify': True}},
-                            'direction': '10'
-                        }
-                    ],
-                    [
-                        {
-                            'src': {'id': [-1], 'category': Constant.E_method,
-                                    'attrs': {}},
-                            'rel': {'type': Constant.use, 'attrs': {}},
-                            'dest': {'id': [-1], 'category': Constant.E_variable,
-                                     'attrs': {'hidden_modify': True}},
-                            'direction': '10'
-                        }
-
-                    ]
-                ]
-            },
-            {
-                'ParamListModify': [
-                    [
+                'ParamListModify': {
+                    'style1':[
                         {
                             'src': {'id': [-1], 'category': Constant.E_method,
                                     'attrs': {'intrusive': True},
@@ -146,11 +146,11 @@ class AntiPattern(PatternType):
                             'direction': '01'
                         }
                     ]
-                ]
+                }
             },
             {
-                'InheritDestroy': [
-                    [
+                'InheritDestroy': {
+                    'style1':[
                         {
                             'src': {'id': [-1], 'category': Constant.E_class,
                                     'attrs': {}, 'filter': {'qualified_name': filter_list}},
@@ -160,11 +160,11 @@ class AntiPattern(PatternType):
                             'direction': '01'
                         }
                     ]
-                ]
+                }
             },
             {
-                'ReflectUse': [
-                    [
+                'ReflectUse': {
+                    'style1':[
                         {
                             'src': {'id': [-1], 'category': Constant.E_method,
                                     'attrs': {}},
@@ -179,7 +179,7 @@ class AntiPattern(PatternType):
                             'direction': '10'
                         }
                     ],
-                    [
+                    'style2':[
                         {
                             'src': {'id': [-1], 'category': Constant.E_class,
                                     'attrs': {}},
@@ -194,7 +194,7 @@ class AntiPattern(PatternType):
                             'direction': '10'
                         }
                     ],
-                ]
+                }
             }
         ]
         PatternType.__init__(self, ident, patterns, rules, filter_list)
