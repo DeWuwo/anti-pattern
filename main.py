@@ -1,8 +1,9 @@
 import argparse
 from utils import FileJson, FileCSV, Constant
 from model.build_model import BuildModel
-from model.anti_pattern import AntiPattern
-from model.coupling_pattern import CouplingPattern
+# from model.anti_pattern import AntiPattern
+# from model.coupling_pattern import CouplingPattern
+from model.patterns.coupling_patterns import CouplingPattern
 from model.match import Match
 from model.git_history import GitHistory
 
@@ -60,8 +61,8 @@ def dispatch(args):
         pattern_match.start_match_pattern(coupling_pattern)
 
         # match anti pattern
-        special_anti_pattern = AntiPattern()
-        pattern_match.start_match_pattern(special_anti_pattern)
+        # special_anti_pattern = AntiPattern()
+        # pattern_match.start_match_pattern(special_anti_pattern)
     except FileNotFoundError as e:
         print(e)
     except Exception as e:
