@@ -106,6 +106,7 @@ class FileCSV:
     @classmethod
     def write_dict_to_csv(cls, out_path: str, name: str, data: List[dict], mode: str):
         print(f'start write {name}')
+        os.makedirs(out_path, exist_ok=True)
         file_path = os.path.join(out_path, name + '.csv')
         headers = []
         if data:
