@@ -30,7 +30,8 @@ class Constant:
     R_aggregate: str = 'Aggregate'
     R_set: str = 'Set'
 
-    Relations: List[str] = [call, R_aggregate, use, define, typed, R_set, R_modify, R_annotate, param, reflect, override, inherit, implement, R_cast, R_super_call]
+    Relations: List[str] = [call, define, use, R_aggregate, typed, R_set, R_modify, R_annotate, param, reflect,
+                            override, implement, inherit, R_cast, R_super_call, contain]
     # anti-pattern name
     ACM: str = "AOSPAccessModify"
     APM: str = "AOSPParameterModify"
@@ -39,7 +40,8 @@ class Constant:
     AFD: str = "AOSPFinalDelete"
 
     # modifier
-    accessible_list: List[str] = ['private', 'protected', 'public']
+    accessible_list: List[str] = ['private', 'protected', 'public', 'null']
+    M_abstract: str = 'abstract'
     M_final: str = 'final'
     M_static: str = 'static'
     un_define: str = 'null'
@@ -66,6 +68,8 @@ class Constant:
     HD_greylist_max_label = 'greylist-max-'
     HD_greylist_max_list: List[str] = ['greylist-max-o', 'greylist-max-p']
 
+    HD_hidden = 'hidden'
+
     @classmethod
     def hidden_map(cls, label: List[str]) -> str:
         if cls.HD_blocked in label or cls.HD_blacklist in label:
@@ -74,6 +78,8 @@ class Constant:
             return cls.HD_greylist
         elif cls.HD_sdk in label or cls.HD_whitelist in label:
             return cls.HD_whitelist
+        elif cls.HD_hidden in label:
+            return cls.HD_hidden
         else:
             for max_label in label:
                 match = cls.HD_max_target.match(max_label)
@@ -82,3 +88,15 @@ class Constant:
                 match = cls.HD_greylist_max.match(max_label)
                 if match:
                     return max_label
+
+    Owner_actively_native = 'actively native'
+    Owner_obsoletely_native = 'obsoletely_native'
+    Owner_intrusive_native = 'intrusive native'
+    Owner_extensive = 'extensive'
+
+    Me_called: str = 'called_times'
+    Me_access: str = 'access_metrics'
+    Me_module: str = 'func_metrics'
+    Me_static: str = 'static_metrics'
+
+    Type_complex: list = ['string', 'int', 'bool', 'byte']
