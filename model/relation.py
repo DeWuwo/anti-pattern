@@ -18,6 +18,7 @@ class Relation:
         self.invoke = -1
         self.src = kwargs['src']
         self.dest = kwargs['dest']
+        self.not_aosp = 0
 
         for key in kwargs['values']:
             if key == 'bindVar':

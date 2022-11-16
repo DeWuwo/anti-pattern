@@ -21,6 +21,7 @@ class Entity:
     entity_mapping: int
     modifiers: List[str]
     accessible: str
+    abstract: bool
     final: bool
     static: bool
     is_global: int
@@ -31,6 +32,7 @@ class Entity:
     end_column: int
     hidden: List[str]
     commits: List[str]
+    commits_count: dict
     refactor: List[dict]
     anonymous: int
     old_aosp: int
@@ -39,6 +41,7 @@ class Entity:
     annotations: List[str]
     parent_class: str
     parent_interface: List[str]
+    called: int
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -52,6 +55,7 @@ class Entity:
         self.is_intrusive = 0
         self.entity_mapping = -1
         self.modifiers = []
+        self.abstract = False
         self.static = False
         self.final = False
         self.accessible = 'null'
@@ -59,6 +63,7 @@ class Entity:
         self.intrusive_modify = {}
         self.bin_path = ''
         self.commits = []
+        self.commits_count = {}
         self.refactor = []
         self.old_aosp = -1
         self.is_param = -1
@@ -66,6 +71,7 @@ class Entity:
         self.annotations = []
         self.parent_class = ''
         self.parent_interface = []
+        self.called = 0
         try:
             self.start_line = args['location']['startLine']
             self.start_column = args['location']['startColumn']
@@ -88,6 +94,8 @@ class Entity:
                 if item in args['modifiers']:
                     self.accessible = item
                     break
+            if Constant.M_abstract in args['modifiers']:
+                self.abstract = True
             if Constant.M_final in args['modifiers']:
                 self.final = True
             if Constant.M_static in args['modifiers']:
@@ -162,18 +170,19 @@ class Entity:
 
     def get_ownership(self):
         if self.is_intrusive == 1:
-            return 'intrusive native'
+            return Constant.Owner_intrusive_native
         elif self.not_aosp == 1:
-            return 'extensive'
+            return Constant.Owner_extensive
         elif self.old_aosp == 1:
-            return 'obsoletely native'
+            return Constant.Owner_obsoletely_native
         else:
-            return 'actively native'
+            return Constant.Owner_actively_native
 
     def toJson(self):
         temp = {'id': self.id, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp, 'isIntrusive': self.is_intrusive,
-                'ownership': self.get_ownership(), 'category': self.category, 'qualifiedName': self.qualifiedName,
-                'name': self.name}
+                'ownership': self.get_ownership(), 'entity_mapping': self.entity_mapping, 'category': self.category,
+                'qualifiedName': self.qualifiedName, 'called_times': self.called, 'name': self.name,
+                'commits_count': self.commits_count}
         if self.file_path != "":
             temp['File'] = self.file_path
         if self.package_name != "":
@@ -231,6 +240,9 @@ class Entity:
     def set_commits(self, commits: List[str]):
         self.commits = commits
 
+    def set_commits_count(self, count: dict):
+        self.commits_count = count
+
     def set_refactor(self, refactor: dict):
         def to_string(ref: dict):
             to_str = ''
@@ -254,6 +266,11 @@ class Entity:
     def set_parent_interface(self, parent_interface: str):
         self.parent_interface.append(parent_interface)
 
+    def set_called_count(self):
+        self.called += 1
+
+    def set_hidden(self, hidden: list):
+        self.hidden = hidden
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package
 
