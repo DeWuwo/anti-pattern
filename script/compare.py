@@ -51,7 +51,7 @@ def compare(left: dict, right: dict, patterns):
                     repeat_count[pattern]['repeat'] += 1
                     break
 
-    FileJson.write_to_json('D:\\Honor\\test_res', repeat_count, 5)
+    FileJson.write_to_json('D:\\Honor\\test_res', repeat_count, 'test')
 
 
 if __name__ == '__main__':

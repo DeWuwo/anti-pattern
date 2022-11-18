@@ -1068,7 +1068,7 @@ class BuildModel:
         FileCSV.write_dict_to_csv(self.out_path, 'facade_entity_info_count', [facade_entity_info], 'w')
         FileCSV.write_entity_to_csv(self.out_path, 'facade_info_entities',
                                     self.facade_entities, 'modify')
-        FileJson.write_to_json(self.out_path, facade_relations_divide_ownership, 1)
+        FileJson.write_to_json(self.out_path, facade_relations_divide_ownership, 'facade')
 
         FileCSV.write_dict_to_csv(self.out_path, 'facade_n2n_count', res_n2n, 'w')
         FileCSV.write_dict_to_csv(self.out_path, 'facade_n2n_stat', [res_n2n_stat], 'w')

@@ -505,9 +505,9 @@ class Match:
         output_path = os.path.join(out_path, pattern_type)
         print(f'output {pattern_type} match res')
         # FileJson.write_match_mode(output_path, match_set)
-        FileJson.write_to_json(output_path, match_set_union_relation, 1)
-        FileJson.write_to_json(output_path, match_set_json_res, 3)
-        FileJson.write_to_json(output_path, match_set_json_res_filter, 6)
+        FileJson.write_to_json(output_path, match_set_union_relation, 'union')
+        FileJson.write_to_json(output_path, match_set_json_res, 'res')
+        FileJson.write_to_json(output_path, match_set_json_res_filter, 'res_filter')
         FileCSV.write_entity_to_csv(output_path, 'coupling_entities',
                                     [self.base_model.entity_extensive[entity_id] for entity_id in
                                      match_set_union_entity],
@@ -522,7 +522,7 @@ class Match:
         output_path = os.path.join(out_path, pattern_type)
 
         # 输出检测结果
-        FileJson.write_to_json(output_path, self.match_result_base_statistic, 4)
+        FileJson.write_to_json(output_path, self.match_result_base_statistic, 'stat')
         # FileCSV.write_stat_to_csv('D:\\Honor\\match_res', pattern_type, datetime.now(), self.output.rsplit('\\', 4)[1],
         #                           self.output.rsplit('\\', 4)[2],
         #                           self.output.rsplit('\\', 4)[3], simple_stat)
