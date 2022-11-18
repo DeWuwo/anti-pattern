@@ -179,7 +179,8 @@ class Entity:
             return Constant.Owner_actively_native
 
     def toJson(self):
-        temp = {'id': self.id, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp, 'isIntrusive': self.is_intrusive,
+        temp = {'id': self.id, 'not_aosp': self.not_aosp, 'is_decoupling': self.is_decoupling,
+                'old_aosp': self.old_aosp, 'isIntrusive': self.is_intrusive,
                 'ownership': self.get_ownership(), 'entity_mapping': self.entity_mapping, 'category': self.category,
                 'qualifiedName': self.qualifiedName, 'called_times': self.called, 'name': self.name,
                 'commits_count': self.commits_count}
@@ -271,6 +272,7 @@ class Entity:
 
     def set_hidden(self, hidden: list):
         self.hidden = hidden
+
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package
 
