@@ -3,8 +3,8 @@ import os.path
 from typing import List, Dict
 from collections import defaultdict
 from functools import partial
-from model.entity import Entity, set_package, set_parameters
-from model.relation import Relation
+from model.dependency.entity import Entity, set_package, set_parameters
+from model.dependency.relation import Relation
 from model.git_history import GitHistory
 from model.blamer.entity_tracer import BaseState
 from utils import Constant, FileCSV, FileJson, Compare

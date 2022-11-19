@@ -3,7 +3,7 @@ import csv
 # import pandas as pd
 from datetime import date
 from typing import Dict, List, Any
-from model.entity import Entity
+from model.dependency.entity import Entity
 
 
 class FileCSV:

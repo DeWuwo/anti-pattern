@@ -1,10 +1,9 @@
 import threading
 import os
-from datetime import datetime
 from typing import List, Dict
 from collections import defaultdict
-from model.relation import Relation
-from model.entity import Entity
+from model.dependency.relation import Relation
+from model.dependency.entity import Entity
 from model.build_model import BuildModel
 from model.patterns.pattern_type import PatternType
 from utils import FileJson, FileCSV, Constant

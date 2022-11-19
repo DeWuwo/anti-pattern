@@ -1,6 +1,6 @@
-from typing import Dict, List
+from typing import List
 from utils import Constant
-from model.entity import Entity
+from model.dependency.entity import Entity
 
 
 class Relation:
