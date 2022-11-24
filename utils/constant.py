@@ -31,7 +31,7 @@ class Constant:
     R_set: str = 'Set'
 
     Relations: List[str] = [call, define, use, R_aggregate, typed, R_set, R_modify, R_annotate, param, reflect,
-                            override, implement, inherit, R_cast, R_super_call, contain]
+                            override, implement, inherit, R_cast, R_super_call, contain, R_import]
     # anti-pattern name
     ACM: str = "AOSPAccessModify"
     APM: str = "AOSPParameterModify"
