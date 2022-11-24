@@ -10,6 +10,7 @@ from utils import FileJson, FileCSV, Constant
 from model.blame_field import BlameField
 from model.patterns.pattern_rules import PatternRules, RelationRule
 from script.code_count import CodeInfo
+from model.metric.metric import Metric
 
 
 class Match:
@@ -138,33 +139,38 @@ class Match:
         return metrics
 
     #
-    def handle_metrics(self, metrics: dict, rels: List[Relation], **kwargs):
+    def handle_metrics(self, metrics: dict, metric_datas, rels: List[Relation], **kwargs):
         for key, val in kwargs.items():
             method = getattr(self, f'handle_metrics_{key}', None)
-            method(metrics, rels, val)
+            method(metrics, metric_datas, rels, val)
 
-    def handle_metrics_called_times(self, metrics: dict, rels: List[Relation], point: list):
+    def handle_metrics_called_times(self, metrics: dict, metric_datas, rels: List[Relation], point: list):
         entity_id = rels[point[0]].dest if point[1] else rels[point[1]].src
-        res = self.base_model.query_relation(Constant.call, '10', Constant.E_method,entity_id)
+        res = self.base_model.query_relation(Constant.call, '10', Constant.E_method, entity_id)
         called_times = {
             'called_by_extension': len(res),
             'called_by_native': self.base_model.entity_extensive[entity_id].called - len(res)
         }
         metrics[Constant.Me_called] = called_times
 
-    def handle_metrics_access_metrics(self, metrics: dict, rels: List[Relation], point: list):
+    def handle_metrics_access_metrics(self, metrics: dict, metric_datas, rels: List[Relation], point: list):
         entity_id = rels[point[0]].dest if point[1] else rels[point[1]].src
         metrics[Constant.Me_access][self.base_model.entity_extensive[entity_id].accessible] += 1
 
-    def handle_metrics_func_metrics(self, metrics: dict, rels: List[Relation], point: list):
+    def handle_metrics_func_metrics(self, metrics: dict, metric_datas, rels: List[Relation], point: list):
         entity_id = rels[point[0]].dest if point[1] else rels[point[1]].src
         metrics[Constant.Me_module] = 'test' \
             if 'test' in self.base_model.entity_extensive[entity_id].qualifiedName \
             else 'not test'
 
-    def handle_metrics_static_metrics(self, metrics: dict, rels: List[Relation], point: list):
+    def handle_metrics_static_metrics(self, metrics: dict, metric_datas: Metric, rels: List[Relation], point: list):
         entity_id = rels[point[0]].dest if point[1] else rels[point[1]].src
         metrics[Constant.Me_static] = self.base_model.entity_extensive[entity_id].commits_count
+        try:
+            metrics[Constant.Me_static].update(
+                metric_datas.mc_data[self.base_model.entity_extensive[entity_id].file_path])
+        except KeyError:
+            pass
 
     # 匹配函数
     def handle_matching(self, result_set: list, filter_set: list, example_stack: list, flag: list, filter_cond: list,
@@ -176,50 +182,50 @@ class Match:
         src_base, src_attr, src_filter = self.entity_rule(example_stack, src)
         dest_base, dest_attr, dest_filter = self.entity_rule(example_stack, dest)
         rel_attr = rules[current].rel['attrs']
-        if len(rules) == 1:
-            flag_map = defaultdict(list)
-            filter_map = defaultdict(list)
-            for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
-                if self.handle_entity_attr_match(self.base_model.entity_extensive[item.src], **src_attr) and \
-                        self.handle_entity_attr_match(self.base_model.entity_extensive[item.dest], **dest_attr) and \
-                        self.handle_relation_attr_match(item, **rel_attr):
-                    if self.handle_entity_filter(self.base_model.entity_extensive[item.src], **src_filter) or \
-                            self.handle_entity_filter(self.base_model.entity_extensive[item.dest], **dest_filter):
-                        filter_map[item.src].append(item)
+        # if len(rules) == 1:
+        #     flag_map = defaultdict(list)
+        #     filter_map = defaultdict(list)
+        #     for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
+        #         if self.handle_entity_attr_match(self.base_model.entity_extensive[item.src], **src_attr) and \
+        #                 self.handle_entity_attr_match(self.base_model.entity_extensive[item.dest], **dest_attr) and \
+        #                 self.handle_relation_attr_match(item, **rel_attr):
+        #             if self.handle_entity_filter(self.base_model.entity_extensive[item.src], **src_filter) or \
+        #                     self.handle_entity_filter(self.base_model.entity_extensive[item.dest], **dest_filter):
+        #                 filter_map[item.src].append(item)
+        #             else:
+        #                 flag_map[item.src].append(item)
+        #     for item in flag_map:
+        #         result_set.append(flag_map[item])
+        #     for item in filter_map:
+        #         filter_set.append(filter_map[item])
+        # else:
+        for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
+            if self.handle_entity_attr_match(self.base_model.entity_extensive[item.src], **src_attr) and \
+                    self.handle_entity_attr_match(self.base_model.entity_extensive[item.dest], **dest_attr) and \
+                    self.handle_relation_attr_match(item, **rel_attr) and \
+                    str(item.src) + str(item.dest) not in flag:
+                next_stack = example_stack[:]
+                next_stack.append(item)
+                flag_update = flag[:]
+                flag_update.append(str(item.src) + str(item.dest))
+                if self.handle_entity_filter(self.base_model.entity_extensive[item.src], **src_filter) or \
+                        self.handle_entity_filter(self.base_model.entity_extensive[item.dest],
+                                                  **dest_filter):
+                    filter_cond[current] = True
+                else:
+                    filter_cond[current] = False
+                if current < len(rules) - 1:
+                    current += 1
+                    self.handle_matching(result_set, filter_set, next_stack, flag_update, filter_cond, rules,
+                                         current)
+                    current -= 1
+                else:
+                    if True in filter_cond:
+                        filter_set.append(next_stack)
                     else:
-                        flag_map[item.src].append(item)
-            for item in flag_map:
-                result_set.append(flag_map[item])
-            for item in filter_map:
-                filter_set.append(filter_map[item])
-        else:
-            for item in self.base_model.query_relation(rel, not_aosp, src_base, dest_base):
-                if self.handle_entity_attr_match(self.base_model.entity_extensive[item.src], **src_attr) and \
-                        self.handle_entity_attr_match(self.base_model.entity_extensive[item.dest], **dest_attr) and \
-                        self.handle_relation_attr_match(item, **rel_attr) and \
-                        str(item.src) + str(item.dest) not in flag:
-                    next_stack = example_stack[:]
-                    next_stack.append(item)
-                    flag_update = flag[:]
-                    flag_update.append(str(item.src) + str(item.dest))
-                    if self.handle_entity_filter(self.base_model.entity_extensive[item.src], **src_filter) or \
-                            self.handle_entity_filter(self.base_model.entity_extensive[item.dest],
-                                                      **dest_filter):
-                        filter_cond[current] = True
-                    else:
-                        filter_cond[current] = False
-                    if current < len(rules) - 1:
-                        current += 1
-                        self.handle_matching(result_set, filter_set, next_stack, flag_update, filter_cond, rules,
-                                             current)
-                        current -= 1
-                    else:
-                        if True in filter_cond:
-                            filter_set.append(next_stack)
-                        else:
-                            result_set.append(next_stack)
+                        result_set.append(next_stack)
 
-    def general_rule_matching(self, rule: PatternRules):
+    def general_rule_matching(self, rule: PatternRules, metric_cal_datas: Metric):
         """
         通用的模式匹配
         :return:
@@ -234,9 +240,10 @@ class Match:
             self.handle_matching(mode_set, filter_set, [], [], [False, False, False, False, False], style.rules, 0)
             res[style.name] = {'res': mode_set, 'filter': filter_set}
             res_union[style.name] = {
-                'res': self.aggregate_res_and_get_metrics(mode_set, rule.union_point, rule.union_edge, style.metrics),
+                'res': self.aggregate_res_and_get_metrics(mode_set, rule.union_point, rule.union_edge, style.metrics,
+                                                          metric_cal_datas),
                 'filter': self.aggregate_res_and_get_metrics(filter_set, rule.union_point, rule.union_edge,
-                                                             style.metrics)}
+                                                             style.metrics, metric_cal_datas)}
 
         self.match_result.append({rule.name: res})
         self.match_result_union.append({rule.name: res_union})
@@ -268,10 +275,10 @@ class Match:
         return 'unknown_module'
 
     #
-    def aggregate_res_and_get_metrics(self, res: List[List[Relation]], points, edges, metrics: dict):
+    def aggregate_res_and_get_metrics(self, res: List[List[Relation]], points, edges, metrics: dict,
+                                      metric_cal_datas: Metric):
         final_res = []
-        index = 0
-        count = len(res)
+        res_copy = res.copy()
 
         def get_condition(rels: List[Relation], points_id: List):
             points_id_list = []
@@ -280,30 +287,26 @@ class Match:
                 direction = rel % 2
                 if points_id[rel]:
                     eid = rels[edge_id].dest if direction else rels[edge_id].src
-                    points_id_list.append(eid)
+                    points_id_list.append(str(eid))
                 else:
-                    points_id_list.append(-1)
-            return points_id_list
+                    points_id_list.append('-')
 
-        while index < count - 1:
-            temp = res[index].copy()
+            return ','.join(points_id_list)
+
+        condition_map = defaultdict(list)
+        for index in range(0, len(res_copy)):
+            condition = get_condition(res_copy[index], points)
+            condition_map[condition].append(index)
+
+        for _, examples in condition_map.items():
+            temp_exa = res_copy[examples[0]]
             metrics_values = self.handle_metrics_init(**metrics)
-            self.handle_metrics(metrics_values, res[index], **metrics)
-            condition = get_condition(temp, points)
-            for exa in range(index + 1, count):
-                cond = get_condition(res[exa], points)
-                if cond == condition:
-                    self.handle_metrics(metrics_values, res[exa], **metrics)
-                    for edge in edges:
-                        temp.append(res[exa][edge])
-                else:
-                    final_res.append({'metrics': metrics_values, 'value': temp})
-                    index = exa
-                    break
-                if exa == count - 1:
-                    final_res.append({'metrics': metrics_values, 'value': temp})
-                    index = exa
-                    break
+            self.handle_metrics(metrics_values, metric_cal_datas, res_copy[examples[0]], **metrics)
+            for exa_index in range(1, len(examples)):
+                self.handle_metrics(metrics_values, metric_cal_datas, res_copy[examples[exa_index]], **metrics)
+                for edge in edges:
+                    temp_exa.append(res_copy[examples[exa_index]][edge])
+            final_res.append({'metrics': metrics_values, 'value': temp_exa})
 
         return final_res
 
@@ -471,11 +474,12 @@ class Match:
         return temp
 
     def start_match_pattern(self, pattern: PatternType):
+        metric_cal_datas: Metric = Metric(self.base_model.relation_extensive, self.out_path)
         print('start detect ', pattern.ident)
         threads = []
         self.pre_del()
         for rule in pattern.rules:
-            th = threading.Thread(target=self.general_rule_matching(rule))
+            th = threading.Thread(target=self.general_rule_matching(rule, metric_cal_datas))
             threads.append(th)
         for th in threads:
             th.setDaemon(False)
