@@ -525,7 +525,9 @@ class BuildModel:
         for entity in self.entity_extensive:
             self.owner_proc[entity.id]['refactor'] = 'null'
             if entity.above_file_level():
-                entity.set_honor(-1)
+                owner = 0 if self.graph_differ(entity, entity.qualifiedName, entity.parameter_names, entity.file_path,
+                                               aosp_entity_map, extensive_entity_map) >= 0 else 1
+                entity.set_honor(owner)
                 self.owner_proc[entity.id]['dep_diff'] = 'ignore'
                 self.owner_proc[entity.id]['git_blame'] = 'ignore'
                 self.owner_proc_count['ignore'] += 1
@@ -912,7 +914,7 @@ class BuildModel:
             relation_info.update({'Define_e': 0, 'Parameter_e': 0})
             entity_info = {
                 'Method': [0, 0], 'Interface': [0, 0], 'Class': [0, 0], 'Variable': [0, 0], 'Annotation': [0, 0],
-                'File': [0, 0], 'Enum': [0, 0], 'Enum Constant': [0, 0],
+                'File': [0, 0], 'Package': [0, 0], 'Enum': [0, 0], 'Enum Constant': [0, 0],
             }
 
             for relation in self.relation_extensive:
