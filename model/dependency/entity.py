@@ -34,6 +34,7 @@ class Entity:
     commits: List[str]
     commits_count: dict
     refactor: List[dict]
+    is_anonymous_class: bool
     anonymous: int
     old_aosp: int
     is_param: int
@@ -72,6 +73,7 @@ class Entity:
         self.parent_class = ''
         self.parent_interface = []
         self.called = 0
+        self.is_anonymous_class = False
         try:
             self.start_line = args['location']['startLine']
             self.start_column = args['location']['startColumn']
@@ -273,6 +275,9 @@ class Entity:
     def set_hidden(self, hidden: list):
         self.hidden = hidden
 
+    def set_anonymous_class(self, is_anonymous: bool):
+        self.is_anonymous_class = is_anonymous
+
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package
 
@@ -304,3 +309,31 @@ def set_parameters(entity: Entity, entities: List[Entity]):
         while entities[temp.parentId].category == Constant.E_method:
             temp = entities[temp.parentId]
         entity.set_parent_param(temp.parameter_types, temp.parameter_names)
+
+
+def get_accessible_domain(src_entity: Entity, dest_entity: Entity, entities: List[Entity]):
+    # 获取节点父 类节点
+    def get_parent_class_node(entity: Entity):
+        if entity.category != Constant.E_class:
+            if entity.parentId != -1:
+                temp = entities[entity.parentId]
+                while temp.category != Constant.E_class:
+                    temp = entities[temp.parentId]
+                return temp.id
+            else:
+                return -1
+        else:
+            return entity.id
+
+    src_entity_parent_class_node = get_parent_class_node(src_entity)
+    dest_entity_parent_class_node = get_parent_class_node(dest_entity)
+    if src_entity_parent_class_node == dest_entity_parent_class_node:
+        return 0
+    elif src_entity.package_name == dest_entity.package_name:
+        return 1
+    else:
+        if entities[dest_entity_parent_class_node].qualifiedName == \
+                entities[dest_entity_parent_class_node].parent_class:
+            return 2
+        else:
+            return 3

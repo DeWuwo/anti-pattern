@@ -9,6 +9,7 @@ from model.patterns.pattern_type import PatternType
 from utils import FileJson, FileCSV, Constant
 from model.blame_field import BlameField
 from model.patterns.pattern_rules import PatternRules, RelationRule
+from model.patterns.pattern_constant import filter_list
 from script.code_count import CodeInfo
 from model.metric.metric import Metric
 
@@ -26,8 +27,9 @@ class Match:
     statistic_entities: Dict[int, Dict[str, int]]
     statistic_modules: Dict[str, Dict[str, int]]
     module_blame: defaultdict
+    code_extension: str
 
-    def __init__(self, build_model: BuildModel, output: str, blame_path: str):
+    def __init__(self, build_model: BuildModel, output: str, blame_path: str, code_extension: str):
         self.base_model = build_model
         self.output = output
         self.out_path = output
@@ -39,6 +41,7 @@ class Match:
         self.statistic_entities = {}
         self.statistic_modules = {}
         self.module_blame = BlameField(blame_path).read_blame_field()
+        self.code_extension = code_extension
 
     # 命令中实体属性解析
     def entity_rule(self, entity_stack: List[Relation], entity: dict):
@@ -88,6 +91,11 @@ class Match:
     def handle_accessible_modify(self, entity: Entity, accessible_modify: bool):
         return not accessible_modify ^ (entity.id in self.base_model.access_modify_entities)
 
+    def handle_accessible_up(self, entity: Entity, accessible_up: bool):
+        return self.handle_accessible_modify(entity, accessible_up) and \
+               Constant.accessible_level[entity.intrusive_modify['access_modify'].split('-')[1]] > \
+               Constant.accessible_level[entity.intrusive_modify['access_modify'].split('-')[0]]
+
     def handle_hidden_modify(self, entity: Entity, hidden_modify: bool):
         return not hidden_modify ^ (entity.id in self.base_model.hidden_modify_entities)
 
@@ -121,56 +129,6 @@ class Match:
 
     def handle_invoke(self, relation: Relation, invoke: bool):
         return not invoke ^ (relation.invoke == 1)
-
-    # metrics init
-    def handle_metrics_init(self, **kwargs):
-        metrics = {}
-        for key, val in kwargs.items():
-            if key == Constant.Me_called:
-                metrics[key] = {}
-            elif key == Constant.Me_access:
-                metrics[key] = {}
-                for access in Constant.accessible_list:
-                    metrics[key][access] = 0
-            elif key == Constant.Me_static:
-                metrics[key] = {}
-            elif key == Constant.Me_module:
-                metrics[key] = ''
-        return metrics
-
-    #
-    def handle_metrics(self, metrics: dict, metric_datas, rels: List[Relation], **kwargs):
-        for key, val in kwargs.items():
-            method = getattr(self, f'handle_metrics_{key}', None)
-            method(metrics, metric_datas, rels, val)
-
-    def handle_metrics_called_times(self, metrics: dict, metric_datas, rels: List[Relation], point: list):
-        entity_id = rels[point[0]].dest if point[1] else rels[point[1]].src
-        res = self.base_model.query_relation(Constant.call, '10', Constant.E_method, entity_id)
-        called_times = {
-            'called_by_extension': len(res),
-            'called_by_native': self.base_model.entity_extensive[entity_id].called - len(res)
-        }
-        metrics[Constant.Me_called] = called_times
-
-    def handle_metrics_access_metrics(self, metrics: dict, metric_datas, rels: List[Relation], point: list):
-        entity_id = rels[point[0]].dest if point[1] else rels[point[1]].src
-        metrics[Constant.Me_access][self.base_model.entity_extensive[entity_id].accessible] += 1
-
-    def handle_metrics_func_metrics(self, metrics: dict, metric_datas, rels: List[Relation], point: list):
-        entity_id = rels[point[0]].dest if point[1] else rels[point[1]].src
-        metrics[Constant.Me_module] = 'test' \
-            if 'test' in self.base_model.entity_extensive[entity_id].qualifiedName \
-            else 'not test'
-
-    def handle_metrics_static_metrics(self, metrics: dict, metric_datas: Metric, rels: List[Relation], point: list):
-        entity_id = rels[point[0]].dest if point[1] else rels[point[1]].src
-        metrics[Constant.Me_static] = self.base_model.entity_extensive[entity_id].commits_count
-        try:
-            metrics[Constant.Me_static].update(
-                metric_datas.mc_data[self.base_model.entity_extensive[entity_id].file_path])
-        except KeyError:
-            pass
 
     # 匹配函数
     def handle_matching(self, result_set: list, filter_set: list, example_stack: list, flag: list, filter_cond: list,
@@ -281,6 +239,8 @@ class Match:
         res_copy = res.copy()
 
         def get_condition(rels: List[Relation], points_id: List):
+            if not points_id:
+                return 'null'
             points_id_list = []
             for rel in range(0, len(points_id)):
                 edge_id = rel // 2
@@ -298,15 +258,22 @@ class Match:
             condition = get_condition(res_copy[index], points)
             condition_map[condition].append(index)
 
-        for _, examples in condition_map.items():
-            temp_exa = res_copy[examples[0]]
-            metrics_values = self.handle_metrics_init(**metrics)
-            self.handle_metrics(metrics_values, metric_cal_datas, res_copy[examples[0]], **metrics)
-            for exa_index in range(1, len(examples)):
-                self.handle_metrics(metrics_values, metric_cal_datas, res_copy[examples[exa_index]], **metrics)
-                for edge in edges:
-                    temp_exa.append(res_copy[examples[exa_index]][edge])
-            final_res.append({'metrics': metrics_values, 'value': temp_exa})
+        for condition, examples in condition_map.items():
+            if condition != 'null':
+                temp_exa = res_copy[examples[0]]
+                metrics_values = metric_cal_datas.handle_metrics_init(**metrics)
+                metric_cal_datas.handle_metrics(metrics_values, res_copy[examples[0]], **metrics)
+                for exa_index in range(1, len(examples)):
+                    metric_cal_datas.handle_metrics(metrics_values, res_copy[examples[exa_index]], **metrics)
+                    for edge in edges:
+                        temp_exa.append(res_copy[examples[exa_index]][edge])
+
+                final_res.append({'metrics': metrics_values, 'value': temp_exa})
+            else:
+                for exa in res_copy:
+                    metrics_values = metric_cal_datas.handle_metrics_init(**metrics)
+                    metric_cal_datas.handle_metrics(metrics_values, exa, **metrics)
+                    final_res.append({'metrics': metrics_values, 'value': exa})
 
         return final_res
 
@@ -474,7 +441,8 @@ class Match:
         return temp
 
     def start_match_pattern(self, pattern: PatternType):
-        metric_cal_datas: Metric = Metric(self.base_model.relation_extensive, self.out_path)
+        metric_cal_datas: Metric = Metric(self.base_model.relation_extensive, self.out_path, self.base_model.query_map,
+                                          self.base_model.entity_extensive, filter_list, self.code_extension)
         print('start detect ', pattern.ident)
         threads = []
         self.pre_del()

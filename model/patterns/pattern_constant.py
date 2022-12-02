@@ -1,5 +1,6 @@
 from model.patterns.pattern_rules import PatternRules
 from utils import Constant
+from model.metric.metric_constant import MetricCons
 
 filter_list = ['android.util', 'android.os.Message', 'com.android.internal.logging',
                'com.android.internal.os', 'android.os', 'com.android.server.utils',
@@ -13,32 +14,32 @@ class PatternCons:
         'FinalDel',
         [1, 0], [0], {
             'del_class_final_for_inherit': {
-                'metrics': {},
+                'metrics': {MetricCons.Me_is_inherit: [0, 1], MetricCons.Me_stability: [0, 1]},
                 'rules': [
                     {
-                        'src': {'id': [-1], 'category': Constant.E_class,
+                        'src': {'id': [-1], 'category': Constant.E_file,
                                 'attrs': {}},
-                        'rel': {'type': Constant.inherit, 'attrs': {}},
+                        'rel': {'type': Constant.contain, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_class,
                                  'attrs': {'final': True, 'intrusive': True}},
-                        'direction': '10'
+                        'direction': '00'
                     }
                 ]
             },
             'del_method_final_for_override': {
-                'metrics': {},
+                'metrics': {MetricCons.Me_is_override: [0, 1], MetricCons.Me_stability: [0, 1]},
                 'rules': [
                     {
-                        'src': {'id': [-1], 'category': Constant.E_method,
+                        'src': {'id': [-1], 'category': Constant.E_class,
                                 'attrs': {}},
-                        'rel': {'type': Constant.override, 'attrs': {}},
+                        'rel': {'type': Constant.define, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_method,
                                  'attrs': {'final': True, 'intrusive': True}},
-                        'direction': '10'
+                        'direction': '00'
                     },
                 ]},
             'del_class_final_for_var': {
-                'metrics': {},
+                'metrics': {MetricCons.Me_interface_number: [0, 0]},
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_class,
@@ -78,28 +79,29 @@ class PatternCons:
             }
         })
 
-    pattern_access = PatternRules('AccessibilityModify', [1, 0], [0], {
+    pattern_access = PatternRules('AccessibilityModify', [], [], {
         'class_access_modify': {
-            'metrics': {},
+            'metrics': {MetricCons.Me_native_used_frequency: [0, 1], MetricCons.Me_stability: [0, 1]},
             'rules': [
                 {
                     'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                     'rel': {'type': Constant.define, 'attrs': {}},
                     'dest': {'id': [-1], 'category': Constant.E_class,
-                             'attrs': {'accessible_modify': True, 'intrusive': True},
+                             'attrs': {'accessible_up': True, 'intrusive': True},
                              'filter': {'qualified_name': filter_list}},
                     'direction': '00'
                 }
             ]
         },
         'method_access_modify': {
-            'metrics': {},
+            'metrics': {MetricCons.Me_native_used_frequency: [0, 1], MetricCons.Me_native_used_effectiveness: [0, 1],
+                        MetricCons.Me_stability: [0, 1]},
             'rules': [
                 {
                     'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                     'rel': {'type': Constant.define, 'attrs': {}},
                     'dest': {'id': [-1], 'category': Constant.E_method,
-                             'attrs': {'accessible_modify': True, 'intrusive': True},
+                             'attrs': {'accessible_up': True, 'intrusive': True},
                              'filter': {'qualified_name': filter_list}},
                     'direction': '00'
                 },
@@ -110,7 +112,7 @@ class PatternCons:
     pattern_hidden = PatternRules(
         'HiddenApi', [1, 0], [0], {
             'call_method': {
-                'metrics': {},
+                'metrics': {MetricCons.Me_acceptable_hidden: [0, 1]},
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_method,
@@ -124,7 +126,7 @@ class PatternCons:
                     }
                 ]},
             'use_variable': {
-                'metrics': {},
+                'metrics': {MetricCons.Me_acceptable_hidden: [0, 1]},
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_method,
@@ -159,7 +161,7 @@ class PatternCons:
     pattern_param_modify = PatternRules(
         'ParameterListModifyDep', [1, 0], [0], {
             'add_parameter': {
-                'metrics': {Constant.Me_called: [0, 0]},
+                'metrics': {MetricCons.Me_add_param: [0, 1], MetricCons.Me_native_used_frequency: [0, 0]},
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {'intrusive': True},
@@ -178,7 +180,8 @@ class PatternCons:
         'InnerExtensionClassUseDep',
         [1, 1, 0, 0, 0, 0, 0, 0], [1, 2, 3], {
             'inner_class': {
-                'metrics': {Constant.Me_access: [2, 1]},
+                'metrics': {MetricCons.Me_inner_scale: [0, 1], MetricCons.Me_extensive_access_frequency: [2, 1],
+                            MetricCons.Me_anonymous_class: [0, 1], MetricCons.Me_stability: [0, 0]},
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {},
@@ -255,7 +258,7 @@ class PatternCons:
         'AggregationExtensionInterfaceClassDep',
         [1, 1, 1, 0, 1, 1, 1, 1, 1, 0], [1, 4], {
             'aggregate_interface': {
-                'metrics': {Constant.Me_static: [0, 1]},
+                'metrics': {MetricCons.Me_stability: [0, 1], MetricCons.Me_native_access_frequency: [1, 1]},
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
@@ -296,7 +299,8 @@ class PatternCons:
                     }
                 ]},
             'aggregate_class': {
-                'metrics': {Constant.Me_static: [0, 1]},
+                'metrics': {MetricCons.Me_stability: [0, 1],
+                            MetricCons.Me_native_access_frequency: [1, 1]},
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
@@ -513,7 +517,7 @@ class PatternCons:
     pattern_reflect = PatternRules(
         'ReflectUse', [1, 0], [0], {
             'reflect_method': {
-                'metrics': {Constant.Me_module: [0, 0]},
+                'metrics': {MetricCons.Me_module: [0, 0], MetricCons.Me_extensive_access_frequency: [0, 1]},
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
@@ -524,7 +528,7 @@ class PatternCons:
                     }
                 ]},
             'reflect_class': {
-                'metrics': {Constant.Me_module: [0, 0]},
+                'metrics': {MetricCons.Me_module: [0, 0], MetricCons.Me_extensive_access_frequency: [0, 1]},
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},

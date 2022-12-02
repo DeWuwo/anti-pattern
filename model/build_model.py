@@ -43,6 +43,7 @@ class BuildModel:
     relation_extensive: List[Relation]
     statistics_android: Dict
     statistics_extensive: Dict
+    file_list_extension: set
 
     out_path: str
     # more info
@@ -93,6 +94,7 @@ class BuildModel:
         self.relation_extensive = []
         self.statistics_android = statistics_android
         self.statistics_extensive = statistics_extensive
+        self.file_list_extension = set()
         # self.hidden_entities = []
         self.params_modify_entities = []
         self.hidden_modify_entities = []
@@ -151,6 +153,8 @@ class BuildModel:
                 aosp_entity_set[entity.category][entity.qualifiedName][entity.file_path].append(entity.id)
                 if entity.category == Constant.E_file:
                     file_set_android.add(entity.file_path)
+                elif entity.category == Constant.E_class and entity.name == Constant.anonymous_class:
+                    entity.set_anonymous_class(True)
         # assi entities
         print('     get assi entities')
         for item in entities_extensive:
@@ -162,6 +166,8 @@ class BuildModel:
                 self.entity_extensive.append(entity)
                 extensive_entity_set[entity.category][entity.qualifiedName][entity.file_path].append(entity.id)
                 self.owner_proc.append(entity.to_csv())
+                if entity.category == Constant.E_file:
+                    self.file_list_extension.add(entity.file_path)
         # init dep
         print("start init model deps")
         import_relation_set = defaultdict(int)
@@ -669,7 +675,7 @@ class BuildModel:
                     self.facade_relations.append(relation)
                     # facade_entities.add(src.id)
                     # facade_entities.add(dest.id)
-                elif relation.rel == Constant.define:
+                elif relation.rel == Constant.define or relation.rel == Constant.contain:
                     self.define_relations.append(relation)
             # 临时增加聚合依赖
             if relation.rel == Constant.define:
