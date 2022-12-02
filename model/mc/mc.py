@@ -147,8 +147,8 @@ class MC:
     def run_log_fetch(self):
         print('fetch git log')
         # gitlogFile = generateLog(projectName)
-        # if os.path.exists(f"{self.out_path}\\mc\\history-java.csv"):
-        #     return
+        if os.path.exists(f"{self.out_path}\\mc\\history-java.csv"):
+            return
 
         [fileList_all, fileList_java, fileList_notest] = self.getAllFilesByFilter()
         [commitCollection_all, commitCollection_java, commitCollection_nontest] = \
@@ -268,6 +268,8 @@ class MC:
         return res
 
     def get_mc_file(self):
+        if os.path.exists(f"{self.out_path}\\mc\\file-mc.csv"):
+            return
         self.run_log_fetch()
         print('get file-mc.csv')
         [mcAuthorDict, mcCommittimesDict, mcChangeLocDict, mcIssueCountDict,
