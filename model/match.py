@@ -469,7 +469,7 @@ class Match:
 
         for target in targets:
             output_to_file(target, self.match_result_union)
-        self.output_module_res(pattern.ident)
+        # self.output_module_res(pattern.ident)
 
     def output_res(self, pattern_type: str, match_set, match_set_union_relation, match_set_union_entity,
                    match_set_json_res, match_set_json_res_filter, out_path):
