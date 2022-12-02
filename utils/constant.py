@@ -41,6 +41,13 @@ class Constant:
 
     # modifier
     accessible_list: List[str] = ['private', 'protected', 'public', 'null']
+    accessible_level: dict = {
+        'private': 0,
+        'null': 1,
+        'protected': 2,
+        'public': 3
+    }
+
     M_abstract: str = 'abstract'
     M_final: str = 'final'
     M_static: str = 'static'
@@ -93,10 +100,3 @@ class Constant:
     Owner_obsoletely_native = 'obsoletely_native'
     Owner_intrusive_native = 'intrusive native'
     Owner_extensive = 'extensive'
-
-    Me_called: str = 'called_times'
-    Me_access: str = 'access_metrics'
-    Me_module: str = 'func_metrics'
-    Me_static: str = 'static_metrics'
-
-    Type_complex: list = ['string', 'int', 'bool', 'byte']
