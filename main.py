@@ -6,6 +6,7 @@ from model.build_model import BuildModel
 from model.patterns.coupling_patterns import CouplingPattern
 from model.match import Match
 from model.git_history import GitHistory
+from model.mc.mc import MC
 
 access_map = {'': '0', 'Private': '1', 'Protected': '2', 'Public': '3'}
 
@@ -50,12 +51,17 @@ def dispatch(args):
 
         # build base model
         git_history = GitHistory(args.code_android, args.code_honor, args.honor, args.refactor_miner,
-                                   args.output)
+                                 args.output)
 
         base_model = BuildModel(entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp,
                                 entities_stat_aosp, git_history, args.output)
 
-        pattern_match = Match(base_model, args.output, module_blame)
+        mc = MC(args.code_honor, args.output, list(base_model.file_list_extension))
+        mc.get_mc_file()
+
+
+
+        pattern_match = Match(base_model, args.output, module_blame, args.code_honor)
         # match coupling pattern
         coupling_pattern = CouplingPattern()
         pattern_match.start_match_pattern(coupling_pattern)
