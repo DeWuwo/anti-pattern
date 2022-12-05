@@ -18,13 +18,15 @@ class GraphRule:
     name: str
     rules: List[RelationRule]
     metrics: dict
+    metrics_filter: list
 
-    def __init__(self, name, rules: List[dict], metrics: dict):
+    def __init__(self, name, rules: List[dict], metrics: dict, metrics_filter: List[dict]):
         self.name = name
         self.rules = []
         for rule in rules:
             self.rules.append(RelationRule(rule))
         self.metrics = metrics
+        self.metrics_filter = metrics_filter
 
 
 class PatternRules:
@@ -37,4 +39,5 @@ class PatternRules:
         self.union_edge = union_edge
         self.styles = []
         for style_name, style_rules in styles.items():
-            self.styles.append(GraphRule(style_name, style_rules['rules'], style_rules['metrics']))
+            self.styles.append(
+                GraphRule(style_name, style_rules['rules'], style_rules['metrics'], style_rules['metrics_filter']))

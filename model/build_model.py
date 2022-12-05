@@ -168,6 +168,8 @@ class BuildModel:
                 self.owner_proc.append(entity.to_csv())
                 if entity.category == Constant.E_file:
                     self.file_list_extension.add(entity.file_path)
+                elif entity.category == Constant.E_class and entity.name == Constant.anonymous_class:
+                    entity.set_anonymous_class(True)
         # init dep
         print("start init model deps")
         import_relation_set = defaultdict(int)
@@ -445,8 +447,8 @@ class BuildModel:
                 move_type: str = move[0]
                 source_state: BaseState = move[1]
                 dest_state: BaseState = move[2]
-                print(len(ent_refactor_info), ent.category, ent.id, move_type, source_state.longname(),
-                      dest_state.longname())
+                # print(len(ent_refactor_info), ent.category, ent.id, move_type, source_state.longname(),
+                #       dest_state.longname())
 
                 # 对扩展重构
                 dep_diff_res = self.graph_differ(ent, source_state.longname(), source_state.get_param(),

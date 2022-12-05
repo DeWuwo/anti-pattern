@@ -2,6 +2,7 @@ import threading
 import os
 from typing import List, Dict
 from collections import defaultdict
+from functools import partial
 from model.dependency.relation import Relation
 from model.dependency.entity import Entity
 from model.build_model import BuildModel
@@ -20,6 +21,7 @@ class Match:
     out_path: str
     match_result: List[Dict[str, Dict[str, Dict[str, Dict[str, List[dict]]]]]]
     match_result_union: List[Dict[str, Dict[str, Dict[str, Dict[str, List[dict]]]]]]
+    match_result_metric: List[Dict[str, Dict[str, Dict[str, Dict[str, List[dict]]]]]]
     match_result_base_statistic: Dict[str, Dict[str, int]]
     # 不同粒度数量统计
     statistic_pkgs: Dict[str, Dict[str, int]]
@@ -35,6 +37,7 @@ class Match:
         self.out_path = output
         self.match_result = []
         self.match_result_union = []
+        self.match_result_metric = []
         self.match_result_base_statistic = {}
         self.statistic_files = {}
         self.statistic_pkgs = {}
@@ -191,24 +194,44 @@ class Match:
         print('      detect Pattern: ', rule.name)
         # res = []
         res = {}
-        res_union = {}
+        res_with_metric = {}
+        res_with_metric_and_filter = {}
+        res_with_metric_statistic = {}
         for style in rule.styles:
             mode_set = []
             filter_set = []
             self.handle_matching(mode_set, filter_set, [], [], [False, False, False, False, False], style.rules, 0)
-            res[style.name] = {'res': mode_set, 'filter': filter_set}
-            res_union[style.name] = {
-                'res': self.aggregate_res_and_get_metrics(mode_set, rule.union_point, rule.union_edge, style.metrics,
-                                                          metric_cal_datas),
-                'filter': self.aggregate_res_and_get_metrics(filter_set, rule.union_point, rule.union_edge,
-                                                             style.metrics, metric_cal_datas)}
+            # res[style.name] = {'res': mode_set, 'filter': filter_set}
+            res_metric, res_metric_filter, res_metric_statistic = \
+                self.aggregate_res_and_get_metrics(mode_set, rule.union_point,
+                                                   rule.union_edge, style.metrics,
+                                                   style.metrics_filter, metric_cal_datas)
+            res_filter_metric, res_filter_metric_filter, res_filter_metric_statistic = \
+                self.aggregate_res_and_get_metrics(filter_set,
+                                                   rule.union_point,
+                                                   rule.union_edge,
+                                                   style.metrics,
+                                                   style.metrics_filter,
+                                                   metric_cal_datas)
+            # res[style.name] = {'res': }
+            res_with_metric_and_filter[style.name] = {'res': res_metric_filter, 'filter': res_filter_metric_filter}
+            res_with_metric[style.name] = {
+                'res': res_metric,
+                'filter': res_filter_metric
+            }
+            res_with_metric_statistic[style.name] = {
+                'res': res_metric_statistic,
+                'filter': res_filter_metric_statistic
+            }
 
-        self.match_result.append({rule.name: res})
-        self.match_result_union.append({rule.name: res_union})
+        self.match_result.append({rule.name: res_with_metric_and_filter})
+        self.match_result_union.append({rule.name: res_with_metric})
+        self.match_result_metric.append({rule.name: res_with_metric_statistic})
 
     def pre_del(self):
         self.match_result = []
         self.match_result_union = []
+        self.match_result_metric = []
         self.match_result_base_statistic = {}
         self.statistic_files = {}
         self.statistic_pkgs = {}
@@ -234,9 +257,11 @@ class Match:
 
     #
     def aggregate_res_and_get_metrics(self, res: List[List[Relation]], points, edges, metrics: dict,
-                                      metric_cal_datas: Metric):
+                                      metrics_filter: list, metric_cal_datas: Metric):
         final_res = []
+        final_res_metrics_filter = []
         res_copy = res.copy()
+        metrics_statistic = metric_cal_datas.handle_metrics_statistics_init(**metrics)
 
         def get_condition(rels: List[Relation], points_id: List):
             if not points_id:
@@ -267,15 +292,20 @@ class Match:
                     metric_cal_datas.handle_metrics(metrics_values, res_copy[examples[exa_index]], **metrics)
                     for edge in edges:
                         temp_exa.append(res_copy[examples[exa_index]][edge])
-
                 final_res.append({'metrics': metrics_values, 'value': temp_exa})
+                metric_cal_datas.handle_metrics_statistics(metrics_values, metrics_statistic, **metrics)
+                if metric_cal_datas.handle_metrics_filter(metrics_values, metrics_filter):
+                    final_res_metrics_filter.append({'metrics': metrics_values, 'value': temp_exa})
             else:
                 for exa in res_copy:
                     metrics_values = metric_cal_datas.handle_metrics_init(**metrics)
                     metric_cal_datas.handle_metrics(metrics_values, exa, **metrics)
                     final_res.append({'metrics': metrics_values, 'value': exa})
+                    metric_cal_datas.handle_metrics_statistics(metrics_values, metrics_statistic, **metrics)
+                    if metric_cal_datas.handle_metrics_filter(metrics_values, metrics_filter):
+                        final_res_metrics_filter.append({'metrics': metrics_values, 'value': exa})
 
-        return final_res
+        return final_res, final_res_metrics_filter, metrics_statistic
 
     def get_statistics(self, res_of_detect):
         print('get statistics')
@@ -351,7 +381,7 @@ class Match:
                         self.statistic_pkgs[pkg][pattern] = pattern_pkgs_set[pkg]
         return simple_stat
 
-    def deal_res_for_output(self, filter_list: List[str], res_of_detect):
+    def deal_res_for_output(self, filter_list: List[str], res_of_detect, out_path: str):
         print('ready for write')
         match_set = []
         union_temp_relation: List = []
@@ -364,7 +394,6 @@ class Match:
         res['values'] = {}
         res_filter = {'modeCount': len(res_of_detect), 'values': {}}
 
-        out_path = self.output
         # 'com.android.server.pm'
         if filter_list:
             out_path = os.path.join(out_path, filter_list[0])
@@ -454,21 +483,26 @@ class Match:
             th.start()
         for th in threads:
             th.join()
-        simple_stat = self.get_statistics(self.match_result_union)
 
         targets = [[], ['com.android.server.am'], ['com.android.server.pm'], ['com.android.systemui.statusbar'],
                    ['com.android.systemui.qs']]
 
-        def output_to_file(file_list, res_of_detect):
+        def output_to_file(file_list, res_of_detect, out_put):
             match_set, match_set_union_relation, match_set_union_entity, match_set_json_res, match_set_json_res_filter, out_path = \
-                self.deal_res_for_output(file_list, res_of_detect)
+                self.deal_res_for_output(file_list, res_of_detect, out_put)
             self.output_res(pattern.ident, match_set, match_set_union_relation, match_set_union_entity,
                             match_set_json_res,
                             match_set_json_res_filter, out_path)
+            simple_stat = self.get_statistics(res_of_detect)
             self.output_statistic(pattern.ident, pattern.patterns, simple_stat, out_path)
 
         for target in targets:
-            output_to_file(target, self.match_result_union)
+            output_to_file(target, self.match_result_union, self.out_path)
+
+        for target in targets:
+            output_to_file(target, self.match_result, os.path.join(self.out_path, 'metric_filter'))
+        # 输出metric统计
+        FileJson.write_to_json(self.out_path, self.match_result_metric, 'res_metric_statistic')
         # self.output_module_res(pattern.ident)
 
     def output_res(self, pattern_type: str, match_set, match_set_union_relation, match_set_union_entity,

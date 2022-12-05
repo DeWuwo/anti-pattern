@@ -23,4 +23,4 @@ class MetricCons:
     Me_interface_number: str = 'interface_number'
     Me_anonymous_class: str = 'anonymous_class'
 
-    Type_complex: list = ['string', 'int', 'bool', 'byte']
+    Type_complex: list = ['String', 'int', 'boolean', 'byte', 'short', 'long', 'float', 'double', 'char']
