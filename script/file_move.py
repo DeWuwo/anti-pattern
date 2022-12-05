@@ -10,4 +10,7 @@ class FileMove:
         for file in file_set:
             src_file = os.path.join(src_path, file)
             dest_file = os.path.join(dest_path)
+            if not os.path.exists(dest_file):
+                os.makedirs(dest_file)
+            print(src_file, dest_file)
             Command.command_run(f'copy /Y {src_file} {dest_file}')

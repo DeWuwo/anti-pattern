@@ -1,5 +1,5 @@
 import os
-from utils import FileJson
+from utils import FileJson, FileCSV
 
 
 class CodeInfo:
@@ -68,6 +68,45 @@ class CodeInfo:
         res2.update(anti_count_sum)
         return res, res2
 
+    @classmethod
+    def get_anti_res_entity_count(cls, dir_path):
+        res = []
+        for dir in os.listdir(dir_path):
+            temp = {'project': dir}
+            json_res: dict = FileJson.read_base_json(os.path.join(dir_path, dir+'\\res.json'))['res']['values']
+            entity_set = set()
+            for pattern, values in json_res.items():
+                for style_res in values['res']:
+                    index = 0
+                    for exam in style_res['res']:
+                        if index == 10:
+                            break
+                        for rel in exam:
+                            entity_set.add(rel['src']['id'])
+                            entity_set.add(rel['dest']['id'])
+            temp.update({'entity_count': len(entity_set)})
+            res.append(temp)
+        FileCSV.write_dict_to_csv(dir_path, 'cc', res, 'w')
+        # target = ''
+        # if self.target_dir['pkg']:
+        #     pkg = self.target_dir['pkg']
+        #     target = os.path.join(self.out_path, f'{pkg}\\{self.pattern_type}\\res.json')
+        # else:
+        #     target = os.path.join(self.out_path, f'{self.pattern_type}\\res.json')
+        #
+        # res: dict = FileJson.read_base_json(target)['res']['values']
+        #
+        # status = {}
+        # status_count = {}
+        # for pattern, values in res.items():
+        #     status[pattern] = []
+        #     status_count[pattern] = 0
+        #     for style_name, style_res in values['res'].items():
+        #         status[pattern].append([style_res['resCount'], style_res['filterCount']])
+        #         status_count[pattern] += style_res['resCount']
+        #         status_count[pattern] += style_res['filterCount']
+        # return status, status_count
+
 
 if __name__ == '__main__':
-    CodeInfo('D:\\Honor\\match_res\\LineageOS\\base\\lineage-19.1', 'coupling-patterns','D:\\test', 'test').run()
+    CodeInfo.get_anti_res_entity_count('E:\\2022ASE\\datacheck')
