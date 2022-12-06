@@ -403,7 +403,7 @@ class Metric:
 
     def handle_metrics_is_inherit(self, metrics: dict, rels: List[Relation], target_entity: list):
         entity_id = rels[target_entity[0]].dest if target_entity[1] else rels[target_entity[1]].src
-        metrics[MetricCons.Me_is_inherit] = [self.entity_extensive[src_entity].qualifiedName for src_entity in
+        metrics[MetricCons.Me_is_inherit] = [self.entity_extensive[rel.src].qualifiedName for rel in
                                              self.query_relation[Constant.inherit]['10'][Constant.E_class][entity_id]]
 
     def handle_metrics_filter_is_inherit(self, metrics: dict, indicate: list):
@@ -419,7 +419,7 @@ class Metric:
 
     def handle_metrics_is_override(self, metrics: dict, rels: List[Relation], target_entity: list):
         entity_id = rels[target_entity[0]].dest if target_entity[1] else rels[target_entity[1]].src
-        metrics[MetricCons.Me_is_override] = [self.entity_extensive[src_entity].qualifiedName for src_entity in
+        metrics[MetricCons.Me_is_override] = [self.entity_extensive[rel.src].qualifiedName for rel in
                                               self.query_relation[Constant.override]['10'][Constant.E_method][
                                                   entity_id]]
 
