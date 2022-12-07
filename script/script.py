@@ -97,6 +97,17 @@ class Script:
         commands.append(f'git -C {assi_code_path} log --numstat --date=iso > {out_path}/mc/gitlog')
         commands.append(
             f'python main.py -ra {aosp_code_path} -re {assi_code_path} -a {aosp_dep_path} -e {assi_dep_path} -ref {self.ref_path} -o {out_path}')
+        # T
+        aosp_code_path = 'D:\\HONOR_code_final\\TAOSP_r1\\base'
+        assi_code_path = 'D:\\HONOR_code_final\\TMagicUI\\base'
+        aosp_dep_path = 'D:\\HONOR_code_final\\T_result_final\\base\\base-out_TAOSP_r1.json'
+        assi_dep_path = 'D:\\HONOR_code_final\\T_result_final\\base\\base-out_TmagicUI.json'
+        out_path = 'D:\\HONOR_code_final\\T_result_final\\base\\'
+        if not os.path.exists(os.path.join(out_path, 'mc')):
+            os.makedirs(os.path.join(out_path, 'mc'))
+        commands.append(f'git -C {assi_code_path} log --numstat --date=iso > {out_path}/mc/gitlog')
+        commands.append(
+            f'python main.py -ra {aosp_code_path} -re {assi_code_path} -a {aosp_dep_path} -e {assi_dep_path} -ref {self.ref_path} -o {out_path}')
 
         return commands
 
