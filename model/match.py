@@ -203,13 +203,13 @@ class Match:
             self.handle_matching(mode_set, filter_set, [], [], [False, False, False, False, False], style.rules, 0)
             # res[style.name] = {'res': mode_set, 'filter': filter_set}
             res_metric, res_metric_filter, res_metric_statistic = \
-                self.aggregate_res_and_get_metrics(mode_set, rule.union_point,
-                                                   rule.union_edge, style.metrics,
+                self.aggregate_res_and_get_metrics(mode_set, style.union_point,
+                                                   style.union_edge, style.metrics,
                                                    style.metrics_filter, metric_cal_datas)
             res_filter_metric, res_filter_metric_filter, res_filter_metric_statistic = \
                 self.aggregate_res_and_get_metrics(filter_set,
-                                                   rule.union_point,
-                                                   rule.union_edge,
+                                                   style.union_point,
+                                                   style.union_edge,
                                                    style.metrics,
                                                    style.metrics_filter,
                                                    metric_cal_datas)

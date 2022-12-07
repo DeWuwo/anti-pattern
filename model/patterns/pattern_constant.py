@@ -12,8 +12,9 @@ filter_list = ['android.util', 'android.os.Message', 'com.android.internal.loggi
 class PatternCons:
     pattern_final = PatternRules(
         'FinalDel',
-        [1, 0], [0], {
+        {
             'del_class_final_for_inherit': {
+                'aggre': [[], []],
                 'metrics': {MetricCons.Me_is_inherit: [0, 1], MetricCons.Me_stability: [0, 1]},
                 'metrics_filter': [],
                 'rules': [
@@ -28,6 +29,7 @@ class PatternCons:
                 ]
             },
             'del_method_final_for_override': {
+                'aggre': [[], []],
                 'metrics': {MetricCons.Me_is_override: [0, 1], MetricCons.Me_stability: [0, 1]},
                 'metrics_filter': [],
                 'rules': [
@@ -41,7 +43,9 @@ class PatternCons:
                     },
                 ]},
             'del_class_final_for_var': {
-                'metrics': {MetricCons.Me_interface_number: [0, 0]},
+                'aggre': [[1, 0], [0]],
+                'metrics': {MetricCons.Me_is_inherit: [0, 0], MetricCons.Me_stability: [0, 0],
+                            MetricCons.Me_interface_number: [0, 0]},
                 'metrics_filter': [],
                 'rules': [
                     {
@@ -55,7 +59,8 @@ class PatternCons:
                 ]
             },
             'del_class_final_for_method': {
-                'metrics': {},
+                'aggre': [[1, 0], [0]],
+                'metrics': {MetricCons.Me_is_override: [0, 0], MetricCons.Me_stability: [0, 0]},
                 'metrics_filter': [],
                 'rules': [
                     {
@@ -68,24 +73,25 @@ class PatternCons:
                     },
                 ]
             },
-            'del_method_final_for_var': {
-                'metrics': {},
-                'metrics_filter': [],
-                'rules': [
-                    {
-                        'src': {'id': [-1], 'category': Constant.E_method,
-                                'attrs': {'final': True, 'intrusive': True}},
-                        'rel': {'type': Constant.define, 'attrs': {}},
-                        'dest': {'id': [-1], 'category': Constant.E_variable,
-                                 'attrs': {'final': True, 'intrusive': True}},
-                        'direction': '00'
-                    },
-                ]
-            }
+            # 'del_method_final_for_var': {
+            #     'metrics': {},
+            #     'metrics_filter': [],
+            #     'rules': [
+            #         {
+            #             'src': {'id': [-1], 'category': Constant.E_method,
+            #                     'attrs': {'final': True, 'intrusive': True}},
+            #             'rel': {'type': Constant.define, 'attrs': {}},
+            #             'dest': {'id': [-1], 'category': Constant.E_variable,
+            #                      'attrs': {'final': True, 'intrusive': True}},
+            #             'direction': '00'
+            #         },
+            #     ]
+            # }
         })
 
-    pattern_access = PatternRules('AccessibilityModify', [], [], {
+    pattern_access = PatternRules('AccessibilityModify', {
         'class_access_modify': {
+            'aggre': [[], []],
             'metrics': {MetricCons.Me_native_used_frequency: [0, 1], MetricCons.Me_stability: [0, 1]},
             'metrics_filter': [{MetricCons.Me_native_used_frequency: [0, 1]}],
             'rules': [
@@ -100,6 +106,7 @@ class PatternCons:
             ]
         },
         'method_access_modify': {
+            'aggre': [[], []],
             'metrics': {MetricCons.Me_native_used_frequency: [0, 1], MetricCons.Me_native_used_effectiveness: [0, 1],
                         MetricCons.Me_stability: [0, 1]},
             'metrics_filter': [
@@ -118,8 +125,9 @@ class PatternCons:
     })
 
     pattern_hidden = PatternRules(
-        'HiddenApi', [1, 0], [0], {
+        'HiddenApi', {
             'call_method': {
+                'aggre': [[1, 0], [0]],
                 'metrics': {MetricCons.Me_acceptable_hidden: [0, 1]},
                 'metrics_filter': [{MetricCons.Me_acceptable_hidden: [0, 1]}],
                 'rules': [
@@ -135,6 +143,7 @@ class PatternCons:
                     }
                 ]},
             'use_variable': {
+                'aggre': [[1, 0], [0]],
                 'metrics': {MetricCons.Me_acceptable_hidden: [0, 1]},
                 'metrics_filter': [{MetricCons.Me_acceptable_hidden: [0, 1]}],
                 'rules': [
@@ -152,6 +161,7 @@ class PatternCons:
                 ]
             },
             'call_special_hidden': {
+                'aggre': [[1, 0], [0]],
                 'metrics': {},
                 'metrics_filter': [],
                 'rules': [
@@ -170,8 +180,9 @@ class PatternCons:
         })
 
     pattern_param_modify = PatternRules(
-        'ParameterListModifyDep', [1, 0], [0], {
+        'ParameterListModifyDep', {
             'add_parameter': {
+                'aggre': [[1, 0], [0]],
                 'metrics': {MetricCons.Me_add_param: [0, 1], MetricCons.Me_native_used_frequency: [0, 0]},
                 'metrics_filter': [{MetricCons.Me_native_used_frequency: [0, 0]}, {MetricCons.Me_add_param: [0, 1]}],
                 'rules': [
@@ -190,8 +201,9 @@ class PatternCons:
 
     pattern_inner_class = PatternRules(
         'InnerExtensionClassUseDep',
-        [1, 1, 0, 0, 0, 0, 0, 0], [1, 2, 3], {
+        {
             'inner_class': {
+                'aggre': [[1, 1, 1, 0, 0, 0, 1, 0], [1, 2, 3]],
                 'metrics': {MetricCons.Me_inner_scale: [0, 1], MetricCons.Me_extensive_access_frequency: [2, 1],
                             MetricCons.Me_anonymous_class: [0, 1], MetricCons.Me_stability: [0, 0]},
                 'metrics_filter': [{MetricCons.Me_inner_scale: [0, 1], MetricCons.Me_anonymous_class: [0, 1]},
@@ -233,8 +245,9 @@ class PatternCons:
     )
 
     pattern_inherit_extensive = PatternRules(
-        'InheritExtension', [1, 0], [0], {
+        'InheritExtension', {
             'inherit_extensive_class': {
+                'aggre': [[1, 0], [0], ],
                 'metrics': {MetricCons.Me_interface_number: [0, 0], MetricCons.Me_stability: [0, 0]},
                 'metrics_filter': [],
                 'rules': [
@@ -252,8 +265,9 @@ class PatternCons:
     )
 
     pattern_implement_extensive = PatternRules(
-        'ImplementExtension', [1, 0], [0], {
+        'ImplementExtension', {
             'implement_extensive_interface': {
+                'aggre': [[1, 0], [0]],
                 'metrics': {MetricCons.Me_interface_number: [0, 0], MetricCons.Me_stability: [0, 0]},
                 'metrics_filter': [],
                 'rules': [
@@ -272,8 +286,9 @@ class PatternCons:
 
     pattern_aggre_extensive = PatternRules(
         'AggregationExtensionInterfaceClassDep',
-        [1, 1, 1, 0, 1, 1, 1, 1, 1, 0], [1, 4], {
+        {
             'aggregate_interface': {
+                'aggre': [[1, 1, 1, 0, 1, 1, 1, 1, 1, 0], [1, 4], ],
                 'metrics': {MetricCons.Me_stability: [0, 1], MetricCons.Me_native_access_frequency: [1, 1]},
                 'metrics_filter': [{MetricCons.Me_stability: [0, 1]}],
                 'rules': [
@@ -316,6 +331,7 @@ class PatternCons:
                     }
                 ]},
             'aggregate_class': {
+                'aggre': [[1, 1, 1, 0, 1, 1, 1, 1, 1, 0], [1, 4]],
                 'metrics': {MetricCons.Me_stability: [0, 1],
                             MetricCons.Me_native_access_frequency: [1, 1]},
                 'metrics_filter': [{MetricCons.Me_stability: [0, 1]}],
@@ -364,8 +380,9 @@ class PatternCons:
 
     pattern_inherit_native = PatternRules(
         'InheritanceNative',
-        [1, 1, 1, 1, 1, 0, 1, 0], [2, 3], {
+        {
             'inherit_native_class': {
+                'aggre': [[1, 1, 1, 1, 1, 0, 1, 0], [2, 3], ],
                 'metrics': {MetricCons.Me_stability: [3, 1], MetricCons.Me_extensive_access_frequency: [3, 1]},
                 'metrics_filter': [{MetricCons.Me_stability: [3, 1]}],
                 'rules': [
@@ -408,8 +425,9 @@ class PatternCons:
     )
 
     pattern_implement_native = PatternRules(
-        'ImplementNative', [1, 0], [0], {
+        'ImplementNative', {
             'implement_native_interface': {
+                'aggre': [[1, 0], [0], ],
                 'metrics': {},
                 'metrics_filter': [],
                 'rules': [
@@ -427,8 +445,9 @@ class PatternCons:
 
     pattern_aggre_native = PatternRules(
         'AggregationAOSPClassDep',
-        [1, 1, 1, 0, 1, 1, 1, 1, 1, 0], [1, 4], {
+        {
             'aggregate_interface': {
+                'aggre': [[1, 1, 1, 0, 1, 1, 1, 1, 1, 0], [1, 4], ],
                 'metrics': {MetricCons.Me_stability: [3, 1]},
                 'metrics_filter': [{MetricCons.Me_stability: [3, 1]}],
                 'rules': [
@@ -471,6 +490,7 @@ class PatternCons:
                     },
                 ]},
             'aggregate_class': {
+                'aggre': [[1, 1, 1, 0, 1, 1, 1, 1, 1, 0], [1, 4], ],
                 'metrics': {MetricCons.Me_stability: [3, 1]},
                 'metrics_filter': [{MetricCons.Me_stability: [3, 1]}],
                 'rules': [
@@ -517,8 +537,9 @@ class PatternCons:
     )
 
     pattern_public_interface = PatternRules(
-        'PublicInterfaceUseDep', [1, 0], [0], {
+        'PublicInterfaceUseDep', {
             'call_public': {
+                'aggre': [[1, 0], [0], ],
                 'metrics': {},
                 'metrics_filter': [],
                 'rules': [
@@ -538,8 +559,9 @@ class PatternCons:
     )
 
     pattern_reflect = PatternRules(
-        'ReflectUse', [1, 0], [0], {
+        'ReflectUse', {
             'reflect_method': {
+                'aggre': [[1, 0], [0], ],
                 'metrics': {MetricCons.Me_open_in_sdk: [0, 1], MetricCons.Me_module: [0, 0],
                             MetricCons.Me_extensive_access_frequency: [0, 1]},
                 'metrics_filter': [{MetricCons.Me_open_in_sdk: [0, 1]}, {MetricCons.Me_module: [0, 0]}],
@@ -553,6 +575,7 @@ class PatternCons:
                     }
                 ]},
             'reflect_class': {
+                'aggre': [[1, 0], [0], ],
                 'metrics': {MetricCons.Me_open_in_sdk: [0, 1], MetricCons.Me_module: [0, 0],
                             MetricCons.Me_extensive_access_frequency: [0, 1]},
                 'metrics_filter': [{MetricCons.Me_open_in_sdk: [0, 1]}, {MetricCons.Me_module: [0, 0]}],

@@ -511,7 +511,7 @@ class Metric:
                      'used_times': len(self.dest_relation[entity_id][Constant.use])
                      }
         for var_type in MetricCons.Type_complex:
-            if var_type in self.entity_extensive[entity_id].raw_type:
+            if var_type not in self.entity_extensive[entity_id].raw_type:
                 metrics[MetricCons.Me_add_param]['complex_count'] += 1
                 break
         metrics[MetricCons.Me_add_param]['detail'].append(temp_info)
