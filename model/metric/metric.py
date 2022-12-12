@@ -14,16 +14,18 @@ class Metric:
     src_relation: defaultdict
     dest_relation: defaultdict
     mc_data: defaultdict
+    mc_data_rank: defaultdict
     query_relation: defaultdict
     entity_extensive: List[Entity]
     hidden_filter_list: List[str]
-    sdk_apis: List[str]
+    sdk_apis: defaultdict
 
     def __init__(self, relations: List[Relation], data_path: str, query_relation, entity_extensive: List[Entity],
                  hidden_filter_list: List[str], code_extension: str):
         self.src_relation = defaultdict(partial(defaultdict, list))
         self.dest_relation = defaultdict(partial(defaultdict, list))
         self.mc_data = defaultdict()
+        self.mc_data_rank = defaultdict()
         for rel in relations:
             self.src_relation[rel.src][rel.rel].append(rel)
             self.dest_relation[rel.dest][rel.rel].append(rel)
@@ -33,6 +35,12 @@ class Metric:
             mc_data_list = []
         for data in mc_data_list:
             self.mc_data[str(data['filename']).replace('\\', '/')] = data
+        try:
+            mc_data_rank = FileCSV.read_dict_from_csv(os.path.join(data_path, 'mc/file-mc_rank.csv'))
+        except FileNotFoundError:
+            mc_data_rank = []
+        for data in mc_data_rank:
+            self.mc_data_rank[str(data['filename']).replace('\\', '/')] = data
         self.query_relation = query_relation
         self.entity_extensive = entity_extensive
         self.hidden_filter_list = hidden_filter_list
@@ -357,6 +365,11 @@ class Metric:
                 self.entity_extensive[entity_id].file_path]
         except KeyError:
             pass
+        try:
+            metrics[MetricCons.Me_stability]['maintenance_cost_rank'] = self.mc_data_rank[
+                self.entity_extensive[entity_id].file_path]
+        except KeyError:
+            pass
 
     def handle_metrics_filter_stability(self, metrics: dict, indicate: list):
         entity = self.entity_extensive[int(metrics[MetricCons.Me_stability]['entity'].split('#')[0])]
@@ -510,10 +523,13 @@ class Metric:
                      'param_type': self.entity_extensive[entity_id].raw_type,
                      'used_times': len(self.dest_relation[entity_id][Constant.use])
                      }
+        complex_flag = True
         for var_type in MetricCons.Type_complex:
-            if var_type not in self.entity_extensive[entity_id].raw_type:
-                metrics[MetricCons.Me_add_param]['complex_count'] += 1
+            if var_type in self.entity_extensive[entity_id].raw_type:
+                complex_flag = False
                 break
+        if complex_flag:
+            metrics[MetricCons.Me_add_param]['complex_count'] += 1
         metrics[MetricCons.Me_add_param]['detail'].append(temp_info)
 
     def handle_metrics_filter_add_param(self, metrics: dict, indicate: list):
@@ -551,8 +567,14 @@ class Metric:
 
     def handle_metrics_open_in_sdk(self, metrics: dict, rels: List[Relation], target_entity: list):
         entity_id = rels[target_entity[0]].dest if target_entity[1] else rels[target_entity[1]].src
-        if self.entity_extensive[entity_id].qualifiedName in self.sdk_apis:
+        if len(self.sdk_apis[self.entity_extensive[entity_id].qualifiedName]) == 1:
             metrics[MetricCons.Me_open_in_sdk]['in_sdk'].append(self.entity_extensive[entity_id].to_string())
+        elif len(self.sdk_apis[self.entity_extensive[entity_id].qualifiedName]) > 1:
+            for api in self.sdk_apis[self.entity_extensive[entity_id].qualifiedName]:
+                if api['params'] == self.entity_extensive[entity_id].parameter_types:
+                    metrics[MetricCons.Me_open_in_sdk]['in_sdk'].append(self.entity_extensive[entity_id].to_string())
+                    break
+            metrics[MetricCons.Me_open_in_sdk]['not_in_sdk'].append(self.entity_extensive[entity_id].to_string())
         else:
             metrics[MetricCons.Me_open_in_sdk]['not_in_sdk'].append(self.entity_extensive[entity_id].to_string())
 

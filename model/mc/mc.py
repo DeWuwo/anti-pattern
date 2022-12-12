@@ -2,9 +2,12 @@ import re
 import os
 import csv
 import glob
+from collections import defaultdict
+from functools import partial
 
 from model.mc.basedata import ModifyDetail
 from model.mc.basedata import CommitDetail
+from utils import FileCSV
 
 
 class MC:
@@ -268,7 +271,7 @@ class MC:
         return res
 
     def get_mc_file(self):
-        if os.path.exists(f"{self.out_path}\\mc\\file-mc.csv"):
+        if os.path.exists(f"{self.out_path}\\mc\\file-mc.csv") and os.path.exists(f"{self.out_path}\\mc\\file-mc_rank.csv"):
             return
         self.run_log_fetch()
         print('get file-mc.csv')
@@ -283,12 +286,39 @@ class MC:
         '''
         change_bug_cost_list = self.change_bug_proness_compute(self.file_list, mcAuthorDict, mcCommittimesDict,
                                                                mcChangeLocDict, mcIssueCountDict, mcIssueLocDict)
-
+        self.get_mc_rank(change_bug_cost_list)
         title = ['filename', '#author', '#cmt', 'changeloc', '#issue', '#issue-cmt', 'issueLoc']
         final = list()
         final.append(title)
         final.extend(change_bug_cost_list)
         writeCSV(final, os.path.join(self.out_path, 'mc\\file-mc.csv'))
+
+    def get_mc_rank(self, mc_data: list):
+        rank = defaultdict(partial(defaultdict, str))
+        title = ['filename', '#author', '#cmt', 'changeloc', '#issue', '#issue-cmt', 'issueLoc']
+        title_index = [1, 2, 3, 4, 5, 6]
+        for key_index in title_index:
+            mc_data_copy = mc_data.copy()
+            mc_data_copy.sort(key=lambda x: x[key_index], reverse=True)
+            for index in range(0, len(mc_data_copy)):
+                rank[mc_data_copy[index][0]][title[0]] = mc_data_copy[index][0]
+                if 0 <= index <= 10:
+                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_10'
+                elif 10 < index <= 50:
+                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_50'
+                elif 50 < index <= 100:
+                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_100'
+                elif 100 < index <= len(mc_data_copy) // 10:
+                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_10%'
+                elif len(mc_data_copy) // 10 < index <= len(mc_data_copy) // 4:
+                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_25%'
+                elif len(mc_data_copy) // 4 < index <= len(mc_data_copy) // 2:
+                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_50%'
+                else:
+                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_100%'
+
+        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'mc'), 'file-mc_rank', [value for _, value in rank.items()], 'w')
+
 
 
 def formatFileName(fileNameList):
