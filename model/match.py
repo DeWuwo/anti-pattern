@@ -200,7 +200,8 @@ class Match:
         for style in rule.styles:
             mode_set = []
             filter_set = []
-            self.handle_matching(mode_set, filter_set, [], [], [False, False, False, False, False], style.rules, 0)
+            self.handle_matching(mode_set, filter_set, [], [], [False for _ in range(0, len(style.rules))], style.rules,
+                                 0)
             # res[style.name] = {'res': mode_set, 'filter': filter_set}
             res_metric, res_metric_filter, res_metric_statistic = \
                 self.aggregate_res_and_get_metrics(mode_set, style.union_point,
@@ -214,18 +215,21 @@ class Match:
                                                    style.metrics_filter,
                                                    metric_cal_datas)
             # res[style.name] = {'res': }
-            res_with_metric_and_filter[style.name] = {'res': res_metric_filter, 'filter': res_filter_metric_filter}
             res_with_metric[style.name] = {
                 'res': res_metric,
                 'filter': res_filter_metric
+            }
+            res_with_metric_and_filter[style.name] = {
+                'res': res_metric_filter,
+                'filter': res_filter_metric_filter
             }
             res_with_metric_statistic[style.name] = {
                 'res': res_metric_statistic,
                 'filter': res_filter_metric_statistic
             }
 
-        self.match_result.append({rule.name: res_with_metric_and_filter})
         self.match_result_union.append({rule.name: res_with_metric})
+        self.match_result.append({rule.name: res_with_metric_and_filter})
         self.match_result_metric.append({rule.name: res_with_metric_statistic})
 
     def pre_del(self):
@@ -283,9 +287,9 @@ class Match:
             condition = get_condition(res_copy[index], points)
             condition_map[condition].append(index)
 
-        for condition, examples in condition_map.items():
-            if condition != 'null':
-                temp_exa = res_copy[examples[0]]
+        if points:
+            for condition, examples in condition_map.items():
+                temp_exa = res_copy[examples[0]].copy()
                 metrics_values = metric_cal_datas.handle_metrics_init(**metrics)
                 metric_cal_datas.handle_metrics(metrics_values, res_copy[examples[0]], **metrics)
                 for exa_index in range(1, len(examples)):
@@ -296,14 +300,14 @@ class Match:
                 metric_cal_datas.handle_metrics_statistics(metrics_values, metrics_statistic, **metrics)
                 if metric_cal_datas.handle_metrics_filter(metrics_values, metrics_filter):
                     final_res_metrics_filter.append({'metrics': metrics_values, 'value': temp_exa})
-            else:
-                for exa in res_copy:
-                    metrics_values = metric_cal_datas.handle_metrics_init(**metrics)
-                    metric_cal_datas.handle_metrics(metrics_values, exa, **metrics)
-                    final_res.append({'metrics': metrics_values, 'value': exa})
-                    metric_cal_datas.handle_metrics_statistics(metrics_values, metrics_statistic, **metrics)
-                    if metric_cal_datas.handle_metrics_filter(metrics_values, metrics_filter):
-                        final_res_metrics_filter.append({'metrics': metrics_values, 'value': exa})
+        else:
+            for exa in res_copy:
+                metrics_values = metric_cal_datas.handle_metrics_init(**metrics)
+                metric_cal_datas.handle_metrics(metrics_values, exa, **metrics)
+                final_res.append({'metrics': metrics_values, 'value': exa})
+                metric_cal_datas.handle_metrics_statistics(metrics_values, metrics_statistic, **metrics)
+                if metric_cal_datas.handle_metrics_filter(metrics_values, metrics_filter):
+                    final_res_metrics_filter.append({'metrics': metrics_values, 'value': exa})
 
         return final_res, final_res_metrics_filter, metrics_statistic
 
@@ -431,7 +435,7 @@ class Match:
 
                     for exa in style['filter']:
                         if handle_filter(exa['value'], filter_list):
-                            res_temp.append({'metrics': exa['metrics'], 'values': self.show_details(exa['value'])})
+                            filter_temp.append({'metrics': exa['metrics'], 'values': self.show_details(exa['value'])})
                             for rel in exa['value']:
                                 s2d = str(rel.src) + '-' + str(rel.dest)
                                 union_temp_entities.add(rel.src)

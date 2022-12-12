@@ -100,7 +100,7 @@ class PatternCons:
                     'rel': {'type': Constant.define, 'attrs': {}},
                     'dest': {'id': [-1], 'category': Constant.E_class,
                              'attrs': {'accessible_up': True, 'intrusive': True},
-                             'filter': {'qualified_name': filter_list}},
+                             'filter': {}},
                     'direction': '00'
                 }
             ]
@@ -117,7 +117,7 @@ class PatternCons:
                     'rel': {'type': Constant.define, 'attrs': {}},
                     'dest': {'id': [-1], 'category': Constant.E_method,
                              'attrs': {'accessible_up': True, 'intrusive': True},
-                             'filter': {'qualified_name': filter_list}},
+                             'filter': {}},
                     'direction': '00'
                 },
             ]
@@ -128,7 +128,7 @@ class PatternCons:
         'HiddenApi', {
             'call_method': {
                 'aggre': [[1, 0], [0]],
-                'metrics': {MetricCons.Me_acceptable_hidden: [0, 1]},
+                'metrics': {MetricCons.Me_acceptable_hidden: [0, 1], MetricCons.Me_stability: [0, 1]},
                 'metrics_filter': [{MetricCons.Me_acceptable_hidden: [0, 1]}],
                 'rules': [
                     {
@@ -144,7 +144,7 @@ class PatternCons:
                 ]},
             'use_variable': {
                 'aggre': [[1, 0], [0]],
-                'metrics': {MetricCons.Me_acceptable_hidden: [0, 1]},
+                'metrics': {MetricCons.Me_acceptable_hidden: [0, 1], MetricCons.Me_stability: [0, 1]},
                 'metrics_filter': [{MetricCons.Me_acceptable_hidden: [0, 1]}],
                 'rules': [
                     {
@@ -183,7 +183,8 @@ class PatternCons:
         'ParameterListModifyDep', {
             'add_parameter': {
                 'aggre': [[1, 0], [0]],
-                'metrics': {MetricCons.Me_add_param: [0, 1], MetricCons.Me_native_used_frequency: [0, 0]},
+                'metrics': {MetricCons.Me_add_param: [0, 1], MetricCons.Me_native_used_frequency: [0, 0],
+                            MetricCons.Me_stability: [0, 0]},
                 'metrics_filter': [{MetricCons.Me_native_used_frequency: [0, 0]}, {MetricCons.Me_add_param: [0, 1]}],
                 'rules': [
                     {
@@ -228,7 +229,7 @@ class PatternCons:
                                 'attrs': {}},
                         'rel': {'type': Constant.call, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {},
-                                 'filter': {'accessible': [Constant.accessible_list[2]]}},
+                                 'filter': {}},
                         'direction': '10'
                     },
                     {
@@ -304,7 +305,7 @@ class PatternCons:
                                 'attrs': {}},
                         'rel': {'type': Constant.call, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_method,
-                                 'attrs': {}, 'filter': {'qualified_name': filter_list}},
+                                 'attrs': {}, 'filter': {}},
                         'direction': '01'
                     },
                     {
@@ -348,7 +349,7 @@ class PatternCons:
                                 'attrs': {}},
                         'rel': {'type': Constant.call, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_method,
-                                 'attrs': {}, 'filter': {'qualified_name': filter_list}},
+                                 'attrs': {}, 'filter': {}},
                         'direction': '01'
                     },
                     {
@@ -408,7 +409,7 @@ class PatternCons:
                         'rel': {'type': Constant.call, 'attrs': {}},
                         'dest': {'id': [-1], 'category': 'Method',
                                  'attrs': {'accessible': ['protected']},
-                                 'filter': {'qualified_name': filter_list}},
+                                 'filter': {}},
                         'direction': '10'
                     },
                     {
@@ -428,7 +429,7 @@ class PatternCons:
         'ImplementNative', {
             'implement_native_interface': {
                 'aggre': [[1, 0], [0], ],
-                'metrics': {},
+                'metrics': {MetricCons.Me_stability: [0, 1]},
                 'metrics_filter': [],
                 'rules': [
                     {
@@ -436,7 +437,7 @@ class PatternCons:
                                 'attrs': {'accessible': []}},
                         'rel': {'type': Constant.implement, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_interface,
-                                 'attrs': {'accessible': []}, 'filter': {'qualified_name': filter_list}},
+                                 'attrs': {'accessible': []}, 'filter': {}},
                         'direction': '10'
                     }]
             }
@@ -462,7 +463,7 @@ class PatternCons:
                                 'attrs': {}},
                         'rel': {'type': Constant.call, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {},
-                                 'filter': {'qualified_name': filter_list}},
+                                 'filter': {}},
                         'direction': '10'
                     },
                     {
@@ -505,7 +506,7 @@ class PatternCons:
                                 'attrs': {}},
                         'rel': {'type': Constant.call, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {},
-                                 'filter': {'qualified_name': filter_list}},
+                                 'filter': {}},
                         'direction': '10'
                     },
                     {
@@ -570,7 +571,7 @@ class PatternCons:
                         'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
                         'rel': {'type': Constant.reflect, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_method, 'attrs': {},
-                                 'filter': {'qualified_name': filter_list}},
+                                 'filter': {}},
                         'direction': '10'
                     }
                 ]},
@@ -584,7 +585,7 @@ class PatternCons:
                         'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {}},
                         'rel': {'type': Constant.reflect, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {},
-                                 'filter': {'qualified_name': filter_list}},
+                                 'filter': {}},
                         'direction': '10'
                     }
                 ],
