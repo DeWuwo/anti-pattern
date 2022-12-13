@@ -60,7 +60,7 @@ class PatternCons:
             },
             'del_class_final_for_method': {
                 'aggre': [[1, 0], [0]],
-                'metrics': {MetricCons.Me_is_override: [0, 0], MetricCons.Me_stability: [0, 0]},
+                'metrics': {MetricCons.Me_is_inherit: [0, 0], MetricCons.Me_stability: [0, 0]},
                 'metrics_filter': [],
                 'rules': [
                     {
@@ -249,7 +249,7 @@ class PatternCons:
         'InheritExtension', {
             'inherit_extensive_class': {
                 'aggre': [[1, 0], [0], ],
-                'metrics': {MetricCons.Me_interface_number: [0, 0], MetricCons.Me_stability: [0, 0]},
+                'metrics': {MetricCons.Me_is_new_inherit: [0, 0], MetricCons.Me_stability: [0, 0]},
                 'metrics_filter': [],
                 'rules': [
                     {
@@ -269,7 +269,7 @@ class PatternCons:
         'ImplementExtension', {
             'implement_extensive_interface': {
                 'aggre': [[1, 0], [0]],
-                'metrics': {MetricCons.Me_interface_number: [0, 0], MetricCons.Me_stability: [0, 0]},
+                'metrics': {MetricCons.Me_is_new_implement: [0, 0], MetricCons.Me_stability: [0, 0]},
                 'metrics_filter': [],
                 'rules': [
                     {

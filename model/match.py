@@ -30,6 +30,7 @@ class Match:
     statistic_modules: Dict[str, Dict[str, int]]
     module_blame: defaultdict
     code_extension: str
+    metric_cal_datas: Metric
 
     def __init__(self, build_model: BuildModel, output: str, blame_path: str, code_extension: str):
         self.base_model = build_model
@@ -45,6 +46,9 @@ class Match:
         self.statistic_modules = {}
         self.module_blame = BlameField(blame_path).read_blame_field()
         self.code_extension = code_extension
+        self.metric_cal_datas: Metric = Metric(self.base_model.relation_extensive, self.out_path,
+                                               self.base_model.query_map, self.base_model.entity_android,
+                                               self.base_model.entity_extensive, filter_list, self.code_extension)
 
     # 命令中实体属性解析
     def entity_rule(self, entity_stack: List[Relation], entity: dict):
@@ -236,6 +240,9 @@ class Match:
         self.match_result = []
         self.match_result_union = []
         self.match_result_metric = []
+        self.statistic_pre_del()
+
+    def statistic_pre_del(self):
         self.match_result_base_statistic = {}
         self.statistic_files = {}
         self.statistic_pkgs = {}
@@ -314,76 +321,102 @@ class Match:
     def get_statistics(self, res_of_detect):
         print('get statistics')
         simple_stat = {}
-        self.match_result_base_statistic['Total'] = {'files_count': self.base_model.statistics_extensive['File']}
-        for item in res_of_detect:
-            for pattern in item:
-                self.match_result_base_statistic[pattern] = {}
-                pattern_files_set = defaultdict(int)
-                pattern_entities_set = defaultdict(int)
-                pattern_module_set = defaultdict(int)
-                pattern_pkgs_set = defaultdict(int)
-                pattern_res: List[List[Relation]] = []
-                for style_name, style_res in item[pattern].items():
-                    for exa in style_res['res']:
-                        pattern_res.append(exa['value'])
-                    for exa in style_res['filter']:
-                        pattern_res.append(exa['value'])
-                simple_stat[pattern] = len(pattern_res)
-                for exa in pattern_res:
-                    temp_file_set = set()
-                    temp_entity_set = set()
-                    temp_module_set = set()
-                    temp_pkg_set = set()
-                    for rel in exa:
-                        temp_entity_set.add(rel.src)
-                        temp_entity_set.add(rel.dest)
-                        src_file = self.get_root_file(rel.src).file_path
-                        dest_file = self.get_root_file(rel.dest).file_path
-                        temp_file_set.add(src_file)
-                        temp_file_set.add(dest_file)
-                        temp_module_set.add(self.get_module_blame(rel.src))
-                        temp_module_set.add(self.get_module_blame(rel.dest))
-                        temp_pkg_set.add(self.base_model.entity_extensive[rel.src].package_name)
-                        temp_pkg_set.add(self.base_model.entity_extensive[rel.dest].package_name)
+        metric_statistic = {}
+        self.statistic_pre_del()
+        self.match_result_base_statistic = {'Total': {'files_count': self.base_model.statistics_extensive['File']}}
+        for pattern_name, pattern_values in res_of_detect['values'].items():
+            self.match_result_base_statistic[pattern_name] = {}
+            metric_statistic[pattern_name] = {}
+            pattern_files_set = defaultdict(int)
+            pattern_entities_set = defaultdict(int)
+            pattern_module_set = defaultdict(int)
+            pattern_pkgs_set = defaultdict(int)
+            pattern_res: List[List[dict]] = []
+            for style_name, style_res in pattern_values['res'].items():
+                metric_statistic[pattern_name][style_name] = {}
+                metric_statistic[pattern_name][style_name]['res'] = {}
+                metric_statistic[pattern_name][style_name]['filter'] = {}
+                metrics_keys = {}
+                if style_res['res'] or style_res['filter']:
+                    try:
+                        for metrics_key, _ in style_res['res'][0]['metrics'].items():
+                            metrics_keys[metrics_key] = 1
+                    except Exception:
+                        for metrics_key, _ in style_res['filter'][0]['metrics'].items():
+                            metrics_keys[metrics_key] = 1
+                metric_statistic[pattern_name][style_name]['res'] = \
+                    self.metric_cal_datas.handle_metrics_statistics_init(**metrics_keys)
+                for exa in style_res['res']:
+                    pattern_res.append(exa['values'])
+                    self.metric_cal_datas.handle_metrics_statistics(exa['metrics'],
+                                                                    metric_statistic[pattern_name][style_name]['res'],
+                                                                    **metrics_keys)
+                for exa in style_res['filter']:
+                    pattern_res.append(exa['values'])
+                    metrics_keys = {}
+                    for metrics_key, _ in exa['metrics'].items():
+                        metrics_keys[metrics_key] = 1
+                    metric_statistic[pattern_name][style_name]['filter'] = \
+                        self.metric_cal_datas.handle_metrics_statistics_init(**metrics_keys)
+                    self.metric_cal_datas.handle_metrics_statistics(exa['metrics'],
+                                                                    metric_statistic[pattern_name][style_name][
+                                                                        'filter'], **metrics_keys)
+            simple_stat[pattern_name] = len(pattern_res)
+            for exa in pattern_res:
+                temp_file_set = set()
+                temp_entity_set = set()
+                temp_module_set = set()
+                temp_pkg_set = set()
+                for rel in exa:
+                    temp_entity_set.add(rel['src']['id'])
+                    temp_entity_set.add(rel['dest']['id'])
+                    src_file = self.get_root_file(rel['src']['id']).file_path
+                    dest_file = self.get_root_file(rel['dest']['id']).file_path
+                    temp_file_set.add(src_file)
+                    temp_file_set.add(dest_file)
+                    temp_module_set.add(self.get_module_blame(rel['src']['id']))
+                    temp_module_set.add(self.get_module_blame(rel['dest']['id']))
+                    temp_pkg_set.add(self.base_model.entity_extensive[rel['src']['id']].package_name)
+                    temp_pkg_set.add(self.base_model.entity_extensive[rel['dest']['id']].package_name)
 
-                    for file_name in temp_file_set:
-                        pattern_files_set[file_name] += 1
-                    for entity_id in temp_entity_set:
-                        pattern_entities_set[entity_id] += 1
-                    for module_blame in temp_module_set:
-                        pattern_module_set[module_blame] += 1
-                    for pkg in temp_pkg_set:
-                        pattern_pkgs_set[pkg] += 1
-                self.match_result_base_statistic[pattern] = {'example_count': len(item[pattern]),
-                                                             'entities_count': len(pattern_entities_set),
-                                                             'entities': pattern_entities_set,
-                                                             'files_count': len(pattern_files_set),
-                                                             'files': pattern_files_set}
-                for file_name in pattern_files_set:
-                    try:
-                        self.statistic_files[file_name][pattern] = pattern_files_set[file_name]
-                    except KeyError:
-                        self.statistic_files[file_name] = {'filename': file_name}
-                        self.statistic_files[file_name][pattern] = pattern_files_set[file_name]
-                for entity_id in pattern_entities_set:
-                    try:
-                        self.statistic_entities[entity_id][pattern] = pattern_entities_set[entity_id]
-                    except KeyError:
-                        self.statistic_entities[entity_id] = self.base_model.entity_extensive[entity_id].to_csv()
-                        self.statistic_entities[entity_id][pattern] = pattern_entities_set[entity_id]
-                for module_blame in pattern_module_set:
-                    try:
-                        self.statistic_modules[module_blame][pattern] = pattern_module_set[module_blame]
-                    except KeyError:
-                        self.statistic_modules[module_blame] = {'module_blame': module_blame}
-                        self.statistic_modules[module_blame][pattern] = pattern_module_set[module_blame]
-                for pkg in pattern_pkgs_set:
-                    try:
-                        self.statistic_pkgs[pkg][pattern] = pattern_pkgs_set[pkg]
-                    except KeyError:
-                        self.statistic_pkgs[pkg] = {'packagename': pkg}
-                        self.statistic_pkgs[pkg][pattern] = pattern_pkgs_set[pkg]
-        return simple_stat
+                for file_name in temp_file_set:
+                    pattern_files_set[file_name] += 1
+                for entity_id in temp_entity_set:
+                    pattern_entities_set[entity_id] += 1
+                for module_blame in temp_module_set:
+                    pattern_module_set[module_blame] += 1
+                for pkg in temp_pkg_set:
+                    pattern_pkgs_set[pkg] += 1
+            self.match_result_base_statistic[pattern_name] = {'example_count': pattern_values['count'],
+                                                              'entities_count': len(pattern_entities_set),
+                                                              'entities': pattern_entities_set,
+                                                              'files_count': len(pattern_files_set),
+                                                              'files': pattern_files_set}
+            for file_name in pattern_files_set:
+                try:
+                    self.statistic_files[file_name][pattern_name] = pattern_files_set[file_name]
+                except KeyError:
+                    self.statistic_files[file_name] = {'filename': file_name}
+                    self.statistic_files[file_name][pattern_name] = pattern_files_set[file_name]
+            for entity_id in pattern_entities_set:
+                try:
+                    self.statistic_entities[entity_id][pattern_name] = pattern_entities_set[entity_id]
+                except KeyError:
+                    self.statistic_entities[entity_id] = self.base_model.entity_extensive[entity_id].to_csv()
+                    self.statistic_entities[entity_id][pattern_name] = pattern_entities_set[entity_id]
+            for module_blame in pattern_module_set:
+                try:
+                    self.statistic_modules[module_blame][pattern_name] = pattern_module_set[module_blame]
+                except KeyError:
+                    self.statistic_modules[module_blame] = {'module_blame': module_blame}
+                    self.statistic_modules[module_blame][pattern_name] = pattern_module_set[module_blame]
+            for pkg in pattern_pkgs_set:
+                try:
+                    self.statistic_pkgs[pkg][pattern_name] = pattern_pkgs_set[pkg]
+                except KeyError:
+                    self.statistic_pkgs[pkg] = {'packagename': pkg}
+                    self.statistic_pkgs[pkg][pattern_name] = pattern_pkgs_set[pkg]
+        return simple_stat, metric_statistic
 
     def deal_res_for_output(self, filter_list: List[str], res_of_detect, out_path: str):
         print('ready for write')
@@ -474,13 +507,12 @@ class Match:
         return temp
 
     def start_match_pattern(self, pattern: PatternType):
-        metric_cal_datas: Metric = Metric(self.base_model.relation_extensive, self.out_path, self.base_model.query_map,
-                                          self.base_model.entity_extensive, filter_list, self.code_extension)
+
         print('start detect ', pattern.ident)
         threads = []
         self.pre_del()
         for rule in pattern.rules:
-            th = threading.Thread(target=self.general_rule_matching(rule, metric_cal_datas))
+            th = threading.Thread(target=self.general_rule_matching(rule, self.metric_cal_datas))
             threads.append(th)
         for th in threads:
             th.setDaemon(False)
@@ -497,8 +529,8 @@ class Match:
             self.output_res(pattern.ident, match_set, match_set_union_relation, match_set_union_entity,
                             match_set_json_res,
                             match_set_json_res_filter, out_path)
-            simple_stat = self.get_statistics(res_of_detect)
-            self.output_statistic(pattern.ident, pattern.patterns, simple_stat, out_path)
+            simple_stat, metrics_statistic = self.get_statistics(match_set_json_res)
+            self.output_statistic(pattern.ident, pattern.patterns, simple_stat, metrics_statistic, out_path)
 
         for target in targets:
             output_to_file(target, self.match_result_union, self.out_path)
@@ -527,7 +559,7 @@ class Match:
              'coupling_entity': len(match_set_union_entity), 'total_entity': len(self.base_model.entity_extensive)}],
                                   'w')
 
-    def output_statistic(self, pattern_type: str, patterns: List[str], simple_stat, out_path):
+    def output_statistic(self, pattern_type: str, patterns: List[str], simple_stat, metrics_statistic, out_path):
         output_path = os.path.join(out_path, pattern_type)
 
         # 输出检测结果
@@ -553,13 +585,8 @@ class Match:
         headers.extend(patterns)
         FileCSV.write_to_csv(output_path, 'module-pattern', headers, self.statistic_modules)
 
-        # # 输出维护成本
-        # try:
-        #     left = os.path.join(self.output, Constant.file_mc)
-        #     right = os.path.join(output_path, 'file-pattern.csv')
-        #     FileCSV.merge_csv(left, right, ['filename'], self.output, pattern_type)
-        # except FileNotFoundError as e:
-        #     print(e)
+        # 输出指标统计
+        FileJson.write_to_json(out_path, metrics_statistic, 'res_metric_statistic')
 
     def output_module_res(self, pattern_type: str):
         print('     output special pkg info')

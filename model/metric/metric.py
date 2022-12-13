@@ -16,12 +16,13 @@ class Metric:
     mc_data: defaultdict
     mc_data_rank: defaultdict
     query_relation: defaultdict
+    entity_native: List[Entity]
     entity_extensive: List[Entity]
     hidden_filter_list: List[str]
     sdk_apis: defaultdict
 
-    def __init__(self, relations: List[Relation], data_path: str, query_relation, entity_extensive: List[Entity],
-                 hidden_filter_list: List[str], code_extension: str):
+    def __init__(self, relations: List[Relation], data_path: str, query_relation, entity_native: List[Entity],
+                 entity_extensive: List[Entity], hidden_filter_list: List[str], code_extension: str):
         self.src_relation = defaultdict(partial(defaultdict, list))
         self.dest_relation = defaultdict(partial(defaultdict, list))
         self.mc_data = defaultdict()
@@ -42,6 +43,7 @@ class Metric:
         for data in mc_data_rank:
             self.mc_data_rank[str(data['filename']).replace('\\', '/')] = data
         self.query_relation = query_relation
+        self.entity_native = entity_native
         self.entity_extensive = entity_extensive
         self.hidden_filter_list = hidden_filter_list
         self.sdk_apis = SDKApi(code_extension, data_path).get_apis()
@@ -119,7 +121,7 @@ class Metric:
         for key, val in kwargs.items():
             if key == MetricCons.Me_native_used_frequency or key == MetricCons.Me_extensive_used_frequency:
                 metrics_statistic[key] = {}
-                indicates = ['n0_e0', 'n0_e1', 'n1_e0', 'n1_e1']
+                indicates = ['n0_e0', 'n1_e0', 'n0_e1', 'n1_e1']
                 for indicate in indicates:
                     metrics_statistic[key][indicate] = 0
             elif key == MetricCons.Me_native_used_effectiveness:
@@ -133,7 +135,19 @@ class Metric:
                 for indicate in indicates:
                     metrics_statistic[key][indicate] = 0
             elif key == MetricCons.Me_stability:
-                metrics_statistic[key] = defaultdict(partial(defaultdict, int))
+                metrics_statistic[key] = {}
+                metrics_statistic[key]['history_commits'] = {}
+                metrics_statistic[key]['maintenance_cost'] = {}
+                metrics_statistic[key]['maintenance_cost_rank'] = {}
+                indicates = ['0-10', '10-30', '30-50', '50-']
+                for indicate in indicates:
+                    metrics_statistic[key]['history_commits'][indicate] = 0
+                indicates = ['per_of_changloc_loc_1', 'per_of_changloc_loc_2', 'per_of_changloc_loc_5', 'per_of_changloc_loc_~']
+                for indicate in indicates:
+                    metrics_statistic[key]['maintenance_cost'][indicate] = 0
+                indicates = ['top_10', 'top_50', 'top_100', 'top_10%', 'top_25%', 'top_50%', 'top_100%']
+                for indicate in indicates:
+                    metrics_statistic[key]['maintenance_cost_rank'][indicate] = 0
             elif key == MetricCons.Me_module:
                 metrics_statistic[key] = {}
                 indicates = ['test', 'not test']
@@ -173,6 +187,16 @@ class Metric:
             elif key == MetricCons.Me_is_inherit:
                 metrics_statistic[key] = {}
                 indicates = ['is_inherit', 'no_inherit']
+                for indicate in indicates:
+                    metrics_statistic[key][indicate] = 0
+            elif key == MetricCons.Me_is_new_inherit:
+                metrics_statistic[key] = {}
+                indicates = ['new_add_inherit', 'modify_inherit']
+                for indicate in indicates:
+                    metrics_statistic[key][indicate] = 0
+            elif key == MetricCons.Me_is_new_implement:
+                metrics_statistic[key] = {}
+                indicates = ['new_add_implement', 'modify_implement']
                 for indicate in indicates:
                     metrics_statistic[key][indicate] = 0
             elif key == MetricCons.Me_is_override:
@@ -388,20 +412,20 @@ class Metric:
 
     def handle_metrics_statistics_stability(self, metrics: dict, metrics_statistics: dict):
         entity = self.entity_extensive[int(metrics[MetricCons.Me_stability]['entity'].split('#')[0])]
-        if metrics[MetricCons.Me_stability]['entity'].split('#')[1] == Constant.E_method:
-            try:
-                if metrics[MetricCons.Me_stability]['history_commits']['actively_native'] < 10:
-                    metrics_statistics[MetricCons.Me_stability]['history_commits']['0-10'] += 1
-                elif 10 <= metrics[MetricCons.Me_stability]['history_commits']['actively_native'] < 30:
-                    metrics_statistics[MetricCons.Me_stability]['history_commits']['10-30'] += 1
-                elif 30 <= metrics[MetricCons.Me_stability]['history_commits']['actively_native'] < 50:
-                    metrics_statistics[MetricCons.Me_stability]['history_commits']['30-50'] += 1
-                else:
-                    metrics_statistics[MetricCons.Me_stability]['history_commits']['50-'] += 1
-            except KeyError:
-                pass
-        elif metrics[MetricCons.Me_stability]['entity'].split('#')[1] in [Constant.E_class, Constant.E_interface]:
-            code_size = entity.end_line - entity.start_line
+        # if metrics[MetricCons.Me_stability]['entity'].split('#')[1] == Constant.E_method:
+        try:
+            if metrics[MetricCons.Me_stability]['history_commits']['actively_native'] < 10:
+                metrics_statistics[MetricCons.Me_stability]['history_commits']['0-10'] += 1
+            elif 10 <= metrics[MetricCons.Me_stability]['history_commits']['actively_native'] < 30:
+                metrics_statistics[MetricCons.Me_stability]['history_commits']['10-30'] += 1
+            elif 30 <= metrics[MetricCons.Me_stability]['history_commits']['actively_native'] < 50:
+                metrics_statistics[MetricCons.Me_stability]['history_commits']['30-50'] += 1
+            else:
+                metrics_statistics[MetricCons.Me_stability]['history_commits']['50-'] += 1
+        except KeyError:
+            pass
+        try:
+            code_size = entity.end_line - entity.start_line + 1
             if float(metrics[MetricCons.Me_stability]['maintenance_cost']['changeloc']) < code_size:
                 metrics_statistics[MetricCons.Me_stability]['maintenance_cost']['per_of_changloc_loc_1'] += 1
             else:
@@ -413,6 +437,18 @@ class Metric:
                     metrics_statistics[MetricCons.Me_stability]['maintenance_cost']['per_of_changloc_loc_5'] += 1
                 else:
                     metrics_statistics[MetricCons.Me_stability]['maintenance_cost']['per_of_changloc_loc_~'] += 1
+        except KeyError:
+            pass
+        try:
+            average = 0
+            for key, mc in metrics[MetricCons.Me_stability]['maintenance_cost_rank'].items():
+                if key == 'filename':
+                    continue
+                average += MetricCons.mc_rank_level[mc]
+            average = int(round(average / 6))
+            metrics_statistics[MetricCons.Me_stability]['maintenance_cost_rank'][MetricCons.mc_rank[average]] += 1
+        except KeyError:
+            pass
 
     def handle_metrics_is_inherit(self, metrics: dict, rels: List[Relation], target_entity: list):
         entity_id = rels[target_entity[0]].dest if target_entity[1] else rels[target_entity[1]].src
@@ -429,6 +465,40 @@ class Metric:
             metrics_statistics[MetricCons.Me_is_inherit]['is_inherit'] += 1
         else:
             metrics_statistics[MetricCons.Me_is_inherit]['no_inherit'] += 1
+
+    def handle_metrics_is_new_inherit(self, metrics: dict, rels: List[Relation], target_entity: list):
+        entity_id = rels[target_entity[0]].dest if target_entity[1] else rels[target_entity[1]].src
+        metrics[MetricCons.Me_is_new_inherit] = (self.entity_extensive[entity_id].parent_class == [])
+
+    def handle_metrics_filter_is_new_inherit(self, metrics: dict, indicate: list):
+        if metrics[MetricCons.Me_is_new_inherit]:
+            return False
+        return True
+
+    def handle_metrics_statistics_is_new_inherit(self, metrics: dict, metrics_statistics: dict):
+        if metrics[MetricCons.Me_is_new_inherit]:
+            metrics_statistics[MetricCons.Me_is_new_inherit]['new_add_inherit'] += 1
+        else:
+            metrics_statistics[MetricCons.Me_is_new_inherit]['modify_inherit'] += 1
+
+    def handle_metrics_is_new_implement(self, metrics: dict, rels: List[Relation], target_entity: list):
+        entity_id = rels[target_entity[0]].dest if target_entity[1] else rels[target_entity[1]].src
+        for interface in self.entity_native[self.entity_extensive[entity_id].entity_mapping].parent_interface:
+            if interface not in self.entity_extensive[entity_id].parent_interface:
+                metrics[MetricCons.Me_is_new_implement] = False
+                break
+        metrics[MetricCons.Me_is_new_implement] = True
+
+    def handle_metrics_filter_is_new_implement(self, metrics: dict, indicate: list):
+        if metrics[MetricCons.Me_is_new_implement]:
+            return False
+        return True
+
+    def handle_metrics_statistics_is_new_implement(self, metrics: dict, metrics_statistics: dict):
+        if metrics[MetricCons.Me_is_new_implement]:
+            metrics_statistics[MetricCons.Me_is_new_implement]['new_add_implement'] += 1
+        else:
+            metrics_statistics[MetricCons.Me_is_new_implement]['modify_implement'] += 1
 
     def handle_metrics_is_override(self, metrics: dict, rels: List[Relation], target_entity: list):
         entity_id = rels[target_entity[0]].dest if target_entity[1] else rels[target_entity[1]].src
