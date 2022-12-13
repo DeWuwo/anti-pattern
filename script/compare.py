@@ -42,19 +42,25 @@ def compare(left: dict, right: dict, patterns):
         return True
 
     for pattern in patterns:
-        repeat_count[pattern] = {'left': left[pattern]['count'], 'right': right[pattern]['count'], 'repeat': 0}
-        old = left[pattern]['examples']
-        new = right[pattern]['examples']
-        for example1 in old:
-            for example2 in new:
-                if match_example(example1, example2):
-                    repeat_count[pattern]['repeat'] += 1
-                    break
+        repeat_count[pattern] = {}
+        old = left[pattern]['res']
+        new = right[pattern]['res']
+        for key, values in old.items():
+            old_exa = old[key]['res']
+            new_exa = new[key]['res']
+            repeat_count[pattern][key] = {'left': old[key]['resCount'], 'right': new[key]['resCount'], 'repeat': 0,
+                                          'repeat_map': []}
+            for example1 in range(0, len(old_exa)):
+                for example2 in range(0, len(new_exa)):
+                    if match_example(old_exa[example1]['values'], new_exa[example2]['values']):
+                        repeat_count[pattern][key]['repeat'] += 1
+                        repeat_count[pattern][key]['repeat_map'].append([str(example1) + '-' + str(example2)])
+                        break
 
     FileJson.write_to_json('D:\\Honor\\test_res', repeat_count, 'test')
 
 
 if __name__ == '__main__':
-    cp = Compare('D:\\Honor\\match_res\\LineageOS\\base\\lineage-16.0\\unsure_resolution.json',
-                 'D:\\Honor\\match_res\\testos\\base\\lineage-16.0\\unsure_resolution.json')
-    cp.compare_ref()
+    cp = Compare('D:\\Honor\\发给XJ的result\\S版本\\coupling-patterns\\res.json',
+                 'D:\\Honor\\发给XJ的result\\T版本\\coupling-patterns\\res.json')
+    compare(*cp.get_anti_res())
