@@ -47,7 +47,7 @@ def dispatch(args):
         entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp, entities_stat_aosp = \
             FileJson.read_from_json(args.android, args.honor)
         # 读取模块责任田
-        module_blame = ''
+        module_blame = args.output
 
         # build base model
         git_history = GitHistory(args.code_android, args.code_honor, args.honor, args.refactor_miner,
