@@ -300,7 +300,10 @@ class MC:
         for key_index in title_index:
             mc_data_copy = mc_data.copy()
             mc_data_copy.sort(key=lambda x: x[key_index], reverse=True)
-            for index in range(0, len(mc_data_copy)):
+            file_num = len(mc_data_copy)
+
+            for index in range(0, file_num):
+                rank[mc_data_copy[index][0]]['file_count'] = str(file_num)
                 rank[mc_data_copy[index][0]][title[0]] = mc_data_copy[index][0]
                 if 0 <= index <= 10:
                     rank[mc_data_copy[index][0]][title[key_index]] = 'top_10'
@@ -316,7 +319,6 @@ class MC:
                     rank[mc_data_copy[index][0]][title[key_index]] = 'top_50%'
                 else:
                     rank[mc_data_copy[index][0]][title[key_index]] = 'top_100%'
-
         FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'mc'), 'file-mc_rank', [value for _, value in rank.items()], 'w')
 
 

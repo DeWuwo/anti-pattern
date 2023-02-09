@@ -549,7 +549,7 @@ class PatternCons:
                         'rel': {'type': Constant.call, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_method,
                                  'attrs': {
-                                     'accessible': [Constant.accessible_list[2]], 'accessible_modify': False},
+                                     'accessible': [Constant.accessible_list[2]]},
                                  'filter': {'qualified_name': filter_list}
                                  },
                         'direction': '10'
@@ -564,7 +564,7 @@ class PatternCons:
             'reflect_method': {
                 'aggre': [[1, 0], [0], ],
                 'metrics': {MetricCons.Me_open_in_sdk: [0, 1], MetricCons.Me_module: [0, 0],
-                            MetricCons.Me_extensive_access_frequency: [0, 1]},
+                            MetricCons.Me_extensive_access_frequency: [0, 1], MetricCons.Me_stability: [0, 1]},
                 'metrics_filter': [{MetricCons.Me_open_in_sdk: [0, 1]}, {MetricCons.Me_module: [0, 0]}],
                 'rules': [
                     {
@@ -578,7 +578,7 @@ class PatternCons:
             'reflect_class': {
                 'aggre': [[1, 0], [0], ],
                 'metrics': {MetricCons.Me_open_in_sdk: [0, 1], MetricCons.Me_module: [0, 0],
-                            MetricCons.Me_extensive_access_frequency: [0, 1]},
+                            MetricCons.Me_extensive_access_frequency: [0, 1], MetricCons.Me_stability: [0, 1]},
                 'metrics_filter': [{MetricCons.Me_open_in_sdk: [0, 1]}, {MetricCons.Me_module: [0, 0]}],
                 'rules': [
                     {

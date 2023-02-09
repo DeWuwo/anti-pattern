@@ -169,6 +169,9 @@ class Entity:
                 'file_path': self.file_path, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp,
                 'isIntrusive': self.is_intrusive}
 
+    def handle_to_csv(self):
+        return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName}
+
     @classmethod
     def get_csv_header(cls):
         return ['id', 'category', 'qualifiedName']

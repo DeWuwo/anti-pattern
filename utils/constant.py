@@ -10,6 +10,7 @@ class Constant:
     E_file: str = "File"
     E_package: str = "Package"
     E_interface: str = "Interface"
+    E_annotation: str = 'Annotation'
 
     # relation type
     contain: str = "Contain"

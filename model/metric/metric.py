@@ -8,6 +8,7 @@ from model.dependency.entity import Entity, get_accessible_domain
 from model.metric.metric_constant import MetricCons
 from utils import FileCSV, Constant, FileCommon
 from model.metric.sdk_api import SDKApi
+from model.metric.conflicts.conflict import Conflict
 
 
 class Metric:
@@ -15,6 +16,7 @@ class Metric:
     dest_relation: defaultdict
     mc_data: defaultdict
     mc_data_rank: defaultdict
+    conflict_info: dict
     query_relation: defaultdict
     entity_native: List[Entity]
     entity_extensive: List[Entity]
@@ -42,6 +44,7 @@ class Metric:
             mc_data_rank = []
         for data in mc_data_rank:
             self.mc_data_rank[str(data['filename']).replace('\\', '/')] = data
+        self.conflict_info = Conflict(os.path.join(data_path, 'merge.csv')).get_conf_files()
         self.query_relation = query_relation
         self.entity_native = entity_native
         self.entity_extensive = entity_extensive
@@ -391,6 +394,12 @@ class Metric:
             pass
         try:
             metrics[MetricCons.Me_stability]['maintenance_cost_rank'] = self.mc_data_rank[
+                self.entity_extensive[entity_id].file_path]
+        except KeyError:
+            pass
+
+        try:
+            metrics[MetricCons.Me_stability]['conflicts'] = self.conflict_info[
                 self.entity_extensive[entity_id].file_path]
         except KeyError:
             pass

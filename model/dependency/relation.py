@@ -57,3 +57,6 @@ class Relation:
 
     def set_not_aosp(self, not_aosp):
         self.not_aosp = not_aosp
+
+    def is_core_rel(self):
+        return self.rel in [Constant.define, Constant.call, Constant.inherit, Constant.implement]
