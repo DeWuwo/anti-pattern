@@ -263,10 +263,10 @@ class BuildModel:
     # get owner string '01', '10', '11' or '00'
     def get_direction(self, relation: Relation):
         def get_owner(ent: Entity):
-            if ent.is_intrusive:
-                return '0'
-            else:
-                return str(ent.not_aosp)
+            # if ent.is_intrusive:
+            #     return '0'
+            # else:
+            return str(ent.not_aosp)
 
         return get_owner(self.entity_extensive[relation.src]) + get_owner(self.entity_extensive[relation.dest])
 
