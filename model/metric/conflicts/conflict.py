@@ -1,13 +1,18 @@
 import csv
+import os
+
+from utils import FileCSV
 
 
 class Conflict:
+    out_path: str
     conf_file: str
     conf_info: dict
     conf_info_sta: dict
 
     def __init__(self, file):
-        self.conf_file = file
+        self.out_path = file
+        self.conf_file = os.path.join(file, 'merge.csv')
         self.conf_info = {}
         self.conf_info_sta = {}
 
@@ -61,6 +66,9 @@ class Conflict:
         loc_rank = sorted(conf_info.items(), key=lambda d: d[1]['loc'], reverse=True)
         for index, item in enumerate(loc_rank):
             self.conf_info[item[0]]['loc_rank'] = f'{index + 1}/{conf_file_num}'
+
+        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'conf'), 'file-conf_rank',
+                                  [value for _, value in self.conf_info.items()], 'w')
 
 
 if __name__ == '__main__':

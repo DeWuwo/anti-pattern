@@ -44,7 +44,7 @@ class Metric:
             mc_data_rank = []
         for data in mc_data_rank:
             self.mc_data_rank[str(data['filename']).replace('\\', '/')] = data
-        self.conflict_info = Conflict(os.path.join(data_path, 'merge.csv')).get_conf_files()
+        self.conflict_info = Conflict(data_path).get_conf_files()
         self.query_relation = query_relation
         self.entity_native = entity_native
         self.entity_extensive = entity_extensive

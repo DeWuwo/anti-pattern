@@ -1,6 +1,7 @@
 import os
+import csv
 from typing import List
-from utils import FileCSV
+from utils import FileCSV, Constant
 
 
 class IntrusiveCompare:
@@ -66,12 +67,60 @@ class IntrusiveCompare:
         p_top_files, p_top_files_data = self.get_top_files(vals, dim, top)
         self.write_res(keys, vals, p_top_files, p_top_files_data, top)
 
+    def get_intrusive_commit(self, projects: List[tuple[str, str]]):
+        final_res = []
+        final_res_total = []
+        for project in projects:
+            res = {}
+            for cat in [Constant.E_class, Constant.E_interface, Constant.E_annotation, 'Enum', 'Enum Constant',
+                        Constant.E_method,
+                        Constant.E_variable]:
+                res[cat] = {'1': 0, '2': 0, '3': 0, '>3': 0}
+            res_total = {'project': project[0], '1': 0, '2': 0, '3': 0, '>3': 0}
+            commits_data = FileCSV.read_dict_from_csv(os.path.join(project[1], 'mixed_entities.csv'))
+            for commit_data in commits_data:
+                category = commit_data['category']
+                commits: str = commit_data['accompany commits']
+                commit_count = commits.count(',') + 1
+                field = str(commit_count)
+                if commit_count > 3:
+                    field = '>3'
+                res[category][field] += 1
+                res_total[field] += 1
+            for cat, val in res.items():
+                print(cat, val)
+                dic = {'project': project[0], 'category': cat}
+                dic.update(val)
+                final_res.append(dic)
+
+            final_res_total.append(res_total)
+            FileCSV.write_dict_to_csv(self.out_path, 'commit_count', final_res, 'w')
+            FileCSV.write_dict_to_csv(self.out_path, 'commit_count_total', final_res_total, 'w')
+
 
 def get_num(str_num: str):
     if str_num == '' or str_num == 'null':
         return 0
     else:
         return int(str_num)
+
+def get(file_path):
+    with open(file_path, 'r', encoding='utf-8') as f:
+        reader = csv.reader(f)
+        info = [line[0] for line in reader]
+        info.sort()
+        tt = set(info)
+        files = list(tt)
+        files.sort()
+        str_files = ';'.join(files)
+        print(len(files))
+        print(str_files)
+
+        pkgs = list(set([file.rsplit('/', 1)[0] for file in files]))
+        pkgs.sort()
+        str_pkgs = ';'.join(pkgs)
+        print(len(pkgs))
+        print(str_pkgs)
 
 
 if __name__ == '__main__':
