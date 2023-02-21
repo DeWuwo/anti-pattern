@@ -256,7 +256,7 @@ class BuildModel:
         possible_refactor_entities = []
         possible_refactor_entities.extend(intrusive_entities.values())
         possible_refactor_entities.extend(old_intrusive_entities.values())
-        possible_refactor_entities.extend(pure_accompany_entities.values())
+        # possible_refactor_entities.extend(pure_accompany_entities.values())
         refactor_list = self.git_history.load_refactor_entity(possible_refactor_entities)
         return all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities, refactor_list
 
