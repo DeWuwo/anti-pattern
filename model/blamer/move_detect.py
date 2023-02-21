@@ -248,7 +248,7 @@ def extract_state(refactor_kind: str,
 def distill_move_edit(refactor_obj: dict) -> List[MoveEdit]:
     refactor_kind = refactor_obj["type"]
     description = refactor_obj["description"]
-    if refactor_kind not in MoveMethodRefactorings and refactor_kind not in MoveClassRefactoring and refactor_kind not in MoveParamRefactorings:
+    if refactor_kind not in MoveMethodRefactorings + MoveClassRefactoring + MoveParamRefactorings:
         return []
     states = extract_state(refactor_kind,
                            description,

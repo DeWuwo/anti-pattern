@@ -58,17 +58,41 @@ class PatternCons:
                     },
                 ]
             },
-            'del_class_final_for_method': {
-                'aggre': [[1, 0], [0]],
+            'del_class_final_for_inherit_and_override': {
+                'aggre': [[1, 1, 0, 0, 0, 0, 0, 0], [1, 2, 3]],
                 'metrics': {MetricCons.Me_is_inherit: [0, 0], MetricCons.Me_stability: [0, 0]},
                 'metrics_filter': [],
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_class,
-                                'attrs': {'final': True, 'intrusive': True}},
+                                'attrs': {}},
+                        'rel': {'type': Constant.inherit, 'attrs': {}},
+                        'dest': {'id': [-1], 'category': Constant.E_class,
+                                 'attrs': {'final': True, 'intrusive': True}},
+                        'direction': '10'
+                    },
+                    {
+                        'src': {'id': ['id', 0, 0], 'category': Constant.E_class,
+                                'attrs': {}},
                         'rel': {'type': Constant.define, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_method,
-                                 'attrs': {'final': True, 'intrusive': True}},
+                                 'attrs': {}},
+                        'direction': '11'
+                    },
+                    {
+                        'src': {'id': ['id', 1, 1], 'category': Constant.E_method,
+                                'attrs': {}},
+                        'rel': {'type': Constant.override, 'attrs': {}},
+                        'dest': {'id': [-1], 'category': Constant.E_method,
+                                 'attrs': {}},
+                        'direction': '10'
+                    },
+                    {
+                        'src': {'id': ['id', 0, 1], 'category': Constant.E_class,
+                                'attrs': {}},
+                        'rel': {'type': Constant.define, 'attrs': {}},
+                        'dest': {'id': ['id', 2, 1], 'category': Constant.E_method,
+                                 'attrs': {}},
                         'direction': '00'
                     },
                 ]
@@ -160,23 +184,23 @@ class PatternCons:
 
                 ]
             },
-            'call_special_hidden': {
-                'aggre': [[1, 0], [0]],
-                'metrics': {},
-                'metrics_filter': [],
-                'rules': [
-                    {
-                        'src': {'id': [-1], 'category': Constant.E_method,
-                                'attrs': {}},
-                        'rel': {'type': Constant.call, 'attrs': {}},
-                        'dest': {'id': [-1], 'category': Constant.E_method,
-                                 'attrs': {'hidden': [Constant.HD_hidden]},
-                                 'filter': {'qualified_name': filter_list}},
-                        'direction': '10'
-                    }
-
-                ]
-            }
+            # 'call_special_hidden': {
+            #     'aggre': [[1, 0], [0]],
+            #     'metrics': {},
+            #     'metrics_filter': [],
+            #     'rules': [
+            #         {
+            #             'src': {'id': [-1], 'category': Constant.E_method,
+            #                     'attrs': {}},
+            #             'rel': {'type': Constant.call, 'attrs': {}},
+            #             'dest': {'id': [-1], 'category': Constant.E_method,
+            #                      'attrs': {'hidden': [Constant.HD_hidden]},
+            #                      'filter': {'qualified_name': filter_list}},
+            #             'direction': '10'
+            #         }
+            #
+            #     ]
+            # }
         })
 
     pattern_param_modify = PatternRules(

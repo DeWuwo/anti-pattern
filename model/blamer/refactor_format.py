@@ -1,5 +1,6 @@
 import re
 from typing import Tuple
+import time
 
 MoveRenameMethodFormat = "Move And Rename Method (.*) " \
                          "from class (.*) " \
@@ -32,11 +33,13 @@ RMPattern = re.compile(RenameMethodFormat)
 EMPattern = re.compile(ExtractMethodFormat)
 EMMPattern = re.compile(ExtractMoveMethodFormat)
 
-MoveMethodPatterns = [(MRMPattern, 1, 2, 3, 4),
-                      (MMPattern, 1, 2, 3, 4),
-                      (RMPattern, 2, 3, 1, 3),
-                      (EMMPattern, 2, 3, 1, 4),
-                      (EMPattern, 2, 3, 1, 3)]
+MoveMethodPatterns = [
+    (RMPattern, 2, 3, 1, 3),
+    (EMPattern, 2, 3, 1, 3),
+    (MMPattern, 1, 2, 3, 4),
+    (MRMPattern, 1, 2, 3, 4),
+    (EMMPattern, 2, 3, 1, 4),
+]
 
 RenameClassFormat = "Rename Class (.*) " \
                     "renamed to (.*)"
@@ -228,7 +231,7 @@ def get_remove_parameter(refactor_obj):
     return None
 
 
-SpecialMoveMethodGetters = [get_rename_parameter, get_add_parameter, get_remove_parameter]
+SpecialMoveMethodGetters = [get_add_parameter, get_rename_parameter, get_remove_parameter]
 
 ClassNameFormat = "(.*) class (.*)"
 ClassNamePattern = re.compile(ClassNameFormat)

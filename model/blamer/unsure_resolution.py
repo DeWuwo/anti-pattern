@@ -54,6 +54,7 @@ def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, refactor_data:
     unsure_filepath = not_sure_line["file path"]
     unsure_param = not_sure_line["param_names"]
     unsure_category = not_sure_line["category"]
+    related_moves = []
     if flag:
         unsure_id = not_sure_line['id']
         try:
@@ -64,7 +65,6 @@ def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, refactor_data:
     else:
         repo = git.Repo(repo_path)
         third_party_commits = json.loads(not_sure_line["accompany commits"])
-
         # if unsure_category == 'Variable' and unsure_longname.rsplit('.', 1)[1] not in unsure_param:
         #     return None
         sorted_commits = list(sorted(third_party_commits,
@@ -78,8 +78,10 @@ def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, refactor_data:
             related_moves = search_refactoring(unsure_category, unsure_longname, unsure_param, unsure_filepath,
                                                refactor_data[str(commit)], str(commit))
         else:
-            return None
-    return related_moves if related_moves else None
+            related_moves = []
+    if not related_moves:
+        return None
+    return related_moves
 
 
 RefactorData = Dict[str, List[dict]]
@@ -95,6 +97,12 @@ def load_refactor_data(file_path: Path, ref_data) -> RefactorData:
     for r in refactor_obj["commits"]:
         ret[r["sha1"]] = r["refactorings"]
     return ret
+    # todo: tojson
+    # if ref_data:
+    #     return ref_data
+    # refactor_obj = json.loads(file_path.read_text())
+    # return refactor_obj["commits"]
+
 
 
 def load_refactor_data_id(file_path: Path) -> RefactorData:

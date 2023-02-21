@@ -152,8 +152,8 @@ class Entity:
 
     def to_owner(self):
         return {'id': self.id, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp, 'isIntrusive': self.is_intrusive,
-                'category': self.category, 'qualifiedName': self.qualifiedName, 'file_path': self.file_path,
-                'mapping': self.entity_mapping}
+                'ownership': self.get_ownership(), 'category': self.category, 'qualifiedName': self.qualifiedName,
+                'file_path': self.file_path, 'mapping': self.entity_mapping}
 
     def handle_to_format(self, to_format: str):
         method = getattr(self, f'handle_to_{to_format}', None)
@@ -177,10 +177,10 @@ class Entity:
         return ['id', 'category', 'qualifiedName']
 
     def get_ownership(self):
-        if self.is_intrusive == 1:
-            return Constant.Owner_intrusive_native
-        elif self.not_aosp == 1:
+        if self.not_aosp == 1:
             return Constant.Owner_extensive
+        elif self.is_intrusive == 1:
+            return Constant.Owner_intrusive_native
         elif self.old_aosp == 1:
             return Constant.Owner_obsoletely_native
         else:

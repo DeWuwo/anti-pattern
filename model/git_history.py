@@ -1,6 +1,7 @@
 import os
 import csv
 import json
+import time
 from typing import List
 from pathlib import Path
 from model.blamer.commit_diff import entry_get_commits
@@ -41,7 +42,10 @@ class GitHistory:
     def get_commits_and_ref(self):
         extension_commits = entry_get_commits(self.repo_path_base, self.repo_path_accompany, self.out_path)
         print('run refactoring miner')
+        t1 = time.perf_counter()
         ref_res = self.get_refactor(extension_commits)
+        t2 = time.perf_counter()
+        print(f'ger refactor data time cost: {t2 - t1} s')
         self.ref_miner_data = ref_res
 
     def get_entity_commits(self):
@@ -66,6 +70,7 @@ class GitHistory:
         ref_temp_cache = self.get_path('ref_temp.json')
         if os.path.exists(ref_cache):
             return []
+        # todo: to dict
         ref_miner_res = []
         for commit in commits:
             cmd = f'{ref_tool} -c {repo_path} {commit} -json {ref_temp_cache}'
@@ -73,6 +78,7 @@ class GitHistory:
                 Command.command_run(cmd)
                 refactor_obj = json.loads(Path(ref_temp_cache).read_text())
                 ref_miner_res.append(refactor_obj['commits'][0])
+                # ref_miner_res[refactor_obj['commits'][0]['sha1']] = refactor_obj['commits'][0]
             except:
                 pass
             if os.path.exists(ref_temp_cache):
@@ -80,15 +86,19 @@ class GitHistory:
                 Command.command_run(del_temp)
         try:
             FileJson.base_write_to_json(self.out_path, 'commits', ref_miner_res, 'ref.json', 'w')
-            return []
+            return ref_miner_res
         except:
             return ref_miner_res
 
     def load_refactor_entity(self, entity_possible_refactor):
         print('   get refactor info')
         try:
-            return load_entity_refactor(self.repo_path_accompany, self.get_path('ref.json'), self.ref_miner_data,
+            t1 = time.perf_counter()
+            res = load_entity_refactor(self.repo_path_accompany, self.get_path('ref.json'), self.ref_miner_data,
                                         self.get_path('unsure_resolution.json'), entity_possible_refactor, self.out_path)
+            t2 = time.perf_counter()
+            print(f'ger entity refactor data time cost: {t2 - t1} s')
+            return res
         except Exception as e:
             print(e)
 
