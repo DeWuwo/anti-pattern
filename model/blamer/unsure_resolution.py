@@ -54,6 +54,8 @@ def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, refactor_data:
     unsure_filepath = not_sure_line["file path"]
     unsure_param = not_sure_line["param_names"]
     unsure_category = not_sure_line["category"]
+    if unsure_category == 'Variable':
+        return None
     related_moves = []
     if flag:
         unsure_id = not_sure_line['id']
