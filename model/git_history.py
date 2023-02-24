@@ -34,10 +34,23 @@ class GitHistory:
 
     def pre_run(self):
         os.makedirs(self.out_path, exist_ok=True)
+        print('start get gitlog')
+        self.get_git_log()
         print('start get all commits')
         self.get_commits_and_ref()
         print('start get all entities\' commits')
         self.get_entity_commits()
+
+    def get_git_log(self):
+        commands = []
+        if not os.path.exists(os.path.join(self.out_path, 'mc')):
+            os.makedirs(os.path.join(self.out_path, 'mc'))
+        if not os.path.exists(os.path.join(self.out_path, 'mc', 'gitlog_ext')):
+            commands.append(f'git -C {self.repo_path_accompany} log --numstat --date=iso > {self.out_path}/mc/gitlog_ext')
+        if not os.path.exists(os.path.join(self.out_path, 'mc', 'gitlog_nat')):
+            commands.append(f'git -C {self.repo_path_base} log --numstat --date=iso > {self.out_path}/mc/gitlog_nat')
+        for cmd in commands:
+            Command.command_run(cmd)
 
     def get_commits_and_ref(self):
         extension_commits = entry_get_commits(self.repo_path_base, self.repo_path_accompany, self.out_path)

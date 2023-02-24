@@ -27,23 +27,31 @@ class Metric:
                  entity_extensive: List[Entity], hidden_filter_list: List[str], code_extension: str):
         self.src_relation = defaultdict(partial(defaultdict, list))
         self.dest_relation = defaultdict(partial(defaultdict, list))
-        self.mc_data = defaultdict()
-        self.mc_data_rank = defaultdict()
+        self.mc_data = defaultdict(partial(defaultdict))
+        self.mc_data_rank = defaultdict(partial(defaultdict))
         for rel in relations:
             self.src_relation[rel.src][rel.rel].append(rel)
             self.dest_relation[rel.dest][rel.rel].append(rel)
         try:
-            mc_data_list = FileCSV.read_dict_from_csv(os.path.join(data_path, 'mc/file-mc.csv'))
+            mc_data_nat = FileCSV.read_dict_from_csv(os.path.join(data_path, 'mc/file-mc_nat.csv'))
+            mc_data_ext = FileCSV.read_dict_from_csv(os.path.join(data_path, 'mc/file-mc_ext.csv'))
         except FileNotFoundError:
-            mc_data_list = []
-        for data in mc_data_list:
-            self.mc_data[str(data['filename']).replace('\\', '/')] = data
+            mc_data_nat = []
+            mc_data_ext = []
+        for data in mc_data_nat:
+            self.mc_data['nat'][str(data['filename']).replace('\\', '/')] = data
+        for data in mc_data_ext:
+            self.mc_data['ext'][str(data['filename']).replace('\\', '/')] = data
         try:
-            mc_data_rank = FileCSV.read_dict_from_csv(os.path.join(data_path, 'mc/file-mc_rank.csv'))
+            mc_data_rank_nat = FileCSV.read_dict_from_csv(os.path.join(data_path, 'mc/file-mc_rank_nat.csv'))
+            mc_data_rank_ext = FileCSV.read_dict_from_csv(os.path.join(data_path, 'mc/file-mc_rank_ext.csv'))
         except FileNotFoundError:
-            mc_data_rank = []
-        for data in mc_data_rank:
-            self.mc_data_rank[str(data['filename']).replace('\\', '/')] = data
+            mc_data_rank_nat = []
+            mc_data_rank_ext = []
+        for data in mc_data_rank_nat:
+            self.mc_data_rank['nat'][str(data['filename']).replace('\\', '/')] = data
+        for data in mc_data_rank_ext:
+            self.mc_data_rank['ext'][str(data['filename']).replace('\\', '/')] = data
         self.conflict_info = Conflict(data_path).get_conf_files()
         self.query_relation = query_relation
         self.entity_native = entity_native
@@ -145,7 +153,8 @@ class Metric:
                 indicates = ['0-10', '10-30', '30-50', '50-']
                 for indicate in indicates:
                     metrics_statistic[key]['history_commits'][indicate] = 0
-                indicates = ['per_of_changloc_loc_1', 'per_of_changloc_loc_2', 'per_of_changloc_loc_5', 'per_of_changloc_loc_~']
+                indicates = ['per_of_changloc_loc_1', 'per_of_changloc_loc_2', 'per_of_changloc_loc_5',
+                             'per_of_changloc_loc_~']
                 for indicate in indicates:
                     metrics_statistic[key]['maintenance_cost'][indicate] = 0
                 indicates = ['top_10', 'top_50', 'top_100', 'top_10%', 'top_25%', 'top_50%', 'top_100%']
@@ -388,13 +397,17 @@ class Metric:
         metrics[MetricCons.Me_stability]['entity'] = self.entity_extensive[entity_id].to_string()
         metrics[MetricCons.Me_stability]['history_commits'] = self.entity_extensive[entity_id].commits_count
         try:
-            metrics[MetricCons.Me_stability]['maintenance_cost'] = self.mc_data[
-                self.entity_extensive[entity_id].file_path]
+            metrics[MetricCons.Me_stability]['maintenance_cost'] = {
+                'native': self.mc_data['nat'][self.entity_extensive[entity_id].file_path],
+                'extensive': self.mc_data['ext'][self.entity_extensive[entity_id].file_path]
+            }
         except KeyError:
             pass
         try:
-            metrics[MetricCons.Me_stability]['maintenance_cost_rank'] = self.mc_data_rank[
-                self.entity_extensive[entity_id].file_path]
+            metrics[MetricCons.Me_stability]['maintenance_cost_rank'] = {
+                'native': self.mc_data_rank['nat'][self.entity_extensive[entity_id].file_path],
+                'extensive': self.mc_data_rank['ext'][self.entity_extensive[entity_id].file_path]
+            }
         except KeyError:
             pass
 
@@ -414,7 +427,7 @@ class Metric:
             except KeyError:
                 return True
         elif metrics[MetricCons.Me_stability]['entity'].split('#')[1] in [Constant.E_class, Constant.E_interface]:
-            return float(metrics[MetricCons.Me_stability]['maintenance_cost']['changeloc']) > (
+            return float(metrics[MetricCons.Me_stability]['maintenance_cost']['native']['changeloc']) > (
                     entity.end_line - entity.start_line)
 
         return False
@@ -450,7 +463,7 @@ class Metric:
             pass
         try:
             average = 0
-            for key, mc in metrics[MetricCons.Me_stability]['maintenance_cost_rank'].items():
+            for key, mc in metrics[MetricCons.Me_stability]['maintenance_cost_rank']['native'].items():
                 if key == 'filename':
                     continue
                 average += MetricCons.mc_rank_level[mc]

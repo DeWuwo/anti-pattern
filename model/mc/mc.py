@@ -14,11 +14,15 @@ class MC:
     code_path: str
     out_path: str
     file_list: list
+    code_path_nat: str
+    file_list_nat: list
 
-    def __init__(self, code_path, out_path, file_list):
-        self.code_path = code_path
+    def __init__(self, out_path, code_path, file_list, code_path_nat, file_list_nat):
         self.out_path = out_path
+        self.code_path = code_path
         self.file_list = file_list
+        self.code_path_nat = code_path_nat
+        self.file_list_nat = file_list_nat
 
     def processGitLog(self, fileName, fileList_all, fileList_py, fileList_notest):
         print('  process git log')
@@ -147,36 +151,36 @@ class MC:
         print("file benchmark: ", len(fileList_all), len(fileList_py), len(fileList_notest))
         return fileList_all, fileList_py, fileList_notest
 
-    def run_log_fetch(self):
+    def run_log_fetch(self, proj):
         print('fetch git log')
         # gitlogFile = generateLog(projectName)
-        if os.path.exists(f"{self.out_path}\\mc\\history-java.csv"):
+        if os.path.exists(f"{self.out_path}\\mc\\history-java_{proj}.csv"):
             return
 
         [fileList_all, fileList_java, fileList_notest] = self.getAllFilesByFilter()
         [commitCollection_all, commitCollection_java, commitCollection_nontest] = \
-            self.processGitLog(os.path.join(self.out_path, 'mc/gitlog'), fileList_all, fileList_java, fileList_notest)
+            self.processGitLog(os.path.join(self.out_path, f'mc/gitlog_{proj}'), fileList_all, fileList_java, fileList_notest)
 
         resList = saveCommitCollection(commitCollection_all)
-        fileName = f"{self.out_path}\\mc\\history-all.csv"
+        fileName = f"{self.out_path}\\mc\\history-all_{proj}.csv"
         writeCSV(resList, fileName)
 
         resList = saveCommitCollection(commitCollection_java)
-        fileName = f"{self.out_path}\\mc\\history-java.csv"
+        fileName = f"{self.out_path}\\mc\\history-java_{proj}.csv"
         writeCSV(resList, fileName)
 
         resList = saveCommitCollection(commitCollection_nontest)
-        fileName = f"{self.out_path}\\mc\\history-notest.csv"
+        fileName = f"{self.out_path}\\mc\\history-notest_{proj}.csv"
         writeCSV(resList, fileName)
 
     # read mc file
-    def read_mc_file(self):
+    def read_mc_file(self, proj):
         mcAuthorDict = dict()  # [filename][author] = the commit count by this author
         mcCommittimesDict = dict()  # [filename] = cmttimes
         mcChangeLocDict = dict()  # [fileName] = loc
         mcIssueCountDict = dict()  # [fileName][issueId] = issue cmt counts
         mcIssueLocDict = dict()  # [fileName][issueId] = issueloc
-        with open(os.path.join(self.out_path, 'mc\\history-java.csv'), "r", encoding="utf8") as fp:
+        with open(os.path.join(self.out_path, f'mc\\history-java_{proj}.csv'), "r", encoding="utf8") as fp:
             reader = csv.reader(fp, delimiter=",")
             for each in reader:
                 [commitId, author, date, issueIds, files, addLocs, delLocs] = each
@@ -270,13 +274,14 @@ class MC:
             res.append([fileName, authorCount, cmtCount, changeLoc, issueCount, issueCmtCount, issueLoc])
         return res
 
-    def get_mc_file(self):
-        if os.path.exists(f"{self.out_path}\\mc\\file-mc.csv") and os.path.exists(f"{self.out_path}\\mc\\file-mc_rank.csv"):
+    def get_mc_file(self, proj):
+        if os.path.exists(f"{self.out_path}\\mc\\file-mc_{proj}.csv") and os.path.exists(
+                f"{self.out_path}\\mc\\file-mc_rank_{proj}.csv"):
             return
-        self.run_log_fetch()
+        self.run_log_fetch(proj)
         print('get file-mc.csv')
         [mcAuthorDict, mcCommittimesDict, mcChangeLocDict, mcIssueCountDict,
-         mcIssueLocDict] = self.read_mc_file()  # [filename]=, cmttimes, changeLoc, issueCounts, issueLoc;
+         mcIssueLocDict] = self.read_mc_file(proj)  # [filename]=, cmttimes, changeLoc, issueCounts, issueLoc;
         '''
         print("mcAuthorDict", mcAuthorDict)
         print("mcCommittimesDict", mcCommittimesDict)
@@ -284,16 +289,17 @@ class MC:
         print("mcIssueLocDict", mcCommittimesDict)
         print("mcIssueCountDict", mcCommittimesDict)
         '''
-        change_bug_cost_list = self.change_bug_proness_compute(self.file_list, mcAuthorDict, mcCommittimesDict,
+        files = self.file_list if proj == '' else self.file_list_nat
+        change_bug_cost_list = self.change_bug_proness_compute(files, mcAuthorDict, mcCommittimesDict,
                                                                mcChangeLocDict, mcIssueCountDict, mcIssueLocDict)
-        self.get_mc_rank(change_bug_cost_list)
+        self.get_mc_rank(change_bug_cost_list, proj)
         title = ['filename', '#author', '#cmt', 'changeloc', '#issue', '#issue-cmt', 'issueLoc']
         final = list()
         final.append(title)
         final.extend(change_bug_cost_list)
-        writeCSV(final, os.path.join(self.out_path, 'mc\\file-mc.csv'))
+        writeCSV(final, os.path.join(self.out_path, f'mc\\file-mc_{proj}.csv'))
 
-    def get_mc_rank(self, mc_data: list):
+    def get_mc_rank(self, mc_data: list, proj):
         rank = defaultdict(partial(defaultdict, str))
         title = ['filename', '#author', '#cmt', 'changeloc', '#issue', '#issue-cmt', 'issueLoc']
         title_index = [1, 2, 3, 4, 5, 6]
@@ -319,8 +325,8 @@ class MC:
                     rank[mc_data_copy[index][0]][title[key_index]] = 'top_50%'
                 else:
                     rank[mc_data_copy[index][0]][title[key_index]] = 'top_100%'
-        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'mc'), 'file-mc_rank', [value for _, value in rank.items()], 'w')
-
+        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'mc'), f'file-mc_rank_{proj}',
+                                  [value for _, value in rank.items()], 'w')
 
 
 def formatFileName(fileNameList):

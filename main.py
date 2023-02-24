@@ -56,10 +56,10 @@ def dispatch(args):
         base_model = BuildModel(entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp,
                                 entities_stat_aosp, git_history, args.output)
 
-        mc = MC(args.code_honor, args.output, list(base_model.file_list_extension))
-        mc.get_mc_file()
-
-
+        mc = MC(args.output, args.code_honor, list(base_model.file_set_extension), args.code_android,
+                list(base_model.file_set_android))
+        mc.get_mc_file('nat')
+        mc.get_mc_file('ext')
 
         pattern_match = Match(base_model, args.output, module_blame, args.code_honor)
         # match coupling pattern

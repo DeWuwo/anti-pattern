@@ -32,9 +32,9 @@ class Script:
             f'git -C {assi_code_path} checkout .',
             f'git -C {assi_code_path} checkout {assi_commit}',
         ]
-        git_log_fetch_commands: List[str] = [
-            f'git -C {assi_code_path} log --numstat --date=iso > {out_path}/mc/gitlog'
-        ]
+        # git_log_fetch_commands: List[str] = [
+        #     f'git -C {assi_code_path} log --numstat --date=iso > {out_path}/mc/gitlog'
+        # ]
 
         dep_commands: List[str] = [
             f'java -Xmx20g -jar {self.dep_path} java {aosp_code_path} base -o {aosp_base_commit}{aosp_hidden}',
@@ -48,8 +48,8 @@ class Script:
         if not os.path.exists(os.path.join(out_path, 'mc')):
             os.makedirs(os.path.join(out_path, 'mc'))
 
-        if os.path.exists(os.path.join(out_path, 'mc', 'gitlog')):
-            git_log_fetch_commands = []
+        # if os.path.exists(os.path.join(out_path, 'mc', 'gitlog')):
+        #     git_log_fetch_commands = []
 
         if os.path.exists(aosp_dep_path) and os.path.exists(assi_dep_path):
             dep_commands = []
@@ -57,17 +57,17 @@ class Script:
         detect_commands: List[str] = [
             f'python main.py -ra {aosp_code_path} -re {assi_code_path} -a {aosp_dep_path} -e {assi_dep_path} -ref {self.ref_path} -o {out_path}'
         ]
-        return branch_checkout_commands, git_log_fetch_commands, dep_commands, detect_commands
+        return branch_checkout_commands, dep_commands, detect_commands
 
     def run_command(self):
         for item in self.oss.get_all_os():
-            branch_checkout_commands, git_log_fetch_commands, dep_commands, detect_commands = self.get_command(*self.oss.get_path(*item))
+            branch_checkout_commands, dep_commands, detect_commands = self.get_command(*self.oss.get_path(*item))
             for cmd in branch_checkout_commands:
                 print(cmd)
                 Command.command_run(cmd)
-            for cmd in git_log_fetch_commands:
-                print(cmd)
-                Command.command_run(cmd)
+            # for cmd in git_log_fetch_commands:
+            #     print(cmd)
+            #     Command.command_run(cmd)
             for cmd in dep_commands:
                 print(cmd)
                 Command.command_run(cmd)
@@ -84,7 +84,7 @@ class Script:
         out_path = 'D:\\merge\\res\\RmagicUI\\base'
         if not os.path.exists(os.path.join(out_path, 'mc')):
             os.makedirs(os.path.join(out_path, 'mc'))
-        commands.append(f'git -C {assi_code_path} log --numstat --date=iso > {out_path}/mc/gitlog')
+        # commands.append(f'git -C {assi_code_path} log --numstat --date=iso > {out_path}/mc/gitlog')
         commands.append(
             f'python main.py -ra {aosp_code_path} -re {assi_code_path} -a {aosp_dep_path} -e {assi_dep_path} -ref {self.ref_path} -o {out_path}')
         aosp_code_path = 'D:\\HONOR_code_final\\SAOSP_r2\\base'
@@ -94,7 +94,7 @@ class Script:
         out_path = 'D:\\HONOR_code_final\\S_result_final\\base\\'
         if not os.path.exists(os.path.join(out_path, 'mc')):
             os.makedirs(os.path.join(out_path, 'mc'))
-        commands.append(f'git -C {assi_code_path} log --numstat --date=iso > {out_path}/mc/gitlog')
+        # commands.append(f'git -C {assi_code_path} log --numstat --date=iso > {out_path}/mc/gitlog')
         commands.append(
             f'python main.py -ra {aosp_code_path} -re {assi_code_path} -a {aosp_dep_path} -e {assi_dep_path} -ref {self.ref_path} -o {out_path}')
         # T
@@ -105,7 +105,6 @@ class Script:
         out_path = 'D:\\HONOR_code_final\\T_result_final\\base\\'
         if not os.path.exists(os.path.join(out_path, 'mc')):
             os.makedirs(os.path.join(out_path, 'mc'))
-        commands.append(f'git -C {assi_code_path} log --numstat --date=iso > {out_path}/mc/gitlog')
         commands.append(
             f'python main.py -ra {aosp_code_path} -re {assi_code_path} -a {aosp_dep_path} -e {assi_dep_path} -ref {self.ref_path} -o {out_path}')
 

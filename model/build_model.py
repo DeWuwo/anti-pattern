@@ -43,7 +43,8 @@ class BuildModel:
     relation_extensive: List[Relation]
     statistics_android: Dict
     statistics_extensive: Dict
-    file_list_extension: set
+    file_set_android : set
+    file_set_extension: set
 
     out_path: str
     # more info
@@ -94,7 +95,8 @@ class BuildModel:
         self.relation_extensive = []
         self.statistics_android = statistics_android
         self.statistics_extensive = statistics_extensive
-        self.file_list_extension = set()
+        self.file_set_android = set()
+        self.file_set_extension = set()
         # self.hidden_entities = []
         self.params_modify_entities = []
         self.hidden_modify_entities = []
@@ -142,7 +144,6 @@ class BuildModel:
         print("start init model entities")
         aosp_entity_set = defaultdict(partial(defaultdict, partial(defaultdict, list)))
         extensive_entity_set = defaultdict(partial(defaultdict, partial(defaultdict, list)))
-        file_set_android = set()
         # aosp entities
         print('     get aosp entities')
         for item in entities_android:
@@ -152,7 +153,7 @@ class BuildModel:
                 self.entity_android.append(entity)
                 aosp_entity_set[entity.category][entity.qualifiedName][entity.file_path].append(entity.id)
                 if entity.category == Constant.E_file:
-                    file_set_android.add(entity.file_path)
+                    self.file_set_android.add(entity.file_path)
                 elif entity.category == Constant.E_class and entity.name == Constant.anonymous_class:
                     entity.set_anonymous_class(True)
         # assi entities
@@ -167,7 +168,7 @@ class BuildModel:
                 extensive_entity_set[entity.category][entity.qualifiedName][entity.file_path].append(entity.id)
                 self.owner_proc.append(entity.to_csv())
                 if entity.category == Constant.E_file:
-                    self.file_list_extension.add(entity.file_path)
+                    self.file_set_extension.add(entity.file_path)
                 elif entity.category == Constant.E_class and entity.name == Constant.anonymous_class:
                     entity.set_anonymous_class(True)
         # init dep
@@ -201,7 +202,7 @@ class BuildModel:
                 temp_define[relation.src].append(self.entity_extensive[relation.dest])
             elif relation.rel == Constant.R_import:
                 if import_relation_set[relation.to_str(self.entity_extensive)] != 1 and \
-                        self.entity_extensive[relation.src].file_path in file_set_android:
+                        self.entity_extensive[relation.src].file_path in self.file_set_android:
                     self.import_extensive_relation.append(relation)
             elif relation.rel == Constant.typed:
                 self.entity_extensive[relation.src].set_typed(relation.dest)
