@@ -19,6 +19,7 @@ class Conflict:
     def get_conf_files(self):
         conf_info: dict = {}
         with open(self.conf_file, encoding='utf-8') as f:
+            csv.field_size_limit(500 * 1024 * 1024)
             reader = csv.reader(f)
             next(reader)
             rows = [row for row in reader]
