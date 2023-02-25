@@ -60,7 +60,7 @@ class PatternCons:
             },
             'del_class_final_for_inherit_and_override': {
                 'aggre': [[1, 1, 0, 0, 0, 0, 0, 0], [1, 2, 3]],
-                'metrics': {MetricCons.Me_is_inherit: [0, 0], MetricCons.Me_stability: [0, 0]},
+                'metrics': {MetricCons.Me_stability: [0, 1], MetricCons.Me_extensive_access_frequency: [2, 1]},
                 'metrics_filter': [],
                 'rules': [
                     {
@@ -273,7 +273,8 @@ class PatternCons:
         'InheritExtension', {
             'inherit_extensive_class': {
                 'aggre': [[1, 0], [0], ],
-                'metrics': {MetricCons.Me_is_new_inherit: [0, 0], MetricCons.Me_stability: [0, 0]},
+                'metrics': {MetricCons.Me_is_new_inherit: [0, 0], MetricCons.Me_is_inherit: [0, 0],
+                            MetricCons.Me_stability: [0, 0]},
                 'metrics_filter': [],
                 'rules': [
                     {
@@ -474,7 +475,8 @@ class PatternCons:
             'aggregate_interface': {
                 'aggre': [[1, 1, 1, 0, 1, 1, 1, 1, 1, 0], [1, 4], ],
                 'metrics': {MetricCons.Me_stability: [3, 1]},
-                'metrics_filter': [{MetricCons.Me_stability: [3, 1]}],
+                # 'metrics_filter': [{MetricCons.Me_stability: [3, 1]}],
+                'metrics_filter': [],
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
@@ -517,7 +519,8 @@ class PatternCons:
             'aggregate_class': {
                 'aggre': [[1, 1, 1, 0, 1, 1, 1, 1, 1, 0], [1, 4], ],
                 'metrics': {MetricCons.Me_stability: [3, 1]},
-                'metrics_filter': [{MetricCons.Me_stability: [3, 1]}],
+                'metrics_filter': [],
+                # 'metrics_filter': [{MetricCons.Me_stability: [3, 1]}],
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},

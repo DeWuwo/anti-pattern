@@ -5,6 +5,7 @@ class MetricCons:
 
     Me_stability: str = 'stability'
     Me_is_inherit: str = 'is_inherit'
+    Me_is_implement: str = 'is_implement'
     Me_is_override: str = 'is_override'
 
     Me_native_used_frequency: str = 'native_used_frequency'

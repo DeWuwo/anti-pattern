@@ -488,6 +488,23 @@ class Metric:
         else:
             metrics_statistics[MetricCons.Me_is_inherit]['no_inherit'] += 1
 
+    def handle_metrics_is_implement(self, metrics: dict, rels: List[Relation], target_entity: list):
+        entity_id = rels[target_entity[0]].dest if target_entity[1] else rels[target_entity[1]].src
+        metrics[MetricCons.Me_is_implement] = [self.entity_extensive[rel.src].qualifiedName for rel in
+                                               self.query_relation[Constant.implement]['01'][Constant.E_class][
+                                                   entity_id]]
+
+    def handle_metrics_filter_is_implement(self, metrics: dict, indicate: list):
+        if metrics[MetricCons.Me_is_implement]:
+            return True
+        return False
+
+    def handle_metrics_statistics_is_implement(self, metrics: dict, metrics_statistics: dict):
+        if metrics[MetricCons.Me_is_implement]:
+            metrics_statistics[MetricCons.Me_is_implement]['is_implement'] += 1
+        else:
+            metrics_statistics[MetricCons.Me_is_implement]['no_implement'] += 1
+
     def handle_metrics_is_new_inherit(self, metrics: dict, rels: List[Relation], target_entity: list):
         entity_id = rels[target_entity[0]].dest if target_entity[1] else rels[target_entity[1]].src
         metrics[MetricCons.Me_is_new_inherit] = (self.entity_extensive[entity_id].parent_class == [])
