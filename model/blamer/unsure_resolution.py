@@ -1,13 +1,16 @@
 import csv
 import sys
 import json
+import time
 from collections import defaultdict
 from pathlib import Path
 from typing import List, Optional, Dict
 import argparse
 import git
+from concurrent.futures import as_completed
 
 from model.blamer.move_detect import distill_move_edit_list, MoveEdit
+from utils import MyThread
 
 refactor_move_cache: Dict[str, Dict[str, List[MoveEdit]]] = {}
 
@@ -48,37 +51,32 @@ def search_refactoring_by_id(category: str, longname: str, unsure_params: str, u
 OwnerShipData = Dict[str, str]
 
 
-def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, refactor_data: Dict[str, List[dict]], flag: bool) \
-        -> Optional[List[MoveEdit]]:
+def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, sorted_commits: Dict[str, int],
+                   refactor_data: Dict[str, List[dict]], flag: bool):
     unsure_longname = not_sure_line["Entity"]
     unsure_filepath = not_sure_line["file path"]
     unsure_param = not_sure_line["param_names"]
     unsure_category = not_sure_line["category"]
-    if unsure_category == 'Variable':
-        return None
     related_moves = []
     if flag:
         unsure_id = not_sure_line['id']
-        try:
-            related_moves = search_refactoring_by_id(unsure_category, unsure_longname, unsure_param,
-                                                     unsure_filepath, refactor_data[unsure_id])
-        except KeyError:
-            return None
+        related_moves = search_refactoring_by_id(unsure_category, unsure_longname, unsure_param,
+                                                 unsure_filepath, refactor_data[unsure_id])
     else:
         repo = git.Repo(repo_path)
         third_party_commits = json.loads(not_sure_line["accompany commits"])
         # if unsure_category == 'Variable' and unsure_longname.rsplit('.', 1)[1] not in unsure_param:
         #     return None
-        sorted_commits = list(sorted(third_party_commits,
-                                     key=lambda k: repo.commit(k).committed_datetime, reverse=False))
-        commit = repo.commit(sorted_commits[0])
+        third_sorted_commits = sorted(third_party_commits, key=lambda k: sorted_commits[k], reverse=False)
+        # commit = repo.commit(third_sorted_commits[0])
+        commit = third_sorted_commits[0]
         try:
             refactor_info = refactor_data[str(commit)]
         except KeyError:
             refactor_info = {}
         if refactor_info:
             related_moves = search_refactoring(unsure_category, unsure_longname, unsure_param, unsure_filepath,
-                                               refactor_data[str(commit)], str(commit))
+                                               refactor_info, str(commit))
         else:
             related_moves = []
     if not related_moves:
@@ -104,7 +102,6 @@ def load_refactor_data(file_path: Path, ref_data) -> RefactorData:
     #     return ref_data
     # refactor_obj = json.loads(file_path.read_text())
     # return refactor_obj["commits"]
-
 
 
 def load_refactor_data_id(file_path: Path) -> RefactorData:
@@ -161,7 +158,8 @@ def resolution_entry():
         json.dump(move_list, file, indent=4)
 
 
-def load_entity_refactor(repo_path: str, refactor_path: str, ref_data: List, unsure_refactor: str,
+def load_entity_refactor(repo_path: str, refactor_path: str, sorted_extensive_commits: list,
+                         ref_data: List, unsure_refactor: str,
                          not_sure_rows: List[dict], out_path: str):
     refactor_path = Path(refactor_path)
     repo_path = Path(repo_path)
@@ -175,31 +173,41 @@ def load_entity_refactor(repo_path: str, refactor_path: str, ref_data: List, uns
         refactor_data = load_refactor_data(refactor_path, ref_data)
     # not_sure_rows = load_not_sure_lines(Path(unsure_ownership))
 
-    move_list_write: Dict[int, dict] = {}
-    move_list: Dict[int, list] = {}
+    ref_ent_write: Dict[int, dict] = {}
+    ref_ent: Dict[int, list] = {}
 
-    i = 0
-    total = len(not_sure_rows)
-    for row in not_sure_rows:
-        i += 1
-        print("\r", end="")
-        print(f"       Refactor detect: {i}/{total}", end="")
-        sys.stdout.flush()
-        moves = resolve_unsure(repo_path, row, refactor_data, refactor_cache)
-        if moves:
-            row_dict = dict()
-            for k, v in row.items():
-                try:
-                    row_dict[k] = json.loads(v)
-                except json.JSONDecodeError:
-                    row_dict[k] = v
-            row_dict["Moves"] = [m.refactor_obj for m in moves]
-            move_list_write[int(row_dict['id'])] = row_dict
-            move_list[int(row_dict['id'])] = [row_dict,
-                                              [[m.refactor_obj['type'], m.src_state, m.to_state] for m in moves]]
+    def resolve_refactor_to_entity(entities: List[dict], *index):
+        move_list_write: Dict[int, dict] = {}
+        move_list: Dict[int, list] = {}
+        sorted_commits: Dict[str, int] = {}
+        for index, cmt in enumerate(sorted_extensive_commits):
+            sorted_commits[cmt] = index
+
+        total = len(entities)
+        i = 0
+        for row in entities:
+            i += 1
+            print("\r", end="")
+            print(f"       Refactor detect: {i}/{total}", end="")
+            sys.stdout.flush()
+            moves = resolve_unsure(repo_path, row, sorted_commits, refactor_data, refactor_cache)
+            if moves:
+                row_dict = dict()
+                for k, v in row.items():
+                    try:
+                        row_dict[k] = json.loads(v)
+                    except json.JSONDecodeError:
+                        row_dict[k] = v
+                row_dict["Moves"] = [m.refactor_obj for m in moves]
+                move_list_write[int(row_dict['id'])] = row_dict
+                move_list[int(row_dict['id'])] = [row_dict,
+                                                  [[m.refactor_obj['type'], m.src_state, m.to_state] for m in moves]]
+        return move_list_write, move_list
+
+    ref_ent_write, ref_ent = resolve_refactor_to_entity(not_sure_rows)
     with open(f"{out_path}/unsure_resolution.json", "w") as file:
-        json.dump(move_list_write, file, indent=4)
-    return move_list
+        json.dump(ref_ent_write, file, indent=4)
+    return ref_ent
 
 
 if __name__ == '__main__':

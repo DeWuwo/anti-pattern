@@ -5,6 +5,7 @@ from utils.constant import Constant
 from utils.command import Command
 from utils.compare import Compare
 from utils.string_utils import StringUtils
+from utils.thread import MyThread
 
 __all__ = [
     'FileJson',
@@ -13,5 +14,6 @@ __all__ = [
     'Command',
     'Compare',
     'FileCommon',
-    'StringUtils'
+    'StringUtils',
+    'MyThread'
 ]

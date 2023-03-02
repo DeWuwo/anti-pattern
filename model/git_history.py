@@ -2,6 +2,7 @@ import os
 import csv
 import json
 import time
+import git
 from typing import List
 from pathlib import Path
 from model.blamer.commit_diff import entry_get_commits
@@ -9,13 +10,14 @@ from model.blamer.dep_blamer import get_entity_commits
 from model.blamer.tagging_ownership import get_entity_owner
 from model.blamer.unsure_resolution import load_entity_refactor
 from model.blamer.refactor_format import get_name_from_sig
-from utils import Command, FileJson
+from utils import Command, FileJson, MyThread
 
 
 class GitHistory:
     repo_path_base: str
     repo_path_accompany: str
     accompany_relation_path: str
+    sorted_extensive_commits: list
     refactor_miner: str
     out_path: str
     ref_miner_data: List
@@ -25,6 +27,7 @@ class GitHistory:
         self.repo_path_base = repo_path_base
         self.repo_path_accompany = repo_path_accompany
         self.accompany_relation_path = accompany_relation_path
+        self.sorted_extensive_commits = []
         self.refactor_miner = refactor_miner
         self.out_path = out_path
         self.pre_run()
@@ -46,7 +49,8 @@ class GitHistory:
         if not os.path.exists(os.path.join(self.out_path, 'mc')):
             os.makedirs(os.path.join(self.out_path, 'mc'))
         if not os.path.exists(os.path.join(self.out_path, 'mc', 'gitlog_ext')):
-            commands.append(f'git -C {self.repo_path_accompany} log --numstat --date=iso > {self.out_path}/mc/gitlog_ext')
+            commands.append(
+                f'git -C {self.repo_path_accompany} log --numstat --date=iso > {self.out_path}/mc/gitlog_ext')
         if not os.path.exists(os.path.join(self.out_path, 'mc', 'gitlog_nat')):
             commands.append(f'git -C {self.repo_path_base} log --numstat --date=iso > {self.out_path}/mc/gitlog_nat')
         for cmd in commands:
@@ -54,12 +58,20 @@ class GitHistory:
 
     def get_commits_and_ref(self):
         extension_commits = entry_get_commits(self.repo_path_base, self.repo_path_accompany, self.out_path)
-        print('run refactoring miner')
-        t1 = time.perf_counter()
-        ref_res = self.get_refactor(extension_commits)
-        t2 = time.perf_counter()
-        print(f'ger refactor data time cost: {t2 - t1} s')
-        self.ref_miner_data = ref_res
+        repo = git.Repo(self.repo_path_accompany)
+        self.sorted_extensive_commits = list(sorted(extension_commits,
+                                                    key=lambda k: repo.commit(k).committed_datetime, reverse=False))
+        ref_cache = self.get_path('ref.json')
+        if os.path.exists(ref_cache):
+            self.ref_miner_data = []
+        else:
+            print('run refactoring miner')
+            t1 = time.perf_counter()
+            ref_res = MyThread(7, self.get_refactor, list(extension_commits)).run()
+            t2 = time.perf_counter()
+            FileJson.base_write_to_json(self.out_path, 'commits', ref_res, 'ref.json', 'w')
+            print(f'ger refactor data time cost: {t2 - t1} s')
+            self.ref_miner_data = ref_res
 
     def get_entity_commits(self):
         try:
@@ -76,13 +88,10 @@ class GitHistory:
 
         return all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities
 
-    def get_refactor(self, commits: List[str]):
+    def get_refactor(self, commits: List[str], index: int):
         ref_tool = os.path.abspath(os.path.join(self.refactor_miner, 'RefactoringMiner'))
         repo_path = self.repo_path_accompany
-        ref_cache = self.get_path('ref.json')
-        ref_temp_cache = self.get_path('ref_temp.json')
-        if os.path.exists(ref_cache):
-            return []
+        ref_temp_cache = self.get_path(f'ref_temp_{index}.json')
         # todo: to dict
         ref_miner_res = []
         for commit in commits:
@@ -97,18 +106,15 @@ class GitHistory:
             if os.path.exists(ref_temp_cache):
                 del_temp = f'del {ref_temp_cache}'
                 Command.command_run(del_temp)
-        try:
-            FileJson.base_write_to_json(self.out_path, 'commits', ref_miner_res, 'ref.json', 'w')
-            return ref_miner_res
-        except:
-            return ref_miner_res
+        return ref_miner_res
 
     def load_refactor_entity(self, entity_possible_refactor):
         print('   get refactor info')
         try:
             t1 = time.perf_counter()
-            res = load_entity_refactor(self.repo_path_accompany, self.get_path('ref.json'), self.ref_miner_data,
-                                        self.get_path('unsure_resolution.json'), entity_possible_refactor, self.out_path)
+            res = load_entity_refactor(self.repo_path_accompany, self.get_path('ref.json'),
+                                       self.sorted_extensive_commits, self.ref_miner_data,
+                                       self.get_path('unsure_resolution.json'), entity_possible_refactor, self.out_path)
             t2 = time.perf_counter()
             print(f'ger entity refactor data time cost: {t2 - t1} s')
             return res
