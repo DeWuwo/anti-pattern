@@ -67,7 +67,7 @@ class GitHistory:
         else:
             print('run refactoring miner')
             t1 = time.perf_counter()
-            ref_res = MyThread(7, self.get_refactor, list(extension_commits)).run()
+            ref_res = MyThread(4, self.get_refactor, list(extension_commits)).run()
             t2 = time.perf_counter()
             FileJson.base_write_to_json(self.out_path, 'commits', ref_res, 'ref.json', 'w')
             print(f'ger refactor data time cost: {t2 - t1} s')

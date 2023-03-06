@@ -19,18 +19,24 @@ class MyThread:
         step = int(len(self.args) / self.works)
         return [self.args[i * step: min(i * step + step, len(self.args))] for i in range(0, self.works + 1)]
 
-    def start_th(self):
+    def start_th(self, need_index: bool, *args):
         with ThreadPoolExecutor(max_workers=self.works + 1) as th_pool:
             # for index, arg in enumerate(self.divide_works_args()):
-            res = [th_pool.submit(self.func, arg, index) for index, arg in enumerate(self.divide_works_args())]
+            if need_index:
+                res = [th_pool.submit(self.func, arg, *args, index) for index, arg in
+                       enumerate(self.divide_works_args())]
+            else:
+                res = [th_pool.submit(self.func, arg, *args) for arg in self.divide_works_args()]
             return res
 
     def run(self):
         res = []
-        for future in as_completed(self.start_th()):
+        for future in as_completed(self.start_th(True)):
             res.extend(future.result())
         return res
 
+    def get_res(self,need_index, *args):
+        return as_completed(self.start_th(need_index, *args))
 
 
 def test(a, b):

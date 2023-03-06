@@ -9,6 +9,7 @@ from typing import Optional, Set, Dict, List, IO, Iterable, Callable
 
 import git
 
+from utils import MyThread
 
 def range_intersection(x: range, y: range) -> Optional[range]:
     start = max(x.start, y.start)
@@ -294,7 +295,13 @@ def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str
     print(' load blame dict')
     blame_dict_path = Path(f"{blame_cache}/blame_dict.csv")
     if not blame_dict_path.exists():
-        blame_dict = create_blame_dict(file_set, git.Repo(repo_path), current_commit)
+        blame_dict = {}
+        repo = git.Repo(repo_path)
+        blame_th = MyThread(4, create_blame_dict, list(file_set))
+        res = blame_th.get_res(False, repo, current_commit)
+        for th_res in res:
+            blame_dict.update(th_res.result())
+        # blame_dict = create_blame_dict(file_set, repo, current_commit)
         dump_blame_dict(blame_dict, blame_dict_path)
     else:
         blame_dict = load_blame_dict(blame_dict_path)
@@ -324,7 +331,7 @@ def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str
         # with open("blame_dict", "wb") as f:
         #     pickle.dump(blame_dict, f)
         end_time = time()
-        print(end_time - start_time)
+        print('git blame cost', end_time - start_time)
 
 
 if __name__ == '__main__':
