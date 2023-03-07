@@ -104,8 +104,9 @@ class GitHistory:
             except:
                 pass
             if os.path.exists(ref_temp_cache):
-                del_temp = f'del {ref_temp_cache}'
-                Command.command_run(del_temp)
+                os.remove(ref_temp_cache)
+                # del_temp = f'del {ref_temp_cache}'
+                # Command.command_run(del_temp)
         return ref_miner_res
 
     def load_refactor_entity(self, entity_possible_refactor):
