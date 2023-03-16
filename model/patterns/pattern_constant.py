@@ -10,6 +10,36 @@ filter_list = ['android.util', 'android.os.Message', 'com.android.internal.loggi
 
 
 class PatternCons:
+    pattern_intrusive = PatternRules('IntrusiveModify', {
+        'class_intrusive_add_method': {
+            'aggre': [[1, 0], [0]],
+            'metrics': {MetricCons.Me_stability: [0, 0]},
+            'metrics_filter': [],
+            'rules': [
+                {
+                    'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {'intrusive': True}},
+                    'rel': {'type': Constant.define, 'attrs': {}},
+                    'dest': {'id': [-1], 'category': Constant.E_method,
+                             'attrs': {}, 'filter': {}},
+                    'direction': '01'
+                }
+            ]
+        },
+        'method_intrusive': {
+            'aggre': [],
+            'metrics': {MetricCons.Me_stability: [0, 0]},
+            'metrics_filter': [],
+            'rules': [
+                {
+                    'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {'intrusive': True}},
+                    'rel': {'type': Constant.define, 'attrs': {}},
+                    'dest': {'id': [-1], 'category': Constant.E_method,
+                             'attrs': {'intrusive': True}, 'filter': {}},
+                    'direction': '00'
+                }
+            ]
+        },
+    })
     pattern_final = PatternRules(
         'FinalDel',
         {
