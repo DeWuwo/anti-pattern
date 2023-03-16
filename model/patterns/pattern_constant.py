@@ -26,7 +26,7 @@ class PatternCons:
             ]
         },
         'method_intrusive': {
-            'aggre': [],
+            'aggre': [[], []],
             'metrics': {MetricCons.Me_stability: [0, 0]},
             'metrics_filter': [],
             'rules': [

@@ -297,7 +297,7 @@ def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str
     if not blame_dict_path.exists():
         blame_dict = {}
         repo = git.Repo(repo_path)
-        blame_th = MyThread(4, create_blame_dict, list(file_set))
+        blame_th = MyThread(10, create_blame_dict, list(file_set))
         res = blame_th.get_res(False, repo, current_commit)
         for th_res in res:
             blame_dict.update(th_res.result())
