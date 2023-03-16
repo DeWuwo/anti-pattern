@@ -380,20 +380,7 @@ class MC:
             for index in range(0, file_num):
                 rank[mc_data_copy[index][0]]['file_count'] = str(file_num)
                 rank[mc_data_copy[index][0]][title[0]] = mc_data_copy[index][0]
-                if 0 <= index <= 10:
-                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_10'
-                elif 10 < index <= 50:
-                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_50'
-                elif 50 < index <= 100:
-                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_100'
-                elif 100 < index <= len(mc_data_copy) // 10:
-                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_10%'
-                elif len(mc_data_copy) // 10 < index <= len(mc_data_copy) // 4:
-                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_25%'
-                elif len(mc_data_copy) // 4 < index <= len(mc_data_copy) // 2:
-                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_50%'
-                else:
-                    rank[mc_data_copy[index][0]][title[key_index]] = 'top_100%'
+                rank[mc_data_copy[index][0]][title[key_index]] = index
         FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'mc'), f'file-mc_rank_{proj}',
                                   [value for _, value in rank.items()], 'w')
 

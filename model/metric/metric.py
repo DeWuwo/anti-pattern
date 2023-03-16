@@ -374,7 +374,7 @@ class Metric:
             elif indicate < 0.5:
                 metrics_statistics[MetricCons.Me_native_access_frequency]['per_private_0.2-0.5'] += 1
             else:
-                metrics_statistics[MetricCons.Me_native_access_frequency]['per_private_1'] += 1
+                metrics_statistics[MetricCons.Me_native_access_frequency]['per_private_0.5-1'] += 1
 
     def handle_metrics_func_metrics(self, metrics: dict, rels: List[Relation], target_entity: list):
         entity_id = rels[target_entity[0]].dest if target_entity[1] else rels[target_entity[1]].src
@@ -463,10 +463,26 @@ class Metric:
             pass
         try:
             average = 0
+            file_count = int(metrics[MetricCons.Me_stability]['maintenance_cost_rank']['native']['file_count'])
             for key, mc in metrics[MetricCons.Me_stability]['maintenance_cost_rank']['native'].items():
-                if key == 'filename':
+                if key == 'filename' or key == 'file_count':
                     continue
-                average += MetricCons.mc_rank_level[mc]
+                index = int(mc)
+                if 0 <= index <= 10:
+                    mc_rank = 'top_10'
+                elif 10 < index <= 50:
+                    mc_rank = 'top_50'
+                elif 50 < index <= 100:
+                    mc_rank = 'top_100'
+                elif 100 < index <= file_count // 10:
+                    mc_rank = 'top_10%'
+                elif file_count // 10 < index <= file_count // 4:
+                    mc_rank = 'top_25%'
+                elif file_count // 4 < index <= file_count // 2:
+                    mc_rank = 'top_50%'
+                else:
+                    mc_rank = 'top_100%'
+                average += MetricCons.mc_rank_level[mc_rank]
             average = int(round(average / 6))
             metrics_statistics[MetricCons.Me_stability]['maintenance_cost_rank'][MetricCons.mc_rank[average]] += 1
         except KeyError:
