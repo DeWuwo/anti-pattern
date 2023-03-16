@@ -10,7 +10,7 @@ from model.blamer.dep_blamer import get_entity_commits
 from model.blamer.tagging_ownership import get_entity_owner
 from model.blamer.unsure_resolution import load_entity_refactor
 from model.blamer.refactor_format import get_name_from_sig
-from utils import Command, FileJson, MyThread
+from utils import Command, FileJson, DynamicThread
 
 
 class GitHistory:
@@ -67,7 +67,7 @@ class GitHistory:
         else:
             print('run refactoring miner')
             t1 = time.perf_counter()
-            ref_res = MyThread(4, self.get_refactor, list(extension_commits)).run()
+            ref_res = DynamicThread(self.get_refactor, list(extension_commits), 8, 10).get_final_res()
             t2 = time.perf_counter()
             FileJson.base_write_to_json(self.out_path, 'commits', ref_res, 'ref.json', 'w')
             print(f'ger refactor data time cost: {t2 - t1} s')
