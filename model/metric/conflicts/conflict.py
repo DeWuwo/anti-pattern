@@ -12,7 +12,7 @@ class Conflict:
 
     def __init__(self, file):
         self.out_path = file
-        self.conf_file = os.path.join(file, 'merge.csv')
+        self.conf_file = os.path.join(file, 'conf/merge.csv')
         self.conf_info = {}
         self.conf_info_sta = {}
 
@@ -31,9 +31,9 @@ class Conflict:
             conf_times_by_file_total = 0
 
             for row in rows:
-                conf_files = row[4]
-                conf_loc = row[7]
-                if int(row[3]) > 0:
+                conf_files = row[3]
+                conf_loc = row[6]
+                if int(row[2]) > 0:
                     files = [file[file.find('\'') + 1: file.rfind('\'')] for file in conf_files.split(',')]
                     locs = [int(loc) for loc in conf_loc[1: -1].split(',')]
                     for file, loc in zip(files, locs):
