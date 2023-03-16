@@ -218,7 +218,7 @@ class MC:
     def run_log_fetch(self, proj, filelist_java):
         print('fetch git log')
         # gitlogFile = generateLog(projectName)
-        if os.path.exists(f"{self.out_path}\\mc\\history-java_{proj}.csv"):
+        if os.path.exists(f"{self.out_path}/mc/history-java_{proj}.csv"):
             return
 
         commitCollection_java = self.process_git_log(os.path.join(self.out_path, f'mc/gitlog_{proj}'), filelist_java)
@@ -246,7 +246,7 @@ class MC:
         mcChangeLocDict = dict()  # [fileName] = loc
         mcIssueCountDict = dict()  # [fileName][issueId] = issue cmt counts
         mcIssueLocDict = dict()  # [fileName][issueId] = issueloc
-        with open(os.path.join(self.out_path, f'mc\\history-java_{proj}.csv'), "r", encoding="utf8") as fp:
+        with open(os.path.join(self.out_path, f'mc/history-java_{proj}.csv'), "r", encoding="utf8") as fp:
             reader = csv.reader(fp, delimiter=",")
             for each in reader:
                 [commitId, author, date, issueIds, files, addLocs, delLocs] = each
@@ -341,8 +341,8 @@ class MC:
         return res
 
     def get_mc_file(self, proj, filelist_java):
-        if os.path.exists(f"{self.out_path}\\mc\\file-mc_{proj}.csv") and os.path.exists(
-                f"{self.out_path}\\mc\\file-mc_rank_{proj}.csv"):
+        if os.path.exists(f"{self.out_path}/mc/file-mc_{proj}.csv") and os.path.exists(
+                f"{self.out_path}/mc/file-mc_rank_{proj}.csv"):
             return
         self.run_log_fetch(proj, filelist_java)
         print('get file-mc.csv')
@@ -362,7 +362,7 @@ class MC:
         final = list()
         final.append(title)
         final.extend(change_bug_cost_list)
-        writeCSV(final, os.path.join(self.out_path, f'mc\\file-mc_{proj}.csv'))
+        writeCSV(final, os.path.join(self.out_path, f'mc/file-mc_{proj}.csv'))
 
     def get_mc(self):
         self.get_mc_file('nat', self.file_list_nat)
