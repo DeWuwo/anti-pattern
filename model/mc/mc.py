@@ -24,6 +24,70 @@ class MC:
         self.code_path_nat = code_path_nat
         self.file_list_nat = file_list_nat
 
+    def process_git_log(self, fileName, fileList_java):
+        print('  process git log')
+        commitCollection_java = list()
+
+        commitId = ""
+        authorName = ""
+        date = ""
+        fileList = list()
+        delList = list()
+        addList = list()
+        issueIds = list()
+        fp = open(fileName, encoding="utf8", errors='ignore')
+        num = 0
+        for line in fp:
+            num += 1
+            # print(num)
+            if re.match(r"commit\s[0-9a-zA-Z]+", line):
+                if (commitId != ""):
+                    # print("process ", commitId, authorName, date, fileList, addList, delList, issueIds)
+                    [isKept, oneCommit] = self.processPreCmt(commitId, authorName, date, fileList, addList, delList,
+                                                             issueIds, fileList_java)
+                    if isKept:
+                        commitCollection_java.append(oneCommit)
+
+                    # print("clear", print (len(commitCollection)))
+                    # clear
+                    fileList = list()
+                    delList = list()
+                    addList = list()
+                    issueIds = list()
+
+                match = re.match(r"commit\s[0-9a-zA-Z]+", line)
+                commitId = match.group().split("commit ")[1]
+
+            elif re.match(r"Author: ", line):
+                strList = line.split("Author: ")[1].split("<")
+                authorName = strList[0].strip()
+                authorEmail = strList[1].split(">")[0]
+
+            elif re.match(r"Date:   ", line):
+                date = line.split("Date:   ")[1].strip("\n")
+
+            elif re.match(r"[0-9]+	[0-9]+	", line):
+                strList = line.strip("\n").split("	")
+                addLoc = int(strList[0])
+                delLoc = int(strList[1])
+                fileName = strList[2]
+                fileList.append(fileName)
+                addList.append(addLoc)
+                delList.append(delLoc)
+            elif re.findall(r"Bug: [0-9]+", line):
+                match = re.findall(r"Bug: [0-9]+", line)
+                for issueId in match:
+                    issueIds.append(int(issueId.split("Bug: ")[1]))
+            # end if
+        # end for
+        [isKept, oneCommit] = self.processPreCmt(commitId, authorName, date, fileList, addList, delList, issueIds,
+                                                 fileList_java)
+        if isKept:
+            commitCollection_java.append(oneCommit)
+
+        fp.close()
+        return commitCollection_java
+
     def processGitLog(self, fileName, fileList_all, fileList_py, fileList_notest):
         print('  process git log')
         commitCollection_all = list()
@@ -151,27 +215,29 @@ class MC:
         print("file benchmark: ", len(fileList_all), len(fileList_py), len(fileList_notest))
         return fileList_all, fileList_py, fileList_notest
 
-    def run_log_fetch(self, proj):
+    def run_log_fetch(self, proj, filelist_java):
         print('fetch git log')
         # gitlogFile = generateLog(projectName)
         if os.path.exists(f"{self.out_path}\\mc\\history-java_{proj}.csv"):
             return
 
-        [fileList_all, fileList_java, fileList_notest] = self.getAllFilesByFilter()
-        [commitCollection_all, commitCollection_java, commitCollection_nontest] = \
-            self.processGitLog(os.path.join(self.out_path, f'mc/gitlog_{proj}'), fileList_all, fileList_java, fileList_notest)
+        commitCollection_java = self.process_git_log(os.path.join(self.out_path, f'mc/gitlog_{proj}'), filelist_java)
 
-        resList = saveCommitCollection(commitCollection_all)
-        fileName = f"{self.out_path}\\mc\\history-all_{proj}.csv"
-        writeCSV(resList, fileName)
+        # [fileList_all, fileList_java, fileList_notest] = self.getAllFilesByFilter()
+        # [commitCollection_all, commitCollection_java, commitCollection_nontest] = \
+        #     self.processGitLog(os.path.join(self.out_path, f'mc/gitlog_{proj}'), fileList_all, fileList_java, fileList_notest)
+
+        # resList = saveCommitCollection(commitCollection_all)
+        # fileName = f"{self.out_path}\\mc\\history-all_{proj}.csv"
+        # writeCSV(resList, fileName)
 
         resList = saveCommitCollection(commitCollection_java)
         fileName = f"{self.out_path}\\mc\\history-java_{proj}.csv"
         writeCSV(resList, fileName)
 
-        resList = saveCommitCollection(commitCollection_nontest)
-        fileName = f"{self.out_path}\\mc\\history-notest_{proj}.csv"
-        writeCSV(resList, fileName)
+        # resList = saveCommitCollection(commitCollection_nontest)
+        # fileName = f"{self.out_path}\\mc\\history-notest_{proj}.csv"
+        # writeCSV(resList, fileName)
 
     # read mc file
     def read_mc_file(self, proj):
@@ -274,11 +340,11 @@ class MC:
             res.append([fileName, authorCount, cmtCount, changeLoc, issueCount, issueCmtCount, issueLoc])
         return res
 
-    def get_mc_file(self, proj):
+    def get_mc_file(self, proj, filelist_java):
         if os.path.exists(f"{self.out_path}\\mc\\file-mc_{proj}.csv") and os.path.exists(
                 f"{self.out_path}\\mc\\file-mc_rank_{proj}.csv"):
             return
-        self.run_log_fetch(proj)
+        self.run_log_fetch(proj, filelist_java)
         print('get file-mc.csv')
         [mcAuthorDict, mcCommittimesDict, mcChangeLocDict, mcIssueCountDict,
          mcIssueLocDict] = self.read_mc_file(proj)  # [filename]=, cmttimes, changeLoc, issueCounts, issueLoc;
@@ -289,8 +355,7 @@ class MC:
         print("mcIssueLocDict", mcCommittimesDict)
         print("mcIssueCountDict", mcCommittimesDict)
         '''
-        files = self.file_list if proj == '' else self.file_list_nat
-        change_bug_cost_list = self.change_bug_proness_compute(files, mcAuthorDict, mcCommittimesDict,
+        change_bug_cost_list = self.change_bug_proness_compute(filelist_java, mcAuthorDict, mcCommittimesDict,
                                                                mcChangeLocDict, mcIssueCountDict, mcIssueLocDict)
         self.get_mc_rank(change_bug_cost_list, proj)
         title = ['filename', '#author', '#cmt', 'changeloc', '#issue', '#issue-cmt', 'issueLoc']
@@ -298,6 +363,10 @@ class MC:
         final.append(title)
         final.extend(change_bug_cost_list)
         writeCSV(final, os.path.join(self.out_path, f'mc\\file-mc_{proj}.csv'))
+
+    def get_mc(self):
+        self.get_mc_file('nat', self.file_list_nat)
+        self.get_mc_file('ext', self.file_list)
 
     def get_mc_rank(self, mc_data: list, proj):
         rank = defaultdict(partial(defaultdict, str))

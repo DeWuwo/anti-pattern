@@ -58,8 +58,7 @@ def dispatch(args):
 
         mc = MC(args.output, args.code_honor, list(base_model.file_set_extension), args.code_android,
                 list(base_model.file_set_android))
-        mc.get_mc_file('nat')
-        mc.get_mc_file('ext')
+        mc.get_mc()
 
         pattern_match = Match(base_model, args.output, module_blame, args.code_honor)
         # match coupling pattern
