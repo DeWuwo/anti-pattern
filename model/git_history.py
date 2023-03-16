@@ -97,7 +97,7 @@ class GitHistory:
         for commit in commits:
             cmd = f'{ref_tool} -c {repo_path} {commit} -json {ref_temp_cache}'
             try:
-                Command.command_run(cmd)
+                Command.command_run(cmd, 1200)
                 refactor_obj = json.loads(Path(ref_temp_cache).read_text())
                 ref_miner_res.append(refactor_obj['commits'][0])
                 # ref_miner_res[refactor_obj['commits'][0]['sha1']] = refactor_obj['commits'][0]
