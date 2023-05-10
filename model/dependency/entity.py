@@ -55,6 +55,8 @@ class Entity:
         self.not_aosp = -2
         self.is_intrusive = 0
         self.entity_mapping = -1
+        self.entity_mapping_file = ""
+        self.entity_mapping_start_line = -1
         self.modifiers = []
         self.abstract = False
         self.static = False
@@ -172,6 +174,42 @@ class Entity:
     def handle_to_csv(self):
         return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName}
 
+    def handle_to_db(self):
+        temp = {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName,
+                'ownership': self.get_ownership(), 'name': self.name,
+                'commits_count': self.commits_count}
+        if self.file_path != "":
+            temp['file_path'] = self.file_path
+        if self.package_name != "":
+            temp['packageName'] = self.package_name
+        if self.start_line != -1:
+            temp['location'] = {}
+            temp['location']['startLine'] = self.start_line
+            temp['location']['startColumn'] = self.start_column
+            temp['location']['endLine'] = self.end_line
+            temp['location']['endColumn'] = self.end_column
+        if self.parameter_types != 'null' and self.category == Constant.E_method:
+            temp['parameterTypes'] = self.parameter_types
+            temp['parameterNames'] = self.parameter_names
+        if self.raw_type != 'null':
+            temp['rawType'] = self.raw_type
+        if self.modifiers:
+            temp['modifiers'] = " ".join(self.modifiers)
+        if self.is_global != 2:
+            temp['global'] = True if self.is_global else False
+        if self.hidden:
+            temp['hidden'] = " ".join(self.hidden)
+        if self.commits:
+            temp['commits'] = self.commits
+        if self.refactor:
+            temp['refactor'] = self.refactor
+        if self.intrusive_modify:
+            temp['intrusiveModify'] = self.intrusive_modify
+        if self.entity_mapping:
+            temp['mapping_file'] = self.entity_mapping_file
+            temp['mapping_start_line'] = self.entity_mapping_start_line
+        return temp
+
     @classmethod
     def get_csv_header(cls):
         return ['id', 'category', 'qualifiedName']
@@ -221,6 +259,31 @@ class Entity:
             temp['intrusiveModify'] = self.intrusive_modify
         return temp
 
+    def to_detail(self):
+        temp = {
+                'ownership': self.get_ownership(), 'category': self.category,
+                'qualifiedName': self.qualifiedName, 'name': self.name, }
+        if self.file_path != "":
+            temp['File'] = self.file_path
+        if self.start_line != -1:
+            temp['location'] = {}
+            temp['location']['startLine'] = self.start_line
+            temp['location']['startColumn'] = self.start_column
+            temp['location']['endLine'] = self.end_line
+            temp['location']['endColumn'] = self.end_column
+        if self.parameter_types != 'null' and self.category == Constant.E_method:
+            temp['parameterTypes'] = self.parameter_types
+            temp['parameterNames'] = self.parameter_names
+        if self.raw_type != 'null':
+            temp['rawType'] = self.raw_type
+        if self.modifiers:
+            temp['modifiers'] = " ".join(self.modifiers)
+        if self.is_global != 2:
+            temp['global'] = True if self.is_global else False
+        if self.hidden:
+            temp['hidden'] = " ".join(self.hidden)
+        return temp
+
     def set_honor(self, not_aosp: int):
         self.not_aosp = not_aosp
 
@@ -232,6 +295,12 @@ class Entity:
 
     def set_entity_mapping(self, entity_id: int):
         self.entity_mapping = entity_id
+
+    def set_entity_mapping_file(self, file_path: str):
+        self.entity_mapping_file = file_path
+
+    def set_entity_mapping_line(self, start: int):
+        self.entity_mapping_start_line = start
 
     def set_package_name(self, package_name: str):
         self.package_name = package_name

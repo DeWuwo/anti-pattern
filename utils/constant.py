@@ -33,6 +33,20 @@ class Constant:
 
     Relations: List[str] = [call, define, use, R_aggregate, typed, R_set, R_modify, R_annotate, param, reflect,
                             override, implement, inherit, R_cast, R_super_call, contain, R_import]
+    relation_count_score = {
+        call: 100,
+        define: 200,
+        R_aggregate: 10,
+        typed: 5,
+        R_annotate: 5,
+        param: 3,
+        reflect: 3,
+        override: 3,
+        implement: 2,
+        inherit: 1,
+        contain: 100,
+    }
+
     # anti-pattern name
     ACM: str = "AOSPAccessModify"
     APM: str = "AOSPParameterModify"
@@ -101,3 +115,5 @@ class Constant:
     Owner_obsoletely_native = 'obsoletely_native'
     Owner_intrusive_native = 'intrusive native'
     Owner_extensive = 'extensive'
+
+    module_list = []

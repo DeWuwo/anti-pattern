@@ -43,7 +43,7 @@ class BuildModel:
     relation_extensive: List[Relation]
     statistics_android: Dict
     statistics_extensive: Dict
-    file_set_android : set
+    file_set_android: set
     file_set_extension: set
 
     out_path: str
@@ -75,6 +75,7 @@ class BuildModel:
     agg_relations: List[Relation]
     facade_relations: List[Relation]
     facade_entities: List[Entity]
+    facade_relations_on_file: Dict[str, Dict[str, list]]
     diff_relations: List[Relation]
     define_relations: List[Relation]
     reflect_relation: List[Relation]
@@ -134,6 +135,7 @@ class BuildModel:
         self.agg_relations = []
         self.facade_relations = []
         self.facade_entities = []
+        self.facade_relations_on_file = {}
         self.diff_relations = []
         self.define_relations = []
         self.reflect_relation = []
@@ -175,8 +177,10 @@ class BuildModel:
         print("start init model deps")
         import_relation_set = defaultdict(int)
         print("     get aosp dep")
-        for item in cells_android:
+        for index, item in enumerate(cells_android):
             relation = Relation(**item)
+            relation.set_id(index)
+            relation.set_files(self.entity_android)
             self.relation_android.append(relation)
             if relation.rel == Constant.R_import:
                 import_relation_set[relation.to_str(self.entity_android)] = 1
@@ -192,8 +196,10 @@ class BuildModel:
         print("     get assi dep")
         temp_param = defaultdict(list)
         temp_define = defaultdict(list)
-        for item in cells_extensive:
+        for index, item in enumerate(cells_extensive):
             relation = Relation(**item)
+            relation.set_id(index)
+            relation.set_files(self.entity_extensive)
             self.relation_extensive.append(relation)
             if relation.rel == Constant.param:
                 temp_param[relation.src].append(self.entity_extensive[relation.dest])
@@ -621,6 +627,8 @@ class BuildModel:
     # Get entity mapping relationship
     def get_entity_map(self, extensive_entity: Entity, native_entity: Entity):
         extensive_entity.set_entity_mapping(native_entity.id)
+        extensive_entity.set_entity_mapping_file(native_entity.file_path)
+        extensive_entity.set_entity_mapping_line(native_entity.start_line)
         native_entity.set_entity_mapping(extensive_entity.id)
 
     # get relation ownership
@@ -967,11 +975,39 @@ class BuildModel:
         facade_relations_divide_ownership = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
         source_facade_relation: Dict[str, List[Relation]] = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
         facade_base_info, facade_relation_info, facade_entity_info, rel_src_map = info_init()
+        facade_relations_module = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
+        relations_module_vendor = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
 
         for rel in self.facade_relations:
             facade_relation_info[get_key(rel, False)] += 1
             facade_relations_divide_ownership[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
             source_facade_relation[get_index(rel, False)].append(rel)
+            rel.set_facade(get_index(rel, False))
+            if (self.entity_extensive[rel.src].file_path in Constant.module_list) ^ \
+                    (self.entity_extensive[rel.dest].file_path in Constant.module_list):
+                facade_relations_module[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
+            src_file = self.entity_extensive[rel.src].file_path
+            dest_file = self.entity_extensive[rel.dest].file_path
+            if src_file != "" and dest_file != "":
+                try:
+                    self.facade_relations_on_file[src_file]['beSrc'].append(
+                        rel.to_simple_detail_json(self.entity_extensive))
+                except KeyError:
+                    self.facade_relations_on_file[src_file] = {'beSrc': [], 'beDest': []}
+                    self.facade_relations_on_file[src_file]['beSrc'].append(
+                        rel.to_simple_detail_json(self.entity_extensive))
+                try:
+                    self.facade_relations_on_file[dest_file]['beDest'].append(
+                        rel.to_simple_detail_json(self.entity_extensive))
+                except KeyError:
+                    self.facade_relations_on_file[dest_file] = {'beSrc': [], 'beDest': []}
+                    self.facade_relations_on_file[dest_file]['beDest'].append(
+                        rel.to_simple_detail_json(self.entity_extensive))
+        for rel in self.diff_relations:
+            if (self.entity_extensive[rel.src].file_path in Constant.module_list) ^ \
+                    (self.entity_extensive[rel.dest].file_path in Constant.module_list):
+                relations_module_vendor[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
+
         for rel in self.agg_relations:
             facade_relation_info[get_key(rel, True)] += 1
             # 聚合重复计数了 define依赖
@@ -1050,21 +1086,21 @@ class BuildModel:
                 res_n2n_stat['e_6-10'] += 1
             else:
                 res_n2n_stat['e_11-'] += 1
-        res_n2n_rel_stat = {'total_intrusive': len(res_n2n),
-                            'count_n_n2n': float(count_n_n2n / (count_e_n2n + count_n_n2n)),
-                            'count_e_n2n': float(count_e_n2n / (count_e_n2n + count_n_n2n))}
-        res_n2n_stat_per = {'total_intrusive': len(res_n2n), 'e_0': 0, 'e_1%': 0, 'e_2%': 0, 'e_3%': 0}
-        for info in res_n2n:
-            n_n2n = info['total_nat_n2n']
-            e_n2n = info['total_ext_n2n']
-            if e_n2n == 0:
-                res_n2n_stat_per['e_0'] += 1
-            elif float(e_n2n / (e_n2n + n_n2n)) < 0.1:
-                res_n2n_stat_per['e_1%'] += 1
-            elif float(e_n2n / (e_n2n + n_n2n)) < 0.2:
-                res_n2n_stat_per['e_2%'] += 1
-            else:
-                res_n2n_stat_per['e_3%'] += 1
+        # res_n2n_rel_stat = {'total_intrusive': len(res_n2n),
+        #                     'count_n_n2n': float(count_n_n2n / (count_e_n2n + count_n_n2n)),
+        #                     'count_e_n2n': float(count_e_n2n / (count_e_n2n + count_n_n2n))}
+        # res_n2n_stat_per = {'total_intrusive': len(res_n2n), 'e_0': 0, 'e_1%': 0, 'e_2%': 0, 'e_3%': 0}
+        # for info in res_n2n:
+        #     n_n2n = info['total_nat_n2n']
+        #     e_n2n = info['total_ext_n2n']
+        #     if e_n2n == 0:
+        #         res_n2n_stat_per['e_0'] += 1
+        #     elif float(e_n2n / (e_n2n + n_n2n)) < 0.1:
+        #         res_n2n_stat_per['e_1%'] += 1
+        #     elif float(e_n2n / (e_n2n + n_n2n)) < 0.2:
+        #         res_n2n_stat_per['e_2%'] += 1
+        #     else:
+        #         res_n2n_stat_per['e_3%'] += 1
 
         facade_base_info['facade_relation'] = facade_base_info['facade_n2e'] + facade_base_info['facade_e2n'] + \
                                               facade_base_info['facade_n2n']
@@ -1081,6 +1117,8 @@ class BuildModel:
                                     self.facade_entities, 'modify')
         facade_relations_divide_ownership.pop('e')
         FileJson.write_to_json(self.out_path, facade_relations_divide_ownership, 'facade')
+        FileJson.write_to_json(self.out_path, facade_relations_module, 'facade_module')
+        FileJson.write_to_json(self.out_path, relations_module_vendor, 'facade_module_to_vendor')
 
         FileCSV.write_dict_to_csv(self.out_path, 'facade_n2n_count', res_n2n, 'w')
         FileCSV.write_dict_to_csv(self.out_path, 'facade_n2n_stat', [res_n2n_stat], 'w')
@@ -1093,7 +1131,7 @@ class BuildModel:
         temp_n2n_stat = project.copy()
         temp_n2n_stat.update(res_n2n_stat)
         temp_n2n_rel_stat = project.copy()
-        temp_n2n_rel_stat.update(res_n2n_rel_stat)
+        # temp_n2n_rel_stat.update(res_n2n_rel_stat)
         FileCSV.write_dict_to_csv('D:\\Honor\\match_res', 'facade_base_info_count', [temp_base], 'a')
         FileCSV.write_dict_to_csv('D:\\Honor\\match_res', 'facade_relation_info_count', [temp_rel], 'a')
         FileCSV.write_dict_to_csv('D:\\Honor\\match_res', 'facade_n2n_stat', [temp_n2n_stat], 'a')

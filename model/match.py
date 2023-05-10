@@ -26,6 +26,7 @@ class Match:
     # 不同粒度数量统计
     statistic_pkgs: Dict[str, Dict[str, int]]
     statistic_files: Dict[str, Dict[str, int]]
+    statistic_files_detail: Dict[str, Dict[str, list]]
     statistic_entities: Dict[int, Dict[str, int]]
     statistic_modules: Dict[str, Dict[str, int]]
     module_blame: defaultdict
@@ -41,6 +42,7 @@ class Match:
         self.match_result_metric = []
         self.match_result_base_statistic = {}
         self.statistic_files = {}
+        self.statistic_files_detail = {}
         self.statistic_pkgs = {}
         self.statistic_entities = {}
         self.statistic_modules = {}
@@ -245,6 +247,7 @@ class Match:
     def statistic_pre_del(self):
         self.match_result_base_statistic = {}
         self.statistic_files = {}
+        self.statistic_files_detail = {}
         self.statistic_pkgs = {}
         self.statistic_entities = {}
         self.statistic_modules = {}
@@ -333,6 +336,7 @@ class Match:
             pattern_pkgs_set = defaultdict(int)
             pattern_res: List[List[dict]] = []
             for style_name, style_res in pattern_values['res'].items():
+                style_files_set = defaultdict(list)
                 metric_statistic[pattern_name][style_name] = {}
                 metric_statistic[pattern_name][style_name]['res'] = {}
                 metric_statistic[pattern_name][style_name]['filter'] = {}
@@ -361,6 +365,24 @@ class Match:
                     self.metric_cal_datas.handle_metrics_statistics(exa['metrics'],
                                                                     metric_statistic[pattern_name][style_name][
                                                                         'filter'], **metrics_keys)
+                # 文件粒度整体输出
+                for exa in style_res['res']:
+                    temp_file_set = set()
+                    for rel in exa['values']:
+                        src_file = self.get_root_file(rel['src']['id']).file_path
+                        dest_file = self.get_root_file(rel['dest']['id']).file_path
+                        temp_file_set.add(src_file)
+                        temp_file_set.add(dest_file)
+
+                    for file_name in temp_file_set:
+                        style_files_set[file_name].append(exa['values'])
+                for file_name in style_files_set:
+                    try:
+                        self.statistic_files_detail[file_name][style_name] = style_files_set[file_name]
+                    except KeyError:
+                        self.statistic_files_detail[file_name] = {'filename': file_name}
+                        self.statistic_files_detail[file_name][style_name] = style_files_set[file_name]
+
             simple_stat[pattern_name] = len(pattern_res)
             for exa in pattern_res:
                 temp_file_set = set()
@@ -416,6 +438,11 @@ class Match:
                 except KeyError:
                     self.statistic_pkgs[pkg] = {'packagename': pkg}
                     self.statistic_pkgs[pkg][pattern_name] = pattern_pkgs_set[pkg]
+            for file_name, facades in self.base_model.facade_relations_on_file.items():
+                try:
+                    self.base_model.facade_relations_on_file[file_name].update(self.statistic_files_detail[file_name])
+                except KeyError:
+                    pass
         return simple_stat, metric_statistic
 
     def deal_res_for_output(self, filter_list: List[str], res_of_detect, out_path: str):
@@ -496,6 +523,25 @@ class Match:
         res['totalCount'] = total_count
         return match_set, union_temp_relation, union_temp_entities, res, res_filter, out_path
 
+    def deal_res_for_db(self, res_of_detect, scan_id):
+        print('to db')
+        anti_res = []
+        for item in res_of_detect:
+            for mode, mode_res in item.items():
+                for style_name, style in mode_res.items():
+
+                    anti_index = 0
+                    for exa in style['res']:
+                        exa_db = {'scan_id': scan_id, 'id': anti_index, 'category': mode, 'style': style_name,
+                                  'rels': [], 'files': []}
+                        exa_files = set()
+                        for rel in exa['value']:
+                            exa['rels'].append(rel.id)
+                            exa_files.add(rel.get_files())
+                        exa_db['files'] = exa_files
+                        anti_res.append(exa_db)
+        return anti_res
+
     def to_detail_json(self, relation: Relation):
         return {"src": self.base_model.entity_extensive[relation.src].toJson(), "values": {relation.rel: 1},
                 "dest": self.base_model.entity_extensive[relation.dest].toJson()}
@@ -530,7 +576,8 @@ class Match:
                             match_set_json_res,
                             match_set_json_res_filter, out_path)
             simple_stat, metrics_statistic = self.get_statistics(match_set_json_res)
-            self.output_statistic(pattern.ident, pattern.patterns, simple_stat, metrics_statistic, out_path)
+            self.output_statistic(pattern.ident, pattern.patterns, pattern.styles, simple_stat, metrics_statistic,
+                                  out_path)
 
         for target in targets:
             output_to_file(target, self.match_result_union, self.out_path)
@@ -540,6 +587,7 @@ class Match:
         # 输出metric统计
         FileJson.write_to_json(self.out_path, self.match_result_metric, 'res_metric_statistic')
         # self.output_module_res(pattern.ident)
+        return self.match_result_union
 
     def output_res(self, pattern_type: str, match_set, match_set_union_relation, match_set_union_entity,
                    match_set_json_res, match_set_json_res_filter, out_path):
@@ -559,7 +607,8 @@ class Match:
              'coupling_entity': len(match_set_union_entity), 'total_entity': len(self.base_model.entity_extensive)}],
                                   'w')
 
-    def output_statistic(self, pattern_type: str, patterns: List[str], simple_stat, metrics_statistic, out_path):
+    def output_statistic(self, pattern_type: str, patterns: List[str], styles: List[str], simple_stat,
+                         metrics_statistic, out_path):
         output_path = os.path.join(out_path, pattern_type)
 
         # 输出检测结果
@@ -575,7 +624,13 @@ class Match:
         headers = ['filename']
         headers.extend(patterns)
         FileCSV.write_to_csv(output_path, 'file-pattern', headers, self.statistic_files)
-        # 输出文件粒度统计
+        # 输出文件粒度详细信息
+        headers = ['filename']
+        headers.extend(['beSrc', 'beDest'])
+        headers.extend(styles)
+        FileCSV.write_to_csv(output_path, 'file-pattern-facade', headers, self.base_model.facade_relations_on_file)
+
+        # 输出包粒度统计
         headers = ['packagename']
         headers.extend(patterns)
         FileCSV.write_to_csv(output_path, 'package-pattern', headers, self.statistic_pkgs)
