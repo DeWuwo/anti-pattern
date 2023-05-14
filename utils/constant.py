@@ -116,4 +116,31 @@ class Constant:
     Owner_intrusive_native = 'intrusive native'
     Owner_extensive = 'extensive'
 
-    module_list = []
+    core_list = ['services/core/java/com/android/server/audio/AudioService.java',
+                 'core/java/android/view/ViewRootImpl.java',
+                 'services/core/java/com/android/server/notification/NotificationManagerService.java',
+                 'services/core/java/com/android/server/power/PowerManagerService.java',
+                 'services/core/java/com/android/server/display/DisplayPowerController.java',
+                 "services/core/java/com/android/server/vibrator/VibrationThread.java",
+                 "services/core/java/com/android/server/input/InputManagerService.java",
+
+                 'services/core/java/com/android/server/am/ActiveServices.java',
+                 "services/core/java/com/android/server/am/BroadcastQueue.java",
+                 "services/core/java/com/android/server/am/ActivityManagerService.java",
+
+                 "services/core/java/com/android/server/wm/ActivityRecord.java",
+                 "services/core/java/com/android/server/wm/WindowManagerService.java",
+                 "services/core/java/com/android/server/wm/Task.java",
+                 "services/core/java/com/android/server/wm/DisplayContent.java",
+                 "services/core/java/com/android/server/wm/DisplayPolicy.java",
+                 "services/core/java/com/android/server/wm/WindowState.java",
+
+                 "services/core/java/com/android/server/pm/InstallPackageHelper.java",
+                 "services/core/java/com/android/server/pm/PackageManagerService.java",
+                 "services/core/java/com/android/server/pm/Settings.java",
+                 "services/core/java/com/android/server/pm/permission/PermissionManagerService.java",
+                 "services/core/java/com/android/server/pm/BackgroundDexOptService.java",
+
+                 ]
+
+    module_list = "services/core/java/com/android/server/pm"

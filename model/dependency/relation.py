@@ -66,6 +66,19 @@ class Relation:
         return {"src": entities[self.src].to_detail(), "values": relation,
                 "dest": entities[self.dest].to_detail()}
 
+    def to_csv(self, entities: List[Entity]):
+        return {"facade": f"{entities[self.src].get_ownership()} -> {entities[self.dest].get_ownership()}",
+                "relation": self.rel,
+                "src_category": entities[self.src].category,
+                "src_modifier": entities[self.src].accessible,
+                "src_entity": entities[self.src].qualifiedName,
+                "src_file": entities[self.src].file_path,
+                "dest_category": entities[self.src].category,
+                "dest_modifier": entities[self.dest].accessible,
+                "dest_entity": entities[self.dest].qualifiedName,
+                "dest_file": entities[self.src].file_path
+                }
+
     def to_db_json(self):
         relation = {self.rel: 1}
         if self.bind_var != -1:

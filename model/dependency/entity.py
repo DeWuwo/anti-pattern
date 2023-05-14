@@ -149,6 +149,9 @@ class Entity:
     def to_string(self):
         return str(self.id) + '#' + self.category + "#" + self.qualifiedName
 
+    def to_common_string(self):
+        return self.category + "#" + self.qualifiedName
+
     def to_csv(self):
         return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName}
 

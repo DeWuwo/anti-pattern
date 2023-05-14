@@ -973,18 +973,31 @@ class BuildModel:
 
         # start output
         facade_relations_divide_ownership = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
+        facade_relations_filter = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
+        facade_relations_module = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
+        relations_module_vendor = {'e2e': [], 'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
+
+        source_facade_relations_filter = []
+        source_facade_relations_module = []
+        source_relations_module_vendor = []
+
         source_facade_relation: Dict[str, List[Relation]] = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
         facade_base_info, facade_relation_info, facade_entity_info, rel_src_map = info_init()
-        facade_relations_module = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
-        relations_module_vendor = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
 
         for rel in self.facade_relations:
             facade_relation_info[get_key(rel, False)] += 1
             facade_relations_divide_ownership[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
             source_facade_relation[get_index(rel, False)].append(rel)
             rel.set_facade(get_index(rel, False))
-            if (self.entity_extensive[rel.src].file_path in Constant.module_list) ^ \
-                    (self.entity_extensive[rel.dest].file_path in Constant.module_list):
+            # 核心文件切面
+            if (self.entity_extensive[rel.src].file_path in Constant.core_list) ^ \
+                    (self.entity_extensive[rel.dest].file_path in Constant.core_list):
+                source_facade_relations_filter.append(rel)
+                facade_relations_filter[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
+            # 动态圈定的文件切面
+            if (self.entity_extensive[rel.src].file_path.startswith(Constant.module_list)) ^ \
+                    (self.entity_extensive[rel.dest].file_path.startswith(Constant.module_list)):
+                source_facade_relations_module.append(rel)
                 facade_relations_module[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
             src_file = self.entity_extensive[rel.src].file_path
             dest_file = self.entity_extensive[rel.dest].file_path
@@ -1006,6 +1019,7 @@ class BuildModel:
         for rel in self.diff_relations:
             if (self.entity_extensive[rel.src].file_path in Constant.module_list) ^ \
                     (self.entity_extensive[rel.dest].file_path in Constant.module_list):
+                source_relations_module_vendor.append(rel)
                 relations_module_vendor[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
 
         for rel in self.agg_relations:
@@ -1117,8 +1131,18 @@ class BuildModel:
                                     self.facade_entities, 'modify')
         facade_relations_divide_ownership.pop('e')
         FileJson.write_to_json(self.out_path, facade_relations_divide_ownership, 'facade')
+        FileJson.write_to_json(self.out_path, facade_relations_filter, 'facade_core')
         FileJson.write_to_json(self.out_path, facade_relations_module, 'facade_module')
         FileJson.write_to_json(self.out_path, relations_module_vendor, 'facade_module_to_vendor')
+
+        FileCSV.write_dict_to_csv(self.out_path, 'facade',
+                                  [rel.to_csv(self.entity_extensive) for rel in self.facade_relations], 'w')
+        FileCSV.write_dict_to_csv(self.out_path, 'facade_core',
+                                  [rel.to_csv(self.entity_extensive) for rel in source_facade_relations_filter], 'w')
+        FileCSV.write_dict_to_csv(self.out_path, 'facade_module',
+                                  [rel.to_csv(self.entity_extensive) for rel in source_facade_relations_module], 'w')
+        FileCSV.write_dict_to_csv(self.out_path, 'facade_module_to_vendor',
+                                  [rel.to_csv(self.entity_extensive) for rel in source_relations_module_vendor], 'w')
 
         FileCSV.write_dict_to_csv(self.out_path, 'facade_n2n_count', res_n2n, 'w')
         FileCSV.write_dict_to_csv(self.out_path, 'facade_n2n_stat', [res_n2n_stat], 'w')
