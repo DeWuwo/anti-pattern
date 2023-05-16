@@ -555,8 +555,8 @@ class BuildModel:
                 self.owner_proc_count['git_any'] += 1
             elif detect_git_must_native(entity):
                 entity.set_honor(0)
-                if entity.category == Constant.E_method and not entity.hidden:
-                    entity.set_hidden(['hidden'])
+                # if entity.category == Constant.E_method and not entity.hidden:
+                #     entity.set_hidden(['hidden'])
                 self.graph_differ(entity, entity.qualifiedName, entity.parameter_names, entity.file_path,
                                   aosp_entity_map, extensive_entity_map)
                 self.owner_proc[entity.id]['dep_diff'] = 'any'
