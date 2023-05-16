@@ -73,7 +73,7 @@ class Constant:
     multi_rule: int = 1
 
     # file_name
-    file_mc = 'mc\\file-mc.csv'
+    file_mc = 'mc/file-mc.csv'
 
     # ano
     anonymous_class = 'Anonymous_Class'
@@ -142,5 +142,5 @@ class Constant:
                  "services/core/java/com/android/server/pm/BackgroundDexOptService.java",
 
                  ]
-
+    # "packages/services/HnSystemService"
     module_list = "services/core/java/com/android/server/pm"

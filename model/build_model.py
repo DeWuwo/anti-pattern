@@ -1017,8 +1017,8 @@ class BuildModel:
                     self.facade_relations_on_file[dest_file]['beDest'].append(
                         rel.to_simple_detail_json(self.entity_extensive))
         for rel in self.diff_relations:
-            if (self.entity_extensive[rel.src].file_path in Constant.module_list) ^ \
-                    (self.entity_extensive[rel.dest].file_path in Constant.module_list):
+            if (self.entity_extensive[rel.src].file_path.startswith(Constant.module_list)) ^ \
+                    (self.entity_extensive[rel.dest].file_path.startswith(Constant.module_list)):
                 source_relations_module_vendor.append(rel)
                 relations_module_vendor[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
 

@@ -13,6 +13,7 @@ class Relation:
     not_aosp: int
     id: int
     facade: str
+    loc: dict
 
     def __init__(self, **kwargs):
         self.bind_var = -1
@@ -25,6 +26,7 @@ class Relation:
         self.src_file = ''
         self.dest_file = ''
         self.facade = ''
+        self.loc = {}
 
         for key in kwargs['values']:
             if key == 'bindVar':
@@ -33,6 +35,10 @@ class Relation:
                 self.setAccessible = 1
             elif key == 'invoke':
                 self.invoke = 1
+            elif key == 'loc':
+                self.loc = kwargs['values'][key]
+            elif key == 'arguments':
+                pass
             else:
                 self.rel = key
 
@@ -73,10 +79,11 @@ class Relation:
                 "src_modifier": entities[self.src].accessible,
                 "src_entity": entities[self.src].qualifiedName,
                 "src_file": entities[self.src].file_path,
-                "dest_category": entities[self.src].category,
+                "dest_category": entities[self.dest].category,
                 "dest_modifier": entities[self.dest].accessible,
+                "dest_label": entities[self.dest].hidden,
                 "dest_entity": entities[self.dest].qualifiedName,
-                "dest_file": entities[self.src].file_path
+                "dest_file": entities[self.dest].file_path
                 }
 
     def to_db_json(self):

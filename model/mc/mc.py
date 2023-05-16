@@ -232,7 +232,7 @@ class MC:
         # writeCSV(resList, fileName)
 
         resList = saveCommitCollection(commitCollection_java)
-        fileName = f"{self.out_path}\\mc\\history-java_{proj}.csv"
+        fileName = f"{self.out_path}/mc/history-java_{proj}.csv"
         writeCSV(resList, fileName)
 
         # resList = saveCommitCollection(commitCollection_nontest)
