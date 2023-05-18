@@ -116,31 +116,46 @@ class Constant:
     Owner_intrusive_native = 'intrusive native'
     Owner_extensive = 'extensive'
 
-    core_list = ['services/core/java/com/android/server/audio/AudioService.java',
-                 'core/java/android/view/ViewRootImpl.java',
-                 'services/core/java/com/android/server/notification/NotificationManagerService.java',
-                 'services/core/java/com/android/server/power/PowerManagerService.java',
-                 'services/core/java/com/android/server/display/DisplayPowerController.java',
-                 "services/core/java/com/android/server/vibrator/VibrationThread.java",
-                 "services/core/java/com/android/server/input/InputManagerService.java",
+    core_list = [
+        # others
+        'services/core/java/com/android/server/audio/AudioService.java',
+        'core/java/android/view/ViewRootImpl.java',
+        'services/core/java/com/android/server/notification/NotificationManagerService.java',
+        'services/core/java/com/android/server/power/PowerManagerService.java',
+        'services/core/java/com/android/server/display/DisplayPowerController.java',
+        "services/core/java/com/android/server/vibrator/VibrationThread.java",
+        "services/core/java/com/android/server/input/InputManagerService.java",
 
-                 'services/core/java/com/android/server/am/ActiveServices.java',
-                 "services/core/java/com/android/server/am/BroadcastQueue.java",
-                 "services/core/java/com/android/server/am/ActivityManagerService.java",
+        # AMS
+        'services/core/java/com/android/server/am/ActiveServices.java',
+        "services/core/java/com/android/server/am/BroadcastQueue.java",
+        "services/core/java/com/android/server/am/ActivityManagerService.java",
 
-                 "services/core/java/com/android/server/wm/ActivityRecord.java",
-                 "services/core/java/com/android/server/wm/WindowManagerService.java",
-                 "services/core/java/com/android/server/wm/Task.java",
-                 "services/core/java/com/android/server/wm/DisplayContent.java",
-                 "services/core/java/com/android/server/wm/DisplayPolicy.java",
-                 "services/core/java/com/android/server/wm/WindowState.java",
+        # WMS
+        "services/core/java/com/android/server/wm/ActivityRecord.java",
+        "services/core/java/com/android/server/wm/WindowManagerService.java",
+        "services/core/java/com/android/server/wm/Task.java",
+        "services/core/java/com/android/server/wm/DisplayContent.java",
+        "services/core/java/com/android/server/wm/DisplayPolicy.java",
+        "services/core/java/com/android/server/wm/WindowState.java",
 
-                 "services/core/java/com/android/server/pm/InstallPackageHelper.java",
-                 "services/core/java/com/android/server/pm/PackageManagerService.java",
-                 "services/core/java/com/android/server/pm/Settings.java",
-                 "services/core/java/com/android/server/pm/permission/PermissionManagerService.java",
-                 "services/core/java/com/android/server/pm/BackgroundDexOptService.java",
+        # PMS
+        "services/core/java/com/android/server/pm/InstallPackageHelper.java",
+        "services/core/java/com/android/server/pm/PackageManagerService.java",
+        "services/core/java/com/android/server/pm/Settings.java",
+        "services/core/java/com/android/server/pm/permission/PermissionManagerService.java",
+        "services/core/java/com/android/server/pm/BackgroundDexOptService.java",
 
-                 ]
+    ]
     # "packages/services/HnSystemService"
     module_list = "services/core/java/com/android/server/pm"
+
+    @staticmethod
+    def load_core_files(file_path):
+        file_list = []
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            for line in lines:
+                if '/' in line:
+                    file_list.append(line.strip().strip('/'))
+            Constant.core_list = file_list

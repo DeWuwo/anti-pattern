@@ -7,7 +7,7 @@ from model.dependency.entity import Entity, set_package, set_parameters
 from model.dependency.relation import Relation
 from model.git_history import GitHistory
 from model.blamer.entity_tracer import BaseState
-from utils import Constant, FileCSV, FileJson, Compare
+from utils import Constant, FileCSV, FileJson, Compare, StringUtils
 
 MoveMethodRefactorings = [
     "Move And Rename Method",
@@ -996,8 +996,8 @@ class BuildModel:
             source_facade_relation[get_index(rel, False)].append(rel)
             rel.set_facade(get_index(rel, False))
             # 核心文件切面
-            if (self.entity_extensive[rel.src].file_path in Constant.core_list) ^ \
-                    (self.entity_extensive[rel.dest].file_path in Constant.core_list):
+            if (StringUtils.find_str_in_list(self.entity_extensive[rel.src].file_path, Constant.core_list)) ^ \
+                    (StringUtils.find_str_in_list(self.entity_extensive[rel.dest].file_path, Constant.core_list)):
                 source_facade_relations_filter.append(rel)
                 facade_relations_filter[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
             # 动态圈定的文件切面

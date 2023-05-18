@@ -44,6 +44,7 @@ def dispatch(args):
         raise ValueError("root directory of project must supply")
     # read files
     try:
+        Constant.load_core_files('./西交工具检测的核心文件.txt')
         entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp, entities_stat_aosp = \
             FileJson.read_from_json(args.android, args.honor)
         # 读取模块责任田

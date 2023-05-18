@@ -1,3 +1,6 @@
+from typing import List
+
+
 class StringUtils:
     @classmethod
     def replace_str(cls, old_string, start_index, end_index, replace_str: str):
@@ -26,6 +29,15 @@ class StringUtils:
             if string[index] == char:
                 index_list.append(index)
         return index_list
+
+    @classmethod
+    def find_str_in_list(cls, string: str, str_list: List[str]):
+        if string in str_list:
+            return True
+        for single_str in str_list:
+            if single_str.endswith(string):
+                return True
+        return False
 
 
 if __name__ == '__main__':
