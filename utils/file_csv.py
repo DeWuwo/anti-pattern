@@ -47,6 +47,7 @@ class FileCSV:
     @classmethod
     def write_stat_to_csv(cls, out_path: str, name: str, run_time: date, assi: str, assi_pkg: str, assi_version: str,
                           res: dict):
+        os.makedirs(out_path, exist_ok=True)
         file_exist = False
         file_path = os.path.join(out_path, name + '_res.csv')
         if os.path.exists(file_path):
@@ -67,6 +68,7 @@ class FileCSV:
     @classmethod
     def base_write_to_csv(cls, out_path: str, name: str, data: list):
         print(f'start write {name}')
+        os.makedirs(out_path, exist_ok=True)
         file_path = os.path.join(out_path, name + '.csv')
         with open(file_path, 'w', newline='') as f:
             f_writer = csv.writer(f)
@@ -77,6 +79,7 @@ class FileCSV:
     @classmethod
     def write_to_csv(cls, out_path: str, name: str, headers: list, statistic: Dict[Any, dict]):
         print(f'start write {name}')
+        os.makedirs(out_path, exist_ok=True)
         file_path = os.path.join(out_path, name + '.csv')
         with open(file_path, 'w', newline='') as f:
             f_writer = csv.DictWriter(f, headers)
@@ -117,6 +120,7 @@ class FileCSV:
 
     @classmethod
     def write_owner_to_csv(cls, out_path: str, name: str, data: List[Entity]):
+        os.makedirs(out_path, exist_ok=True)
         file_path = os.path.join(out_path, name + '.csv')
         headers = []
         if data:
@@ -129,6 +133,7 @@ class FileCSV:
 
     @classmethod
     def write_file_to_csv(cls, out_path: str, name: str, data: Dict[str, Dict[str, int]], key: str, headers: List[str]):
+        os.makedirs(out_path, exist_ok=True)
         file_path = os.path.join(out_path, name + '.csv')
         header = [key]
         header.extend(headers)
@@ -143,6 +148,7 @@ class FileCSV:
     @classmethod
     def write_entity_to_csv(cls, out_path: str, name: str, data: List[Entity], to_format: str):
         print('start write ', name)
+        os.makedirs(out_path, exist_ok=True)
         file_path = os.path.join(out_path, name + '.csv')
         headers = []
         if data:

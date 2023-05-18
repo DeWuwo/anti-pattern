@@ -846,55 +846,61 @@ class BuildModel:
         intrusive_count, file_intrusive_count, intrusive_keys = get_intrusive_count()
 
         FileCSV.write_owner_to_csv(self.out_path, 'final_ownership', self.entity_extensive)
-        FileCSV.write_dict_to_csv(self.out_path, 'final_ownership_count', [ownership_count], 'w')
-        FileCSV.write_file_to_csv(self.out_path, 'final_ownership_file_count', file_owner_count, 'file',
+        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'final_ownership_count',
+                                  [ownership_count], 'w')
+        FileCSV.write_file_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'final_ownership_file_count',
+                                  file_owner_count, 'file',
                                   owner_keys)
-        FileCSV.write_dict_to_csv(self.out_path, 'intrusive_count', [intrusive_count], 'w')
-        FileCSV.write_file_to_csv(self.out_path, 'intrusive_file_count', file_intrusive_count, 'file',
+        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'intrusive_count',
+                                  [intrusive_count], 'w')
+        FileCSV.write_file_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'intrusive_file_count',
+                                  file_intrusive_count, 'file',
                                   intrusive_keys)
-        FileCSV.write_dict_to_csv(self.out_path, 'owner_proc', self.owner_proc, 'w')
-        FileCSV.write_dict_to_csv(self.out_path, 'owner_proc_count', [self.owner_proc_count], 'w')
-        FileCSV.write_entity_to_csv(self.out_path, 'param_modify_entities',
+        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'owner_proc', self.owner_proc, 'w')
+        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'owner_proc_count',
+                                  [self.owner_proc_count], 'w')
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'param_modify_entities',
                                     [self.entity_extensive[entity_id] for entity_id in self.params_modify_entities],
                                     'modify')
-        FileCSV.write_entity_to_csv(self.out_path, 'access_modify_entities',
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'access_modify_entities',
                                     [self.entity_extensive[entity_id] for entity_id in self.access_modify_entities],
                                     'modify')
-        FileCSV.write_entity_to_csv(self.out_path, 'final_modify_entities',
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'final_modify_entities',
                                     [self.entity_extensive[entity_id] for entity_id in self.final_modify_entities],
                                     'modify')
-        FileCSV.write_entity_to_csv(self.out_path, 'class_var_modify_entities',
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'class_var_modify_entities',
                                     [self.entity_extensive[entity_id] for entity_id in self.class_var_modify_entities],
                                     'modify')
-        FileCSV.write_entity_to_csv(self.out_path, 'method_var_modify_entities',
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'method_var_modify_entities',
                                     [self.entity_extensive[entity_id] for entity_id in self.method_var_modify_entities],
                                     'modify')
-        FileCSV.write_entity_to_csv(self.out_path, 'class_var_extensive_entities',
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'class_var_extensive_entities',
                                     [self.entity_extensive[entity_id] for entity_id in
                                      self.class_var_extensive_entities],
                                     'modify')
-        FileCSV.write_entity_to_csv(self.out_path, 'annotation_modify_entities',
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'annotation_modify_entities',
                                     [self.entity_extensive[entity_id] for entity_id in self.annotation_modify_entities],
                                     'modify')
 
-        FileCSV.write_entity_to_csv(self.out_path, 'parent_class_modify_entities',
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'parent_class_modify_entities',
                                     [self.entity_extensive[entity_id] for entity_id in
                                      self.parent_class_modify_entities],
                                     'modify')
 
-        FileCSV.write_entity_to_csv(self.out_path, 'parent_interface_modify_entities',
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'intrusive_analysis'),
+                                    'parent_interface_modify_entities',
                                     [self.entity_extensive[entity_id] for entity_id in
                                      self.parent_interface_modify_entities],
                                     'modify')
-        FileCSV.write_entity_to_csv(self.out_path, 'return_type_modify_entities',
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'return_type_modify_entities',
                                     [self.entity_extensive[entity_id] for entity_id in
                                      self.return_type_modify_entities],
                                     'modify')
-        FileJson.write_data_to_json(self.out_path,
+        FileJson.write_data_to_json(os.path.join(self.out_path, 'intrusive_analysis'),
                                     [rel.to_detail_json(self.entity_extensive) for rel in
                                      self.import_extensive_relation],
                                     'add_import.json')
-        FileCSV.write_entity_to_csv(self.out_path, 'inner_extensive_class_entities',
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'inner_extensive_class_entities',
                                     [self.entity_extensive[entity_id] for entity_id in
                                      self.inner_extensive_class_entities],
                                     'modify')
@@ -902,7 +908,7 @@ class BuildModel:
         temp_ref = set()
         for _, v in self.refactor_entities.items():
             temp_ref.update(v)
-        FileCSV.write_entity_to_csv(self.out_path, 'refactor_entities',
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'intrusive_analysis'), 'refactor_entities',
                                     [self.entity_extensive[entity_id] for entity_id in temp_ref],
                                     'modify')
 
@@ -1124,10 +1130,13 @@ class BuildModel:
 
         for ent in self.facade_entities:
             facade_entity_info[ent.category][ent.not_aosp] += 1
-        FileCSV.write_dict_to_csv(self.out_path, 'facade_base_info_count', [facade_base_info], 'w')
-        FileCSV.write_dict_to_csv(self.out_path, 'facade_relation_info_count', [facade_relation_info], 'w')
-        FileCSV.write_dict_to_csv(self.out_path, 'facade_entity_info_count', [facade_entity_info], 'w')
-        FileCSV.write_entity_to_csv(self.out_path, 'facade_info_entities',
+        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'facade_analysis'), 'facade_base_info_count',
+                                  [facade_base_info], 'w')
+        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'facade_analysis'), 'facade_relation_info_count',
+                                  [facade_relation_info], 'w')
+        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'facade_analysis'), 'facade_entity_info_count',
+                                  [facade_entity_info], 'w')
+        FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'facade_analysis'), 'facade_info_entities',
                                     self.facade_entities, 'modify')
         facade_relations_divide_ownership.pop('e')
         FileJson.write_to_json(self.out_path, facade_relations_divide_ownership, 'facade')
@@ -1144,8 +1153,9 @@ class BuildModel:
         FileCSV.write_dict_to_csv(self.out_path, 'facade_module_to_vendor',
                                   [rel.to_csv(self.entity_extensive) for rel in source_relations_module_vendor], 'w')
 
-        FileCSV.write_dict_to_csv(self.out_path, 'facade_n2n_count', res_n2n, 'w')
-        FileCSV.write_dict_to_csv(self.out_path, 'facade_n2n_stat', [res_n2n_stat], 'w')
+        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'facade_analysis'), 'facade_n2n_count', res_n2n, 'w')
+        FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'facade_analysis'), 'facade_n2n_stat', [res_n2n_stat],
+                                  'w')
 
         project = {'project': self.out_path.rsplit('\\')[-1]}
         temp_base = project.copy()
