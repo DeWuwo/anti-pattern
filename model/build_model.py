@@ -991,6 +991,10 @@ class BuildModel:
         facade_base_info, facade_relation_info, facade_entity_info, rel_src_map = info_init()
 
         for rel in self.facade_relations:
+            # 过滤
+            if (StringUtils.find_str_in_short_list(self.entity_extensive[rel.src].qualifiedName, Constant.filter_list)) ^ \
+                    (StringUtils.find_str_in_short_list(self.entity_extensive[rel.dest].qualifiedName, Constant.filter_list)):
+                continue
             facade_relation_info[get_key(rel, False)] += 1
             facade_relations_divide_ownership[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
             source_facade_relation[get_index(rel, False)].append(rel)
@@ -1023,6 +1027,9 @@ class BuildModel:
                     self.facade_relations_on_file[dest_file]['beDest'].append(
                         rel.to_simple_detail_json(self.entity_extensive))
         for rel in self.diff_relations:
+            if (StringUtils.find_str_in_short_list(self.entity_extensive[rel.src].qualifiedName, Constant.filter_list)) ^ \
+                    (StringUtils.find_str_in_short_list(self.entity_extensive[rel.dest].qualifiedName, Constant.filter_list)):
+                continue
             if (self.entity_extensive[rel.src].file_path.startswith(Constant.module_list)) ^ \
                     (self.entity_extensive[rel.dest].file_path.startswith(Constant.module_list)):
                 source_relations_module_vendor.append(rel)

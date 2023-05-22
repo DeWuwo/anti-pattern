@@ -150,6 +150,12 @@ class Constant:
     # "packages/services/HnSystemService"
     module_list = "services/core/java/com/android/server/pm"
 
+    filter_list = ['android.util', 'android.os.Message', 'com.android.internal.logging',
+                   'com.android.internal.os', 'android.os', 'com.android.server.utils',
+                   'hihonor.android.utils', 'android.os.ServiceManager', 'com.android.server.LocalServices',
+                   'android.provider.Settings.Secure', 'android.provider.Settings.System',
+                   'com.android.telephony.Rlog']
+
     @staticmethod
     def load_core_files(file_path):
         file_list = []

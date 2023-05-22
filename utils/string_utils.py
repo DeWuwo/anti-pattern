@@ -39,7 +39,20 @@ class StringUtils:
                 return True
         return False
 
+    @classmethod
+    def find_str_in_short_list(cls, string: str, str_list: List[str]):
+        if string in str_list:
+            return True
+        for single_str in str_list:
+            if string.startswith(single_str):
+                return True
+        return False
+
 
 if __name__ == '__main__':
     a = '12315'
-    print(StringUtils.find_char(a, '1'))
+    print(StringUtils.find_str_in_short_list('android.util.Slog.w', ['android.util', 'android.os.Message', 'com.android.internal.logging',
+                   'com.android.internal.os', 'android.os', 'com.android.server.utils',
+                   'hihonor.android.utils', 'android.os.ServiceManager', 'com.android.server.LocalServices',
+                   'android.provider.Settings.Secure', 'android.provider.Settings.System',
+                   'com.android.telephony.Rlog']))
