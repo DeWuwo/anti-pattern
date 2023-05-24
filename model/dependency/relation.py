@@ -1,5 +1,5 @@
 from typing import List
-from utils import Constant
+from utils import Constant, StringUtils
 from model.dependency.entity import Entity
 
 
@@ -73,6 +73,10 @@ class Relation:
                 "dest": entities[self.dest].to_detail()}
 
     def to_csv(self, entities: List[Entity]):
+        is_filter = 'false'
+        if StringUtils.find_str_in_short_list(entities[self.src].qualifiedName, Constant.filter_list) or \
+                StringUtils.find_str_in_short_list(entities[self.dest].qualifiedName, Constant.filter_list):
+            is_filter = 'true'
         return {"facade": f"{entities[self.src].get_ownership()} -> {entities[self.dest].get_ownership()}",
                 "relation": self.rel,
                 "src_category": entities[self.src].category,
@@ -83,7 +87,8 @@ class Relation:
                 "dest_modifier": entities[self.dest].accessible,
                 "dest_label": " ".join(entities[self.dest].hidden),
                 "dest_entity": entities[self.dest].qualifiedName,
-                "dest_file": entities[self.dest].file_path
+                "dest_file": entities[self.dest].file_path,
+                'filter': is_filter
                 }
 
     def to_db_json(self):

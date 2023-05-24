@@ -991,16 +991,12 @@ class BuildModel:
         facade_base_info, facade_relation_info, facade_entity_info, rel_src_map = info_init()
 
         for rel in self.facade_relations:
-            # 过滤
-            if (StringUtils.find_str_in_short_list(self.entity_extensive[rel.src].qualifiedName, Constant.filter_list)) ^ \
-                    (StringUtils.find_str_in_short_list(self.entity_extensive[rel.dest].qualifiedName, Constant.filter_list)):
-                continue
             facade_relation_info[get_key(rel, False)] += 1
             facade_relations_divide_ownership[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
             source_facade_relation[get_index(rel, False)].append(rel)
             rel.set_facade(get_index(rel, False))
             # 核心文件切面
-            if (StringUtils.find_str_in_list(self.entity_extensive[rel.src].file_path, Constant.core_list)) ^ \
+            if (StringUtils.find_str_in_list(self.entity_extensive[rel.src].file_path, Constant.core_list)) or \
                     (StringUtils.find_str_in_list(self.entity_extensive[rel.dest].file_path, Constant.core_list)):
                 source_facade_relations_filter.append(rel)
                 facade_relations_filter[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
@@ -1027,9 +1023,6 @@ class BuildModel:
                     self.facade_relations_on_file[dest_file]['beDest'].append(
                         rel.to_simple_detail_json(self.entity_extensive))
         for rel in self.diff_relations:
-            if (StringUtils.find_str_in_short_list(self.entity_extensive[rel.src].qualifiedName, Constant.filter_list)) ^ \
-                    (StringUtils.find_str_in_short_list(self.entity_extensive[rel.dest].qualifiedName, Constant.filter_list)):
-                continue
             if (self.entity_extensive[rel.src].file_path.startswith(Constant.module_list)) ^ \
                     (self.entity_extensive[rel.dest].file_path.startswith(Constant.module_list)):
                 source_relations_module_vendor.append(rel)
@@ -1164,19 +1157,19 @@ class BuildModel:
         FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'facade_analysis'), 'facade_n2n_stat', [res_n2n_stat],
                                   'w')
 
-        project = {'project': self.out_path.rsplit('\\')[-1]}
-        temp_base = project.copy()
-        temp_base.update(facade_base_info)
-        temp_rel = project.copy()
-        temp_rel.update(facade_relation_info)
-        temp_n2n_stat = project.copy()
-        temp_n2n_stat.update(res_n2n_stat)
-        temp_n2n_rel_stat = project.copy()
+        # project = {'project': self.out_path.rsplit('\\')[-1]}
+        # temp_base = project.copy()
+        # temp_base.update(facade_base_info)
+        # temp_rel = project.copy()
+        # temp_rel.update(facade_relation_info)
+        # temp_n2n_stat = project.copy()
+        # temp_n2n_stat.update(res_n2n_stat)
+        # temp_n2n_rel_stat = project.copy()
         # temp_n2n_rel_stat.update(res_n2n_rel_stat)
-        FileCSV.write_dict_to_csv('D:\\Honor\\match_res', 'facade_base_info_count', [temp_base], 'a')
-        FileCSV.write_dict_to_csv('D:\\Honor\\match_res', 'facade_relation_info_count', [temp_rel], 'a')
-        FileCSV.write_dict_to_csv('D:\\Honor\\match_res', 'facade_n2n_stat', [temp_n2n_stat], 'a')
-        FileCSV.write_dict_to_csv('D:\\Honor\\match_res', 'facade_n2n_rel_stat', [temp_n2n_rel_stat], 'a')
+        # FileCSV.write_dict_to_csv('D:\\Honor\\match_res', 'facade_base_info_count', [temp_base], 'a')
+        # FileCSV.write_dict_to_csv('D:\\Honor\\match_res', 'facade_relation_info_count', [temp_rel], 'a')
+        # FileCSV.write_dict_to_csv('D:\\Honor\\match_res', 'facade_n2n_stat', [temp_n2n_stat], 'a')
+        # FileCSV.write_dict_to_csv('D:\\Honor\\match_res', 'facade_n2n_rel_stat', [temp_n2n_rel_stat], 'a')
 
 
 # valid entity map
