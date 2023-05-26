@@ -148,7 +148,7 @@ class Constant:
 
     ]
     # "packages/services/HnSystemService"
-    module_list = "services/core/java/com/android/server/pm"
+    module_list = ["packages/services/HnSystemService"]
 
     filter_list = ['android.util', 'android.os.Message', 'com.android.internal.logging',
                    'com.android.internal.os', 'android.os', 'com.android.server.utils',
