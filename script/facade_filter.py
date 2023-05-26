@@ -164,4 +164,65 @@ class FacadeFilter:
                 inter_set.append(conf)
         # inter_set = facade_file_set & conf_file_set
         return {'project': project, 'conf_files': len(conf_file_set), 'facade_files': len(facade_file_set),
-                'inter_set': len(inter_set), 'rate': float(len(inter_set)/len(conf_file_set)),'files': list(inter_set)}
+                'inter_set': len(inter_set), 'rate': float(len(inter_set) / len(conf_file_set)),
+                'files': list(inter_set)}
+
+    def get_module_stat(self):
+        e2n, n2e = self.load_facade()
+        nodes_map = {}
+        edges_map = {}
+        for rel in e2n + n2e:
+            src = rel['src']
+            dest = rel['dest']
+            rel_type = list(rel["values"].keys())[0]
+            if src['category'] == Constant.E_file or src['category'] == Constant.E_package or \
+                    dest['category'] == Constant.E_file or dest['category'] == Constant.E_package:
+                continue
+            if rel_type not in self.relation_types:
+                continue
+            src_pkg = src['packageName']
+            dest_pkg = dest['packageName']
+            # 添加src节点
+            if src_pkg not in nodes_map.keys():
+                new_node = {
+                    "name": src_pkg,
+                    'actively native': 0,
+                    'intrusive native': 0,
+                    'extensive': 0,
+                    'obsoletely_native': 0
+                }
+                nodes_map.update({src_pkg: new_node})
+            nodes_map[src_pkg][src['ownership']] += 1
+            # 添加dest节点
+            if dest_pkg not in nodes_map.keys():
+                new_node = {
+                    "name": dest_pkg,
+                    'actively native': 0,
+                    'intrusive native': 0,
+                    'extensive': 0,
+                    'obsoletely_native': 0
+                }
+                nodes_map.update({dest_pkg: new_node})
+            nodes_map[dest_pkg][dest['ownership']] += 1
+
+            # 添加依赖
+            if f"{src_pkg}_{dest_pkg}" not in edges_map.keys():
+                const_rels = {}
+                for const_rel in self.relation_types:
+                    const_rels.update({const_rel: 0})
+                new_edge = {
+                    "name": f"{src_pkg}_{dest_pkg}",
+                    "src": src_pkg,
+                    "dest": dest_pkg,
+                    "relations": const_rels,
+                    'weight': 0
+                }
+                edges_map.update({f"{src_pkg}_{dest_pkg}": new_edge})
+            edges_map[f"{src_pkg}_{dest_pkg}"]['relations'][rel_type] += 1
+            edges_map[f"{src_pkg}_{dest_pkg}"]['weight'] += 1
+        nodes = [nodes_map[pkg] for pkg in nodes_map.keys()]
+        edges = [edges_map[pkgs] for pkgs in edges_map.keys()]
+        res = {'nodes': nodes,
+               "edges": sorted(edges, key=lambda k: k.get('weight', 0), reverse=True)}
+
+        FileJson.write_to_json('D:/Honor/merge/facade', res, 'facade_stat')
