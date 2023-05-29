@@ -1032,6 +1032,10 @@ class BuildModel:
                     self.facade_relations_on_file[dest_file]['beDest'].append(
                         rel.to_simple_detail_json(self.entity_extensive))
         for rel in self.diff_relations:
+            src = self.entity_extensive[rel.src]
+            dest = self.entity_extensive[rel.dest]
+            if src.not_aosp + dest.not_aosp != 2:
+                continue
             for module_name, module_list in Constant.module_list.items():
                 if module_name not in source_relations_module_vendor.keys():
                     source_relations_module_vendor[module_name] = []
