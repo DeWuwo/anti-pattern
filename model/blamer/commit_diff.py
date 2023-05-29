@@ -15,7 +15,8 @@ def get_all_commits(repo: git.Repo) -> Set[str]:
 
 def get_all_aosp_commits(repo: git.Repo) -> Set[str]:
     all_commits = set()
-    for tag in repo.remote().refs:
+    # for tag in repo.remote().refs:
+    for tag in repo.tags:
         all_commits = all_commits | set([str(commit) for commit in repo.iter_commits(tag)])
     return all_commits
 
