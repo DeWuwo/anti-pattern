@@ -1,4 +1,6 @@
 import os
+import networkx as nx
+import matplotlib.pyplot as plt
 from typing import List
 from collections import defaultdict
 from functools import partial
@@ -186,24 +188,28 @@ class FacadeFilter:
             if src_pkg not in nodes_map.keys():
                 new_node = {
                     "name": src_pkg,
-                    'actively native': 0,
-                    'intrusive native': 0,
-                    'extensive': 0,
-                    'obsoletely_native': 0
+                    'weight': {
+                        'actively native': set(),
+                        'intrusive native': set(),
+                        'extensive': set(),
+                        'obsoletely_native': set()
+                    }
                 }
                 nodes_map.update({src_pkg: new_node})
-            nodes_map[src_pkg][src['ownership']] += 1
+            nodes_map[src_pkg]['weight'][src['ownership']].add(src['qualifiedName'])
             # 添加dest节点
             if dest_pkg not in nodes_map.keys():
                 new_node = {
                     "name": dest_pkg,
-                    'actively native': 0,
-                    'intrusive native': 0,
-                    'extensive': 0,
-                    'obsoletely_native': 0
+                    'weight': {
+                        'actively native': set(),
+                        'intrusive native': set(),
+                        'extensive': set(),
+                        'obsoletely_native': set()
+                    }
                 }
                 nodes_map.update({dest_pkg: new_node})
-            nodes_map[dest_pkg][dest['ownership']] += 1
+            nodes_map[dest_pkg]['weight'][dest['ownership']].add(dest['qualifiedName'])
 
             # 添加依赖
             if f"{src_pkg}_{dest_pkg}" not in edges_map.keys():
@@ -220,9 +226,69 @@ class FacadeFilter:
                 edges_map.update({f"{src_pkg}_{dest_pkg}": new_edge})
             edges_map[f"{src_pkg}_{dest_pkg}"]['relations'][rel_type] += 1
             edges_map[f"{src_pkg}_{dest_pkg}"]['weight'] += 1
-        nodes = [nodes_map[pkg] for pkg in nodes_map.keys()]
-        edges = [edges_map[pkgs] for pkgs in edges_map.keys()]
-        res = {'nodes': nodes,
-               "edges": sorted(edges, key=lambda k: k.get('weight', 0), reverse=True)}
 
+        nodes = []
+        for pkg in nodes_map.keys():
+            temp = nodes_map[pkg]
+            weight = {}
+            for owner in temp['weight'].keys():
+                weight.update({owner: len(temp['weight'][owner])})
+            nodes.append({'name': pkg, 'weight': weight})
+            nodes_map[pkg] = {'name': pkg, 'weight': weight}
+        edges = [edges_map[pkgs] for pkgs in edges_map.keys()]
+        edges = sorted(edges, key=lambda k: k.get('weight', 0), reverse=True)
+        res = {'nodes': nodes,
+               "edges": edges}
         FileJson.write_to_json('D:/Honor/merge/facade', res, 'facade_stat')
+
+        res_csv = []
+        for edge in edges:
+            edge_csv = {}
+            edge_csv.update({'src': edge['src'], 'dest': edge['dest']})
+            edge_csv.update(edge['relations'])
+            src_info = nodes_map[edge['src']]
+            for owner, weight in src_info['weight'].items():
+                edge_csv.update({f"src_{owner}": weight})
+            dest_info = nodes_map[edge['dest']]
+            for owner, weight in dest_info['weight'].items():
+                edge_csv.update({f"dest_{owner}": weight})
+            res_csv.append(edge_csv)
+        FileCSV.write_dict_to_csv('D:/Honor/merge/facade', 'facade_stat', res_csv, 'w')
+        filter_nodes = []
+        filter_edges = edges[0: 10]
+        temp_node = set()
+        for edge in filter_edges:
+            temp_node.add(edge['src'])
+            temp_node.add(edge['dest'])
+        for node in temp_node:
+            filter_nodes.append(nodes_map[node])
+
+        # 生成图
+        G = nx.Graph()
+
+        node_label = {}
+        edge_label = {}
+        for node in filter_nodes:
+            G.add_node(node['name'], attr=node)
+        for node in G.nodes:
+            node_label[node] = G.nodes[node]
+        node_label = nx.get_node_attributes(G, 'attr')
+
+        for edge in filter_edges:
+            G.add_edge(edge['src'], edge['dest'], attr=edge['relations'])
+
+        for edge in G.edges:
+            edge_label[edge] = G.edges[edge]
+
+        pos = nx.shell_layout(G)
+        nx.draw(G, pos)
+
+        nx.draw_networkx_nodes(G, pos)
+
+        nx.draw_networkx_edges(G, pos, width=1, edge_color='dodgerblue',
+                               arrowstyle="->", arrowsize=30, arrows=True)
+
+        nx.draw_networkx_labels(G, pos, labels=node_label, font_size=7)
+
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_label, font_size=7, )
+        plt.show()
