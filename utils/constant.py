@@ -148,7 +148,7 @@ class Constant:
 
     ]
     # "packages/services/HnSystemService"
-    module_list = ["packages/services/HnSystemService"]
+    module_list = {"原子服务": ["packages/services/HnSystemService"]}
 
     filter_list = ['android.util', 'android.os.Message', 'com.android.internal.logging',
                    'com.android.internal.os', 'android.os', 'com.android.server.utils',
@@ -165,3 +165,24 @@ class Constant:
                 if '/' in line:
                     file_list.append(line.strip().strip('/'))
             Constant.core_list = file_list
+
+    @staticmethod
+    def load_module_files(file_path):
+        module_name = "default"
+        file_list = []
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            for line in lines:
+                if '#' in line:
+                    if file_list:
+                        module = {module_name: file_list}
+                        if module_name not in Constant.module_list.keys():
+                            Constant.module_list.update(module)
+                        file_list = []
+                    module_name = line[1:].strip()
+                if '/' in line:
+                    file_list.append(line.strip().strip('/'))
+            if file_list:
+                module = {module_name: file_list}
+                if module_name not in Constant.module_list.keys():
+                    Constant.module_list.update(module)

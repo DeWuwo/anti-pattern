@@ -45,6 +45,7 @@ def dispatch(args):
     # read files
     try:
         Constant.load_core_files('core_files.txt')
+        Constant.load_module_files('module_files.txt')
         entities_honor, cells_honor, entities_stat_honor, entities_aosp, cells_aosp, entities_stat_aosp = \
             FileJson.read_from_json(args.android, args.honor)
         # 读取模块责任田
@@ -69,8 +70,6 @@ def dispatch(args):
         # special_anti_pattern = AntiPattern()
         # pattern_match.start_match_pattern(special_anti_pattern)
     except FileNotFoundError as e:
-        print(e)
-    except Exception as e:
         print(e)
 
 

@@ -980,12 +980,14 @@ class BuildModel:
         # start output
         facade_relations_divide_ownership = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
         facade_relations_filter = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
-        facade_relations_module = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
-        relations_module_vendor = {'e2e': [], 'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
+        # facade_relations_module = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
+        facade_relations_module = {}
+        # relations_module_vendor = {'e2e': [], 'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
+        relations_module_vendor = {}
 
         source_facade_relations_filter = []
-        source_facade_relations_module = []
-        source_relations_module_vendor = []
+        source_facade_relations_module = {}
+        source_relations_module_vendor = {}
 
         source_facade_relation: Dict[str, List[Relation]] = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
         facade_base_info, facade_relation_info, facade_entity_info, rel_src_map = info_init()
@@ -1001,10 +1003,17 @@ class BuildModel:
                 source_facade_relations_filter.append(rel)
                 facade_relations_filter[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
             # 动态圈定的文件切面
-            if (self.entity_extensive[rel.src].file_path.startswith(Constant.module_list)) ^ \
-                    (self.entity_extensive[rel.dest].file_path.startswith(Constant.module_list)):
-                source_facade_relations_module.append(rel)
-                facade_relations_module[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
+            for module_name, module_list in Constant.module_list.items():
+                if module_name not in source_facade_relations_module.keys():
+                    source_facade_relations_module[module_name] = []
+                    facade_relations_module[module_name] = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
+                if StringUtils.find_str_in_short_list(self.entity_extensive[rel.src].file_path, module_list) or \
+                        StringUtils.find_str_in_short_list(self.entity_extensive[rel.dest].file_path, module_list):
+                    # csv格式输出
+                    source_facade_relations_module[module_name].append(rel)
+                    # json 格式输出
+                    facade_relations_module[module_name][get_index(rel, False)].append(
+                        rel.to_detail_json(self.entity_extensive))
             src_file = self.entity_extensive[rel.src].file_path
             dest_file = self.entity_extensive[rel.dest].file_path
             if src_file != "" and dest_file != "":
@@ -1023,10 +1032,17 @@ class BuildModel:
                     self.facade_relations_on_file[dest_file]['beDest'].append(
                         rel.to_simple_detail_json(self.entity_extensive))
         for rel in self.diff_relations:
-            if (StringUtils.find_str_in_short_list(self.entity_extensive[rel.src].file_path, Constant.module_list)) ^ \
-                    (StringUtils.find_str_in_short_list(self.entity_extensive[rel.src].file_path, Constant.module_list)):
-                source_relations_module_vendor.append(rel)
-                relations_module_vendor[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
+            for module_name, module_list in Constant.module_list.items():
+                if module_name not in source_relations_module_vendor.keys():
+                    source_relations_module_vendor[module_name] = []
+                    relations_module_vendor[module_name] = {'e2e': [], 'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
+                if StringUtils.find_str_in_short_list(self.entity_extensive[rel.src].file_path, module_list) ^ \
+                        StringUtils.find_str_in_short_list(self.entity_extensive[rel.dest].file_path, module_list):
+                    # csv格式输出
+                    source_relations_module_vendor[module_name].append(rel)
+                    # json 格式输出
+                    relations_module_vendor[module_name][get_index(rel, False)].append(
+                        rel.to_detail_json(self.entity_extensive))
 
         for rel in self.agg_relations:
             facade_relation_info[get_key(rel, True)] += 1
@@ -1106,21 +1122,6 @@ class BuildModel:
                 res_n2n_stat['e_6-10'] += 1
             else:
                 res_n2n_stat['e_11-'] += 1
-        # res_n2n_rel_stat = {'total_intrusive': len(res_n2n),
-        #                     'count_n_n2n': float(count_n_n2n / (count_e_n2n + count_n_n2n)),
-        #                     'count_e_n2n': float(count_e_n2n / (count_e_n2n + count_n_n2n))}
-        # res_n2n_stat_per = {'total_intrusive': len(res_n2n), 'e_0': 0, 'e_1%': 0, 'e_2%': 0, 'e_3%': 0}
-        # for info in res_n2n:
-        #     n_n2n = info['total_nat_n2n']
-        #     e_n2n = info['total_ext_n2n']
-        #     if e_n2n == 0:
-        #         res_n2n_stat_per['e_0'] += 1
-        #     elif float(e_n2n / (e_n2n + n_n2n)) < 0.1:
-        #         res_n2n_stat_per['e_1%'] += 1
-        #     elif float(e_n2n / (e_n2n + n_n2n)) < 0.2:
-        #         res_n2n_stat_per['e_2%'] += 1
-        #     else:
-        #         res_n2n_stat_per['e_3%'] += 1
 
         facade_base_info['facade_relation'] = facade_base_info['facade_n2e'] + facade_base_info['facade_e2n'] + \
                                               facade_base_info['facade_n2n']
@@ -1139,19 +1140,28 @@ class BuildModel:
         FileCSV.write_entity_to_csv(os.path.join(self.out_path, 'facade_analysis'), 'facade_info_entities',
                                     self.facade_entities, 'modify')
         facade_relations_divide_ownership.pop('e')
+
+        # json 格式输出依赖切面
         FileJson.write_to_json(self.out_path, facade_relations_divide_ownership, 'facade')
         FileJson.write_to_json(self.out_path, facade_relations_filter, 'facade_core')
-        FileJson.write_to_json(self.out_path, facade_relations_module, 'facade_module')
-        FileJson.write_to_json(self.out_path, relations_module_vendor, 'facade_module_to_vendor')
+        for module_name, res in facade_relations_module.items():
+            FileJson.write_to_json(os.path.join(self.out_path, 'facade_module'), res, f'facade_module_{module_name}')
+        for module_name, res in relations_module_vendor.items():
+            FileJson.write_to_json(os.path.join(self.out_path, 'facade_module'), res,
+                                   f'facade_module_to_vendor_{module_name}')
 
+        # csv格式输出依赖切面
         FileCSV.write_dict_to_csv(self.out_path, 'facade',
                                   [rel.to_csv(self.entity_extensive) for rel in self.facade_relations], 'w')
         FileCSV.write_dict_to_csv(self.out_path, 'facade_core',
                                   [rel.to_csv(self.entity_extensive) for rel in source_facade_relations_filter], 'w')
-        FileCSV.write_dict_to_csv(self.out_path, 'facade_module',
-                                  [rel.to_csv(self.entity_extensive) for rel in source_facade_relations_module], 'w')
-        FileCSV.write_dict_to_csv(self.out_path, 'facade_module_to_vendor',
-                                  [rel.to_csv(self.entity_extensive) for rel in source_relations_module_vendor], 'w')
+        for module_name, res in source_facade_relations_module.items():
+            FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'facade_module'), f'facade_module_{module_name}',
+                                      [rel.to_csv(self.entity_extensive) for rel in res], 'w')
+        for module_name, res in source_relations_module_vendor.items():
+            FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'facade_module'),
+                                      f'facade_module_to_vendor_{module_name}',
+                                      [rel.to_csv(self.entity_extensive) for rel in res], 'w')
 
         FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'facade_analysis'), 'facade_n2n_count', res_n2n, 'w')
         FileCSV.write_dict_to_csv(os.path.join(self.out_path, 'facade_analysis'), 'facade_n2n_stat', [res_n2n_stat],
