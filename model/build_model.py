@@ -74,6 +74,7 @@ class BuildModel:
     refactor_entities: Dict[str, List[int]]
     agg_relations: List[Relation]
     facade_relations: List[Relation]
+    facade_relations_error: List[Relation]
     facade_entities: List[Entity]
     facade_relations_on_file: Dict[str, Dict[str, list]]
     diff_relations: List[Relation]
@@ -134,6 +135,7 @@ class BuildModel:
         }
         self.agg_relations = []
         self.facade_relations = []
+        self.facade_relations_error = []
         self.facade_entities = []
         self.facade_relations_on_file = {}
         self.diff_relations = []
@@ -657,10 +659,23 @@ class BuildModel:
 
     # get diff and extra useful aosp 'define' dep
     def detect_facade(self):
+        def concept_error(relation: Relation):
+            if relation.rel == Constant.define and self.entity_extensive[relation.src].not_aosp \
+                    and not self.entity_extensive[relation.dest].not_aosp:
+                if self.entity_extensive[relation.src].refactor:
+                    return False
+            elif relation.rel == Constant.param and self.entity_extensive[relation.src].not_aosp:
+                # 伴生方法不会 有原生参数
+                return False
+            return True
+
         facade_entities = set()
         for relation in self.relation_extensive:
             src = self.entity_extensive[relation.src]
             dest = self.entity_extensive[relation.dest]
+            if not concept_error(relation):
+                self.facade_relations_error.append(relation)
+                continue
             if src.not_aosp + dest.not_aosp == 1:
                 self.facade_relations.append(relation)
                 self.diff_relations.append(relation)
@@ -679,7 +694,7 @@ class BuildModel:
                             self.method_var_extensive_entities.append(dest.id)
             elif src.not_aosp + dest.not_aosp == 2:
                 self.diff_relations.append(relation)
-            # 依赖切面扩充
+            # 依赖切面扩充 侵入式到原生
             elif src.not_aosp == 0 and dest.not_aosp == 0:
                 if relation.not_aosp == 1:
                     self.diff_relations.append(relation)
@@ -694,8 +709,12 @@ class BuildModel:
                     type_entity_id = dest.typed
                     if type_entity_id != -1 and \
                             self.entity_extensive[type_entity_id].not_aosp != src.not_aosp:
-                        self.agg_relations.append(relation)
+                        self.agg_relations.append(
+                            Relation(**{"src": src.id,
+                                        "values": {Constant.R_aggregate: 1, "loc": relation.loc},
+                                        "dest": type_entity_id}))
 
+        self.facade_relations.extend(self.agg_relations)
         for e_id in facade_entities:
             self.facade_entities.append(self.entity_extensive[e_id])
 
@@ -945,7 +964,7 @@ class BuildModel:
 
             return base_info, relation_info, entity_info, rel_src
 
-        def get_index(relation: Relation, is_agg: bool) -> str:
+        def get_index(relation: Relation) -> str:
             src_owner = self.entity_extensive[relation.src].not_aosp
             dest_owner = self.entity_extensive[relation.dest].not_aosp
 
@@ -955,9 +974,20 @@ class BuildModel:
                 else:
                     return 'n'
 
-            if is_agg:
-                return get_index_str(src_owner) + '2' + get_index_str(
-                    self.entity_extensive[self.entity_extensive[relation.dest].typed].not_aosp)
+            # if is_agg:
+            #     return get_index_str(src_owner) + '2' + get_index_str(
+            #         self.entity_extensive[self.entity_extensive[relation.dest].typed].not_aosp)
+
+            """
+            特殊情况处理
+            
+            情况1：注解依赖的方向调整，调用src和dest实体
+            
+            情况2：过滤概念上就无法理解的错误，如伴生实体定义原生实体，伴生方法 有原生参数
+            
+            
+            
+            """
             if relation.rel == Constant.R_annotate:
                 return get_index_str(dest_owner) + '2' + get_index_str(src_owner)
             elif relation.rel == Constant.define:
@@ -965,17 +995,19 @@ class BuildModel:
                     if self.entity_extensive[relation.src].refactor:
                         return get_index_str(src_owner) + '2' + get_index_str(dest_owner)
                     else:
+                        # 伴生实体 不会定义原生实体
                         return 'e'
             elif relation.rel == Constant.param and self.entity_extensive[relation.src].not_aosp:
+                # 伴生方法不会 有原生参数
                 return 'e'
             return get_index_str(src_owner) + '2' + get_index_str(dest_owner)
 
         # 临时添加 聚合 依赖
-        def get_key(relation: Relation, is_agg: bool) -> str:
+        def get_key(relation: Relation) -> str:
             rel_type = relation.rel
-            if is_agg:
-                rel_type = 'Aggregate'
-            return rel_type + '_' + get_index(relation, is_agg)
+            # if is_agg:
+            #     rel_type = 'Aggregate'
+            return rel_type + '_' + get_index(relation)
 
         # start output
         facade_relations_divide_ownership = {'e2n': [], 'n2e': [], 'n2n': [], 'e': []}
@@ -993,15 +1025,15 @@ class BuildModel:
         facade_base_info, facade_relation_info, facade_entity_info, rel_src_map = info_init()
 
         for rel in self.facade_relations:
-            facade_relation_info[get_key(rel, False)] += 1
-            facade_relations_divide_ownership[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
-            source_facade_relation[get_index(rel, False)].append(rel)
-            rel.set_facade(get_index(rel, False))
+            facade_relation_info[get_key(rel)] += 1
+            facade_relations_divide_ownership[get_index(rel)].append(rel.to_detail_json(self.entity_extensive))
+            source_facade_relation[get_index(rel)].append(rel)
+            rel.set_facade(get_index(rel))
             # 核心文件切面
             if (StringUtils.find_str_in_list(self.entity_extensive[rel.src].file_path, Constant.core_list)) or \
                     (StringUtils.find_str_in_list(self.entity_extensive[rel.dest].file_path, Constant.core_list)):
                 source_facade_relations_filter.append(rel)
-                facade_relations_filter[get_index(rel, False)].append(rel.to_detail_json(self.entity_extensive))
+                facade_relations_filter[get_index(rel)].append(rel.to_detail_json(self.entity_extensive))
             # 动态圈定的文件切面
             for module_name, module_list in Constant.module_list.items():
                 if module_name not in source_facade_relations_module.keys():
@@ -1012,7 +1044,7 @@ class BuildModel:
                     # csv格式输出
                     source_facade_relations_module[module_name].append(rel)
                     # json 格式输出
-                    facade_relations_module[module_name][get_index(rel, False)].append(
+                    facade_relations_module[module_name][get_index(rel)].append(
                         rel.to_detail_json(self.entity_extensive))
             src_file = self.entity_extensive[rel.src].file_path
             dest_file = self.entity_extensive[rel.dest].file_path
@@ -1045,14 +1077,14 @@ class BuildModel:
                     # csv格式输出
                     source_relations_module_vendor[module_name].append(rel)
                     # json 格式输出
-                    relations_module_vendor[module_name][get_index(rel, False)].append(
+                    relations_module_vendor[module_name][get_index(rel)].append(
                         rel.to_detail_json(self.entity_extensive))
 
-        for rel in self.agg_relations:
-            facade_relation_info[get_key(rel, True)] += 1
-            # 聚合重复计数了 define依赖
-            # facade_relations_divide_ownership[get_index(rel, True)].append(rel.to_detail_json(self.entity_extensive))
-            # source_facade_relation[get_index(rel, True)].append(rel)
+        # for rel in self.agg_relations:
+        #     facade_relation_info[get_key(rel, True)] += 1
+        # 聚合重复计数了 define依赖
+        # facade_relations_divide_ownership[get_index(rel, True)].append(rel.to_detail_json(self.entity_extensive))
+        # source_facade_relation[get_index(rel, True)].append(rel)
 
         facade_base_info['facade_n2e'] = len(facade_relations_divide_ownership['n2e'])
         facade_base_info['facade_e2n'] = len(facade_relations_divide_ownership['e2n'])

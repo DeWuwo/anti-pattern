@@ -307,3 +307,107 @@ class FacadeFilter:
 
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_label, font_size=7, )
         plt.show()
+
+    def get_module_stat_2(self, out_name):
+        e2n, n2e = self.load_facade()
+        nodes_map = {}
+        edges_map = {}
+        for rel in e2n + n2e:
+            src = rel['src']
+            dest = rel['dest']
+            rel_type = list(rel["values"].keys())[0]
+            if src['category'] == Constant.E_file or src['category'] == Constant.E_package or \
+                    dest['category'] == Constant.E_file or dest['category'] == Constant.E_package:
+                continue
+            if rel_type not in self.relation_types:
+                continue
+            src_pkg = src['packageName']
+            dest_pkg = dest['packageName']
+            # 添加src节点
+            if src_pkg not in nodes_map.keys():
+                new_node = {
+                    "name": src_pkg,
+                    'weight': {
+                        'actively native': set(),
+                        'intrusive native': set(),
+                        'extensive': set(),
+                        'obsoletely_native': set()
+                    }
+                }
+                nodes_map.update({src_pkg: new_node})
+            nodes_map[src_pkg]['weight'][src['ownership']].add(src['qualifiedName'])
+            # 添加dest节点
+            if dest_pkg not in nodes_map.keys():
+                new_node = {
+                    "name": dest_pkg,
+                    'weight': {
+                        'actively native': set(),
+                        'intrusive native': set(),
+                        'extensive': set(),
+                        'obsoletely_native': set()
+                    }
+                }
+                nodes_map.update({dest_pkg: new_node})
+            nodes_map[dest_pkg]['weight'][dest['ownership']].add(dest['qualifiedName'])
+
+            # 添加依赖
+            if f"{src_pkg}_{dest_pkg}" not in edges_map.keys():
+                const_rels = {}
+                for const_rel in self.relation_types:
+                    const_rels.update({const_rel: 0})
+                new_edge = {
+                    "name": f"{src_pkg}_{dest_pkg}",
+                    "src": src_pkg,
+                    "dest": dest_pkg,
+                    "relations": const_rels,
+                    "owner": {
+                        "extensive-actively native": 0,
+                        "extensive-intrusive native": 0,
+                        "extensive-obsoletely_native": 0,
+                        "intrusive native-extensive": 0,
+                        'obsoletely_native-extensive': 0,
+                        'actively native-extensive': 0
+                    },
+                    'weight': 0
+                }
+                edges_map.update({f"{src_pkg}_{dest_pkg}": new_edge})
+            edges_map[f"{src_pkg}_{dest_pkg}"]['relations'][rel_type] += 1
+            edges_map[f"{src_pkg}_{dest_pkg}"]['owner'][f"{src['ownership']}-{dest['ownership']}"] += 1
+            edges_map[f"{src_pkg}_{dest_pkg}"]['weight'] += 1
+
+        nodes = []
+        for pkg in nodes_map.keys():
+            temp = nodes_map[pkg]
+            weight = {}
+            for owner in temp['weight'].keys():
+                weight.update({owner: len(temp['weight'][owner])})
+            nodes.append({'name': pkg, 'weight': weight})
+            nodes_map[pkg] = {'name': pkg, 'weight': weight}
+        edges = [edges_map[pkgs] for pkgs in edges_map.keys()]
+        edges = sorted(edges, key=lambda k: k.get('weight', 0), reverse=True)
+        res = {'nodes': nodes,
+               "edges": edges}
+        FileJson.write_to_json('D:/Honor/merge/facade', res, out_name)
+
+        res_csv = []
+        for edge in edges:
+            edge_csv = {}
+            edge_csv.update({'src': edge['src'], 'dest': edge['dest']})
+            edge_csv.update(edge['relations'])
+            edge_csv.update(edge['owner'])
+            src_info = nodes_map[edge['src']]
+            for owner, weight in src_info['weight'].items():
+                edge_csv.update({f"src_{owner}": weight})
+            dest_info = nodes_map[edge['dest']]
+            for owner, weight in dest_info['weight'].items():
+                edge_csv.update({f"dest_{owner}": weight})
+            res_csv.append(edge_csv)
+        FileCSV.write_dict_to_csv('D:/Honor/merge/facade', out_name, res_csv, 'w')
+        filter_nodes = []
+        filter_edges = edges[0: 10]
+        temp_node = set()
+        for edge in filter_edges:
+            temp_node.add(edge['src'])
+            temp_node.add(edge['dest'])
+        for node in temp_node:
+            filter_nodes.append(nodes_map[node])

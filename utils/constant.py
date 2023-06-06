@@ -112,7 +112,7 @@ class Constant:
                     return max_label
 
     Owner_actively_native = 'actively native'
-    Owner_obsoletely_native = 'obsoletely_native'
+    Owner_obsoletely_native = 'obsoletely native'
     Owner_intrusive_native = 'intrusive native'
     Owner_extensive = 'extensive'
 
