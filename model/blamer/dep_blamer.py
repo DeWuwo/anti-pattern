@@ -11,6 +11,7 @@ import git
 
 from utils import MyThread
 
+
 def range_intersection(x: range, y: range) -> Optional[range]:
     start = max(x.start, y.start)
     end = min(x.stop, y.stop)
@@ -96,7 +97,7 @@ class DepData:
     def __init__(self, repo_path: Path, analyzed_root: Path, dep_file: Path):
         self.repo_path = repo_path
         self.analyzed_root = analyzed_root
-        self.dep_obj = json.loads(dep_file.read_text())
+        self.dep_obj = json.loads(dep_file.read_text(encoding='utf-8'))
 
     def get_dep_ents(self) -> Set[Entity]:
         ret = set()
@@ -122,7 +123,7 @@ class DepData:
 
 
 def dump_ownership(ownership_data: List[EntOwnership], fp: IO):
-    writer = csv.DictWriter(fp, ["Entity", "category", "id", "param_names","file path", "commits"])
+    writer = csv.DictWriter(fp, ["Entity", "category", "id", "param_names", "file path", "commits"])
     writer.writeheader()
     for d in ownership_data:
         writer.writerow({
@@ -311,6 +312,7 @@ def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str
             return contain_commit(blame_dict[f], only_accompany_commits_set | old_base_commits_set)
         except Exception:
             return False
+
     filter_file_set = set(filter(is_accompany_file, file_set))
     blame = create_blamer(blame_dict)
     print(' get entities commits')

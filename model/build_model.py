@@ -663,7 +663,7 @@ class BuildModel:
 
     # get diff and extra useful aosp 'define' dep
     def detect_facade(self):
-        def concept_error(relation: Relation):
+        def concept_correct(relation: Relation):
             if relation.rel == Constant.define and self.entity_extensive[relation.src].not_aosp \
                     and not self.entity_extensive[relation.dest].not_aosp:
                 if self.entity_extensive[relation.src].refactor:
@@ -677,7 +677,7 @@ class BuildModel:
         for relation in self.relation_extensive:
             src = self.entity_extensive[relation.src]
             dest = self.entity_extensive[relation.dest]
-            if not concept_error(relation):
+            if not concept_correct(relation):
                 self.facade_relations_error.append(relation)
                 continue
             if src.not_aosp + dest.not_aosp == 1:

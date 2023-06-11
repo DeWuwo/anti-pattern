@@ -25,7 +25,7 @@ class FileJson:
                 entities_honor = honor['variables']
                 cells_honor = honor['cells']
                 entities_stat_honor = honor["entityNum"]
-            with open(file_android) as a:
+            with open(file_android, encoding='utf-8') as a:
                 android = json.load(a, strict=False)
                 entities_aosp = android['variables']
                 cells_aosp = android['cells']
