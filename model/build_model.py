@@ -581,8 +581,12 @@ class BuildModel:
     # graph differ
     def graph_differ(self, entity: Entity, search_name: str, search_param: str, search_file: str,
                      aosp_entity_set: defaultdict, extensive_entity_set: defaultdict):
-        aosp_list: List[int] = aosp_entity_set[entity.category][search_name][search_file]
-        extensive_list: List[int] = extensive_entity_set[entity.category][entity.qualifiedName][entity.file_path]
+        aosp_list_full: List[int] = aosp_entity_set[entity.category][search_name][search_file]
+        extensive_list_full: List[int] = extensive_entity_set[entity.category][entity.qualifiedName][entity.file_path]
+
+        aosp_list: List[int] = [ent for ent in aosp_list_full if self.entity_android[ent].entity_mapping == -1]
+        extensive_list: List[int] = [ent for ent in extensive_list_full if self.entity_extensive[ent].entity_mapping == -1]
+
         if not aosp_list:
             return -1
         elif len(aosp_list) == 1 and len(extensive_list) == 1:

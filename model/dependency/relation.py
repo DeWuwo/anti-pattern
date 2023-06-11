@@ -77,8 +77,13 @@ class Relation:
         if StringUtils.find_str_in_short_list(entities[self.src].qualifiedName, Constant.filter_list) or \
                 StringUtils.find_str_in_short_list(entities[self.dest].qualifiedName, Constant.filter_list):
             is_filter = 'true'
+        try:
+            loc = self.loc['startLine']
+        except KeyError:
+            loc = -1
         return {"facade": f"{entities[self.src].get_ownership()} -> {entities[self.dest].get_ownership()}",
                 "relation": self.rel,
+                "startLine": loc,
                 "src_category": entities[self.src].category,
                 "src_modifier": entities[self.src].accessible,
                 "src_entity": entities[self.src].qualifiedName,
