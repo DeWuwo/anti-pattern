@@ -11,6 +11,9 @@ class Constant:
     E_package: str = "Package"
     E_interface: str = "Interface"
     E_annotation: str = 'Annotation'
+    E_annotation_mem: str = 'Annotation Member'
+    E_enum: str = 'Enum'
+    E_enum_cnt: str = 'Enum Constant'
 
     # relation type
     contain: str = "Contain"
@@ -31,8 +34,12 @@ class Constant:
     R_aggregate: str = 'Aggregate'
     R_set: str = 'Set'
 
+    entities: List[str] = [E_package, E_file, E_class, E_interface, E_method, E_variable, E_annotation,
+                           E_annotation_mem, E_enum, E_enum_cnt]
+
     Relations: List[str] = [call, define, use, R_aggregate, typed, R_set, R_modify, R_annotate, param, reflect,
                             override, implement, inherit, R_cast, R_super_call, contain, R_import]
+    CoreRelation: List[str] = [R_aggregate, R_annotate, implement, inherit, call, param, reflect, override]
     relation_count_score = {
         call: 100,
         define: 200,
@@ -148,7 +155,9 @@ class Constant:
 
     ]
     # "packages/services/HnSystemService"
-    module_list = {"原子服务": ["packages/services/HnSystemService"]}
+    module_list = {}
+
+    module_files = []
 
     filter_list = ['android.util', 'android.os.Message', 'com.android.internal.logging',
                    'com.android.internal.os', 'android.os', 'com.android.server.utils',
@@ -169,6 +178,7 @@ class Constant:
     @staticmethod
     def load_module_files(file_path):
         module_name = "default"
+        total_list = []
         file_list = []
         with open(file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -182,7 +192,9 @@ class Constant:
                     module_name = line[1:].strip()
                 if '/' in line:
                     file_list.append(line.strip().strip('/'))
+                    total_list.append(line.strip().strip('/'))
             if file_list:
                 module = {module_name: file_list}
                 if module_name not in Constant.module_list.keys():
                     Constant.module_list.update(module)
+        Constant.module_files = total_list

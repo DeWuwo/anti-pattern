@@ -14,7 +14,7 @@ import sys
 import time
 
 if __name__ == '__main__':
-    Script('D:\\Honor\\source_code\\utils\\bin').run_honor_command()
+    Script('D:\\Honor\\source_code\\utils\\bin').run_command()
     lineage = [('lineage-16.0', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-16.0'),
                ('lineage-17.1', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-17.1'),
                ('lineage-18.1', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-18.1'),
@@ -34,6 +34,9 @@ if __name__ == '__main__':
         ('honor_r', 'D:\\Honor\\match_res\\Honor\\base\\honor_r'),
         ('honor_s', 'D:\\Honor\\match_res\\Honor\\base\\honor_s'),
     ]
+    # ins_a = IntrusiveCompare()
+    # ins_a.get_intrusive_commit(lineage + calyx + omni + aospa)
+
     # ins_a = IntrusiveCompare()
     # ins_a.start_analysis(2, 1, lineage_s=lineage[2:], omnirom_s=omni[2:], calyx=calyx, aospa=aospa, honor=honor)
     # lineage=lineage, omnirom=omni, calyx=calyx,aospa=aospa, honor=honor
@@ -68,9 +71,22 @@ if __name__ == '__main__':
     # 移动文件
     # method_file = ['']
     #
-    # result_data = ['D:\\Honor\\项目交付材料\\数据集核对',
+    # result_data = ['E:\\数据\\anti\\',
     #                ['coupling-patterns\\res.json']]
     #
     # for proj in aospa + calyx + lineage + omni:
     #     FileMove.file_move(proj[1], os.path.join(result_data[0], proj[0]),
     #                        result_data[1])
+
+    # 切面依赖模块统计
+    # FacadeFilter(aospa[2][1], 'facade.json',
+    #              [Constant.implement, Constant.inherit, Constant.R_aggregate]).get_module_stat_2(f'{aospa[2][0]}_facade_stat_class')
+    #
+    # FacadeFilter(aospa[2][1], 'facade.json',
+    #              [Constant.call]).get_module_stat_2(f'{aospa[2][0]}_facade_stat_method')
+    #
+    # FacadeFilter(lineage[2][1], 'facade.json',
+    #              [Constant.implement, Constant.inherit, Constant.R_aggregate]).get_module_stat_2(f'{lineage[2][0]}_facade_stat_class')
+    #
+    # FacadeFilter(lineage[2][1], 'facade.json',
+    #              [Constant.call]).get_module_stat_2(f'{lineage[2][0]}_facade_stat_method')

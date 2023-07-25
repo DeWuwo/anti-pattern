@@ -144,6 +144,20 @@ class BuildModel:
         self.owner_proc = []
         self.owner_proc_count = {}
 
+        print("load conflict entity")
+        conf_entities = {}
+        conf_path = f"{self.out_path}\\conf_entities"
+        for file in os.listdir(conf_path):
+            res = FileJson.read_base_json(f"{conf_path}/{file}")
+
+            for ent in res:
+                ent_name = ent['qualifiedName']
+                if ent_name not in conf_entities.keys():
+                    conf_entities.update({ent_name: {'time': set(), 'blocks': 0, 'loc': 0}})
+                conf_entities[ent_name]['time'].add(file)
+                conf_entities[ent_name]['blocks'] += 1
+                conf_entities[ent_name]['loc'] += ent['confLOC']
+
         # init entity
         print("start init model entities")
         aosp_entity_set = defaultdict(partial(defaultdict, partial(defaultdict, list)))
@@ -175,6 +189,8 @@ class BuildModel:
                     self.file_set_extension.add(entity.file_path)
                 elif entity.category == Constant.E_class and entity.name == Constant.anonymous_class:
                     entity.set_anonymous_class(True)
+                if entity.qualifiedName in conf_entities.keys():
+                    entity.set_conf_data(len(conf_entities['times']), conf_entities['blocks'], conf_entities['loc'])
         # init dep
         print("start init model deps")
         import_relation_set = defaultdict(int)
@@ -223,6 +239,7 @@ class BuildModel:
                     self.entity_extensive[relation.dest].qualifiedName)
             elif relation.rel == Constant.call:
                 self.entity_extensive[relation.dest].set_called_count()
+
         # data get -- blame
         print('start init owner from blame')
         all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities, refactor_list = self.get_blame_data()
@@ -537,6 +554,8 @@ class BuildModel:
                         ent.set_intrusive(1)
                 else:
                     ent.set_honor(1)
+            else:
+                ent.set_honor(0 if dep_diff_res > -1 else 1)
 
         # start detect ownership
         for entity in self.entity_extensive:
@@ -555,6 +574,9 @@ class BuildModel:
                 self.owner_proc[entity.id]['git_blame'] = 'any'
                 self.owner_proc_count['dep_coupling'] += 1
                 self.owner_proc_count['git_any'] += 1
+            elif StringUtils.find_str_in_short_list(entity.file_path, Constant.module_files):
+                entity.set_honor(1)
+
             elif detect_git_must_native(entity):
                 entity.set_honor(0)
                 # if entity.category == Constant.E_method and not entity.hidden:
@@ -585,7 +607,8 @@ class BuildModel:
         extensive_list_full: List[int] = extensive_entity_set[entity.category][entity.qualifiedName][entity.file_path]
 
         aosp_list: List[int] = [ent for ent in aosp_list_full if self.entity_android[ent].entity_mapping == -1]
-        extensive_list: List[int] = [ent for ent in extensive_list_full if self.entity_extensive[ent].entity_mapping == -1]
+        extensive_list: List[int] = [ent for ent in extensive_list_full if
+                                     self.entity_extensive[ent].entity_mapping == -1]
 
         if not aosp_list:
             return -1
@@ -958,10 +981,9 @@ class BuildModel:
                 relation_info[rel_type + '_n2e'] = 0
                 relation_info[rel_type + '_n2n'] = 0
             relation_info.update({'Define_e': 0, 'Parameter_e': 0})
-            entity_info = {
-                'Method': [0, 0], 'Interface': [0, 0], 'Class': [0, 0], 'Variable': [0, 0], 'Annotation': [0, 0],
-                'File': [0, 0], 'Package': [0, 0], 'Enum': [0, 0], 'Enum Constant': [0, 0],
-            }
+            entity_info = {}
+            for ent_cat in Constant.entities:
+                entity_info.update({ent_cat: [0, 0]})
 
             for relation in self.relation_extensive:
                 rel_src[relation.rel][relation.src] += 1

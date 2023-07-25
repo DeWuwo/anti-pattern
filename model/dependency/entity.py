@@ -43,6 +43,9 @@ class Entity:
     parent_class: str
     parent_interface: List[str]
     called: int
+    conflict_times: int
+    conflict_blocks: int
+    conflict_loc: int
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -76,6 +79,9 @@ class Entity:
         self.parent_interface = []
         self.called = 0
         self.is_anonymous_class = False
+        self.conflict_times = 0
+        self.conflict_blocks = 0
+        self.conflict_loc = 0
         try:
             self.start_line = args['location']['startLine']
             self.start_column = args['location']['startColumn']
@@ -153,7 +159,9 @@ class Entity:
         return self.category + "#" + self.qualifiedName
 
     def to_csv(self):
-        return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName}
+        return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName,
+                'conflict_times': self.conflict_times, 'conflict_blocks': self.conflict_blocks,
+                'conflict_loc': self.conflict_loc}
 
     def to_owner(self):
         return {'id': self.id, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp, 'isIntrusive': self.is_intrusive,
@@ -264,8 +272,8 @@ class Entity:
 
     def to_detail(self):
         temp = {
-                'ownership': self.get_ownership(), 'category': self.category,
-                'qualifiedName': self.qualifiedName, 'name': self.name, }
+            'ownership': self.get_ownership(), 'category': self.category,
+            'qualifiedName': self.qualifiedName, 'name': self.name, }
         if self.file_path != "":
             temp['File'] = self.file_path
         if self.start_line != -1:
@@ -355,6 +363,11 @@ class Entity:
 
     def set_anonymous_class(self, is_anonymous: bool):
         self.is_anonymous_class = is_anonymous
+
+    def set_conf_data(self, times, blocks, loc):
+        self.conflict_times = times
+        self.conflict_blocks = blocks
+        self.conflict_loc = loc
 
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package
