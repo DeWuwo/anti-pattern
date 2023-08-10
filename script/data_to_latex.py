@@ -8,6 +8,10 @@ class ToLatex:
     file_path: str
     relation_types: List[str]
 
+    """
+    该脚本用于读取表格数据并将其转化未 latex 所需文本，方便论文数据更新
+    具体内容格式可再调整
+    """
     def __init__(self, file_path: str):
         self.file_path = file_path
 

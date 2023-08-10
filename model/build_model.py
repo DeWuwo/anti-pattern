@@ -147,6 +147,8 @@ class BuildModel:
         print("load conflict entity")
         conf_entities = {}
         conf_path = f"{self.out_path}\\conf_entities"
+        if not os.path.exists(conf_path):
+            os.mkdir(conf_path)
         for file in os.listdir(conf_path):
             res = FileJson.read_base_json(f"{conf_path}/{file}")
 
@@ -1259,6 +1261,8 @@ def get_parent_anonymous_class(entity: int, entity_set: List[Entity]):
     temp = entity
     while entity_set[temp].name != Constant.anonymous_class:
         temp = get_parent_entity(temp, entity_set).id
+        print("\r", end="")
+        print('parent', temp, end="")
     return entity_set[temp]
 
 

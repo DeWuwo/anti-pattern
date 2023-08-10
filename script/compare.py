@@ -1,3 +1,9 @@
+"""
+多版本数据对比脚本，包括
+match_rel  依赖的匹配
+compare_facade 对比依赖切面
+compare_anti 对比反模式
+"""
 import os
 from typing import List
 from utils import FileJson, FileCSV
@@ -6,6 +12,14 @@ from utils import FileJson, FileCSV
 class Compare:
 
     def __init__(self, out_path, old_version, new_version, left, right):
+        """
+        共包含五个参数
+        out_path     结果输出路径
+        old_version  旧版本版本名，用于输出时构造输出文件名
+        new_version  新版本版本名，用于输出时构造输出文件名
+        left         旧版本<依赖切面， 反模式>结果路径
+        right        新版本<依赖切面， 反模式>结果路径
+        """
         self.out_path = os.path.join(out_path, f"{old_version}_{new_version}")
         self.left = left
         self.right = right
@@ -23,6 +37,11 @@ class Compare:
         return left, right, directions
 
     def compare_facade(self):
+        """
+        通过读取一个旧版本，一个新版本的依赖界面json结果，生成依赖的数量变化，包括三个维度
+        <保留> <新增> <移除>
+        同时会生成json文件记录对应 新增 或 移除 的切面详细内容
+        """
         left, right, directions = self.get_facade_res()
         compare_count = {}
         compare_res = {}
@@ -112,6 +131,11 @@ class Compare:
         }
 
     def compare_anti(self):
+        """
+        通过读取一个旧版本，一个新版本的反模式json结果，生成反模式的数量变化，包括三个维度
+        <保留> <新增> <移除>
+        同时会生成json文件记录对应 新增 或 移除 的切面详细内容
+        """
         left, right, patterns = self.get_anti_res()
         repeat_count: dict = {}
         del_exas: dict = {}

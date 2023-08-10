@@ -223,7 +223,7 @@ class Entity:
 
     @classmethod
     def get_csv_header(cls):
-        return ['id', 'category', 'qualifiedName']
+        return ['id', 'category', 'qualifiedName', 'conflict_loc', 'conflict_blocks', 'conflict_times']
 
     def get_ownership(self):
         if self.not_aosp == 1:

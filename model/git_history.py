@@ -117,7 +117,7 @@ class GitHistory:
                                        self.sorted_extensive_commits, self.ref_miner_data,
                                        self.get_path('unsure_resolution.json'), entity_possible_refactor, self.out_path)
             t2 = time.perf_counter()
-            print(f'ger entity refactor data time cost: {t2 - t1} s')
+            print(f'\n get entity refactor data time cost: {t2 - t1} s')
             return res
         except Exception as e:
             print(e)
