@@ -1,5 +1,6 @@
 from typing import List
 from utils.constant import Constant
+from model.dependency.degree import Degree
 
 
 class Entity:
@@ -46,6 +47,7 @@ class Entity:
     conflict_times: int
     conflict_blocks: int
     conflict_loc: int
+    degree: Degree
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -82,6 +84,7 @@ class Entity:
         self.conflict_times = 0
         self.conflict_blocks = 0
         self.conflict_loc = 0
+        self.degree = Degree()
         try:
             self.start_line = args['location']['startLine']
             self.start_column = args['location']['startColumn']
@@ -240,7 +243,7 @@ class Entity:
                 'old_aosp': self.old_aosp, 'isIntrusive': self.is_intrusive,
                 'ownership': self.get_ownership(), 'entity_mapping': self.entity_mapping, 'category': self.category,
                 'qualifiedName': self.qualifiedName, 'called_times': self.called, 'name': self.name,
-                'commits_count': self.commits_count}
+                'commits_count': self.commits_count, 'degree': self.degree.__dict__}
         if self.file_path != "":
             temp['File'] = self.file_path
         if self.package_name != "":
@@ -368,6 +371,9 @@ class Entity:
         self.conflict_times = times
         self.conflict_blocks = blocks
         self.conflict_loc = loc
+
+    def set_degree(self, **kwargs):
+        self.degree.handle_set_degree(**kwargs)
 
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package

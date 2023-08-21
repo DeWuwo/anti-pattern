@@ -318,13 +318,13 @@ def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str
     print(' get entities commits')
     if os.path.exists(f"{out_path}/ownership.csv"):
         print(' entities commits existed')
-        for ent in ents:
-            if ent.path not in filter_file_set:
-                continue
-            ent_commits = blame(ent.path, ent.start_line, ent.end_line)
-            ownership_data.append(EntOwnership(ent, ent_commits))
-        with open(f"{out_path}/ownership.csv", "w", encoding="utf-8", newline="") as f:
-            dump_ownership(ownership_data, f)
+        # for ent in ents:
+        #     if ent.path not in filter_file_set:
+        #         continue
+        #     ent_commits = blame(ent.path, ent.start_line, ent.end_line)
+        #     ownership_data.append(EntOwnership(ent, ent_commits))
+        # with open(f"{out_path}/ownership.csv", "w", encoding="utf-8", newline="") as f:
+        #     dump_ownership(ownership_data, f)
     else:
         for ent in ents:
             if ent.path not in filter_file_set:

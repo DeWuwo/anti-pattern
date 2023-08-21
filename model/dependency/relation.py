@@ -67,6 +67,9 @@ class Relation:
         return {"src": entities[self.src].toJson(), "values": relation,
                 "dest": entities[self.dest].toJson()}
 
+    def handle_to_simple_json(self):
+        return {"src": self.src, "rel_type": self.rel, "dest": self.dest}
+
     def to_simple_detail_json(self, entities: List[Entity]):
         relation = {'type': self.rel}
         return {"src": entities[self.src].to_detail(), "values": relation,

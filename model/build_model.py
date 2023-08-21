@@ -5,6 +5,7 @@ from collections import defaultdict
 from functools import partial
 from model.dependency.entity import Entity, set_package, set_parameters
 from model.dependency.relation import Relation
+from model.dependency.graph import Graph
 from model.git_history import GitHistory
 from model.blamer.entity_tracer import BaseState
 from utils import Constant, FileCSV, FileJson, Compare, StringUtils
@@ -241,6 +242,11 @@ class BuildModel:
                     self.entity_extensive[relation.dest].qualifiedName)
             elif relation.rel == Constant.call:
                 self.entity_extensive[relation.dest].set_called_count()
+
+        # 生成依赖图
+        graph = Graph(self.entity_extensive, self.relation_extensive)
+        for ent in self.entity_extensive:
+            graph.get_analysis(ent)
 
         # data get -- blame
         print('start init owner from blame')
