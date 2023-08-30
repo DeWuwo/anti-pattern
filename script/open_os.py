@@ -77,8 +77,8 @@ class OpenOS:
         ]
 
     def get_all_os(self):
-        # return self.test
-        return self.LineageOS + self.CalyxOS + self.OmniROM + self.AOSPA
+        return self.test
+        # return self.LineageOS + self.CalyxOS + self.OmniROM + self.AOSPA
 
     def get_path(self, os_name: str, os_version: str, pkg: str, os_commit, aosp_commit: str, os_hidden: str,
                  aosp_hidden, aosp_base_version: str):

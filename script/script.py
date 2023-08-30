@@ -15,7 +15,7 @@ class Script:
         self.ref_path = ref_path
         self.proj_path = 'D:\\Honor\\realization\\section\\base-enre-out\\'
         self.oss = OpenOS()
-        self.dep_path = 'D:\\Honor\\source_code\\enre_java_1.2.4.jar'
+        self.dep_path = 'D:\\Honor\\source_code\\enre_java_honor_0715.jar'
 
     def get_command(self, aosp_code_path, assi_code_path, aosp_dep_path, assi_dep_path, base_aosp_dep_path, aosp_commit,
                     assi_commit, aosp_base_commit, out_path, aosp_hidden, assi_hidden):
@@ -51,8 +51,8 @@ class Script:
         # if os.path.exists(os.path.join(out_path, 'mc', 'gitlog')):
         #     git_log_fetch_commands = []
 
-        # if os.path.exists(aosp_dep_path) and os.path.exists(assi_dep_path):
-        #     dep_commands = []
+        if os.path.exists(aosp_dep_path) and os.path.exists(assi_dep_path):
+            dep_commands = []
 
         detect_commands: List[str] = [
             f'python main.py -ra {aosp_code_path} -re {assi_code_path} -a {aosp_dep_path} -e {assi_dep_path} -ref {self.ref_path} -o {out_path}'
