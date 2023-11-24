@@ -1,24 +1,30 @@
 import os
-
+from time import time
 from typing import List
 from script.open_os import OpenOS
-from utils import Command
+from utils import Command, FileCommon, FileCSV
+from baseline.compare import Compare
 
 
 class Script:
     ref_path: str
     proj_path: str
+    gum_path: str
     oss: OpenOS
     dep_path: str
+    out_path: str
 
     def __init__(self, ref_path):
         self.ref_path = ref_path
         self.proj_path = 'D:\\Honor\\realization\\section\\base-enre-out\\'
         self.oss = OpenOS()
         self.dep_path = 'D:\\Honor\\source_code\\enre_java_honor_0715.jar'
+        self.gum_path = 'D:\\Honor\\source_code\\gumtree.jar'
+        self.gum_out = "D:\\Honor\\gumdiff"
 
     def get_command(self, aosp_code_path, assi_code_path, aosp_dep_path, assi_dep_path, base_aosp_dep_path, aosp_commit,
                     assi_commit, aosp_base_commit, out_path, aosp_hidden, assi_hidden):
+        self.out_path = out_path
         branch_checkout_commands: List[str] = [
             f'git -C {aosp_code_path} clean -d -fx',
             f'git -C {aosp_code_path} checkout .',
@@ -59,21 +65,46 @@ class Script:
         ]
         return branch_checkout_commands, dep_commands, detect_commands
 
+    def run_gum_diff(self, aosp_code_path, assi_code_path, aosp_dep_path, assi_dep_path, base_aosp_dep_path,
+                     aosp_commit,
+                     assi_commit, aosp_base_commit, out_path, aosp_hidden, assi_hidden):
+        gum_commands: List[str] = []
+        pkg = ""
+        os.makedirs(os.path.join(out_path, 'gumdiff'), exist_ok=True)
+        for file in FileCommon.get_files_list(os.path.join(aosp_code_path, pkg), ['java']):
+            up_path = os.path.join(aosp_code_path, pkg, file).replace('/', '\\')
+            down_path = os.path.join(assi_code_path, pkg, file).replace('/', '\\')
+            out = os.path.join(out_path, 'gumdiff',
+                               os.path.join(pkg, file.replace('.java', '.json')).replace("\\", '_').replace(
+                                   "/", '_'))
+            gum_commands.append(
+                f"java -jar {self.gum_path} textdiff -f json {up_path} {down_path} > {out}", )
+        return gum_commands
+
     def run_command(self):
         for item in self.oss.get_all_os():
-            branch_checkout_commands, dep_commands, detect_commands = self.get_command(*self.oss.get_path(*item))
+            branch_checkout_commands, dep_commands, detect_commands = self.get_command(
+                *self.oss.get_path(*item))
             for cmd in branch_checkout_commands:
                 print(cmd)
                 Command.command_run(cmd)
             # for cmd in git_log_fetch_commands:
             #     print(cmd)
             #     Command.command_run(cmd)
-            for cmd in dep_commands:
-                print(cmd)
+            # for cmd in dep_commands:
+            #     print(cmd)
+            #     Command.command_run(cmd)
+            # for cmd in detect_commands:
+            #     print(cmd)
+            #     Command.command_run(cmd)
+            gum_diff_cmd = self.run_gum_diff(*self.oss.get_path(*item))
+            start_time = time()
+            for cmd in gum_diff_cmd:
                 Command.command_run(cmd)
-            for cmd in detect_commands:
-                print(cmd)
-                Command.command_run(cmd)
+            end_time = time()
+            FileCSV.write_dict_to_csv('D\\Honor\\gumdiff', 'runtime',
+                                      [{'count': len(gum_diff_cmd), 'time': end_time - start_time}], 'a')
+            Compare().compare_file_gumtree(self.out_path)
 
     def get_honor_command(self):
         commands: List[str] = []
@@ -114,7 +145,6 @@ class Script:
         commands = self.get_honor_command()
         for cmd in commands:
             Command.command_run(cmd)
-
 
     def get_dep(self):
         aosp_code_path = 'D:\\Honor\\source_code\\android\\base'

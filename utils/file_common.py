@@ -19,8 +19,17 @@ class FileCommon:
         except Exception as e:
             raise e
 
+    @classmethod
+    def get_files_list(cls, dir_path: str, base_type: List[str]):
+        target = dir_path
+        file_list = []
+        for parent, dirs, files in os.walk(target):
+            for f in files:
+                if f.split('.')[-1] in base_type:
+                    file_list.append(os.path.join(parent, f).split(dir_path, 1)[1].strip('\\').strip('/'))
+        return file_list
+
 
 if __name__ == '__main__':
-    FileCSV.base_write_to_csv('D:\\Honor\\match_res\\LineageOS\\base\\lineage-18.1', 'sdk_api',
-                              FileCommon.read_from_file_by_line(
-                                  'D:\\Honor\\source_code\\LineageOS\\base\\api\\current.txt'))
+   for file in FileCommon.get_files_list('D:\\Honor\\source_code\\android\\base\\services\\core\\java\\com\\android\\server\\pm', ['java']):
+       print(file)

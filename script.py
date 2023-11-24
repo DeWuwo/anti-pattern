@@ -71,9 +71,9 @@ if __name__ == '__main__':
     # 移动文件
     # method_file = ['']
     #
-    # result_data = ['E:\\数据\\anti\\',
-    #                ['coupling-patterns\\res.json']]
-    #
+    result_data = ['E:\\数据\\anti_data\\',
+                   ['facade.json']]
+
     # for proj in aospa + calyx + lineage + omni:
     #     FileMove.file_move(proj[1], os.path.join(result_data[0], proj[0]),
     #                        result_data[1])

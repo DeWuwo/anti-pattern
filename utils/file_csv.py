@@ -105,16 +105,19 @@ class FileCSV:
                 writer.writerow(row)
 
     @classmethod
-    def write_dict_to_csv(cls, out_path: str, name: str, data: List[dict], mode: str):
+    def write_dict_to_csv(cls, out_path: str, name: str, data: List[dict], mode: str, write_header=True):
         print(f'start write {name}')
         os.makedirs(out_path, exist_ok=True)
         file_path = os.path.join(out_path, name + '.csv')
         headers = []
         if data:
             headers = [item for item in data[0].keys()]
+        if os.path.exists(file_path):
+            write_header = False
         with open(file_path, mode, newline='') as f:
             f_writer = csv.DictWriter(f, headers)
-            f_writer.writeheader()
+            if write_header:
+                f_writer.writeheader()
             f_writer.writerows(data)
         print(f'write {name} success')
 
