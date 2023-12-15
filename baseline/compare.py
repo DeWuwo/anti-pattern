@@ -19,7 +19,7 @@ class Compare:
         FileCSV.write_dict_to_csv(out_path, 'compare_gum', [
             {'intersection': len(same_files), 'gum_diff': len(left_files), 'our': len(right_files), "left": left_files,
              "right": right_files}], 'w')
-        FileCSV.write_dict_to_csv('D\\Honor\\gumdiff', 'compare_gum', [
+        FileCSV.write_dict_to_csv('E:\\Graduate\\baseline\\gumdiff', 'compare_gum', [
             {'intersection': len(same_files), 'gum_diff': len(left_files), 'our': len(right_files)}], 'a')
 
 

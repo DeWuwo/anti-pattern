@@ -14,7 +14,7 @@ import sys
 import time
 
 if __name__ == '__main__':
-    Script('D:\\Honor\\source_code\\utils\\bin').run_command()
+    Script('E:\\Graduate\\RefactoringMine\\utils\\bin').run_command()
     lineage = [('lineage-16.0', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-16.0'),
                ('lineage-17.1', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-17.1'),
                ('lineage-18.1', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-18.1'),

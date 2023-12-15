@@ -86,6 +86,8 @@ class BuildModel:
 
     owner_proc: List[Dict]
     owner_proc_count: dict
+    aosp_entity_set: defaultdict
+    extensive_entity_set: defaultdict
 
     def __init__(self, entities_extensive, cells_extensive, statistics_extensive: Dict, entities_android, cells_android,
                  statistics_android: Dict, git_history: GitHistory, out_path: str):
@@ -147,7 +149,7 @@ class BuildModel:
 
         print("load conflict entity")
         conf_entities = {}
-        conf_path = f"{self.out_path}\\conf_entities"
+        conf_path = os.path.join(self.out_path, "conf_entities")
         if not os.path.exists(conf_path):
             os.mkdir(conf_path)
         for file in os.listdir(conf_path):
@@ -163,8 +165,8 @@ class BuildModel:
 
         # init entity
         print("start init model entities")
-        aosp_entity_set = defaultdict(partial(defaultdict, partial(defaultdict, list)))
-        extensive_entity_set = defaultdict(partial(defaultdict, partial(defaultdict, list)))
+        self.aosp_entity_set = defaultdict(partial(defaultdict, partial(defaultdict, list)))
+        self.extensive_entity_set = defaultdict(partial(defaultdict, partial(defaultdict, list)))
         # aosp entities
         print('     get aosp entities')
         for item in entities_android:
@@ -172,7 +174,7 @@ class BuildModel:
                 entity = Entity(**item)
                 set_parameters(entity, self.entity_android)
                 self.entity_android.append(entity)
-                aosp_entity_set[entity.category][entity.qualifiedName][entity.file_path].append(entity.id)
+                self.aosp_entity_set[entity.category][entity.qualifiedName][entity.file_path].append(entity.id)
                 if entity.category == Constant.E_file:
                     self.file_set_android.add(entity.file_path)
                 elif entity.category == Constant.E_class and entity.name == Constant.anonymous_class:
@@ -186,7 +188,7 @@ class BuildModel:
                 set_package(entity, self.entity_extensive)
                 set_parameters(entity, self.entity_extensive)
                 self.entity_extensive.append(entity)
-                extensive_entity_set[entity.category][entity.qualifiedName][entity.file_path].append(entity.id)
+                self.extensive_entity_set[entity.category][entity.qualifiedName][entity.file_path].append(entity.id)
                 self.owner_proc.append(entity.to_csv())
                 if entity.category == Constant.E_file:
                     self.file_set_extension.add(entity.file_path)
@@ -262,7 +264,7 @@ class BuildModel:
         print('get ownership')
         # first get entity owner
         print('     get entity owner')
-        self.get_entity_ownership(aosp_entity_set, extensive_entity_set, all_entities, all_native_entities,
+        self.get_entity_ownership(all_entities, all_native_entities,
                                   old_native_entities, old_update_entities, intrusive_entities,
                                   old_intrusive_entities, pure_accompany_entities, refactor_list,
                                   temp_define, temp_param)
@@ -332,7 +334,7 @@ class BuildModel:
         return self.query_map[rel][not_aosp][src][dest]
 
     # diff & blame
-    def get_entity_ownership(self, aosp_entity_map, extensive_entity_map, all_entities: dict, all_native_entities: dict,
+    def get_entity_ownership(self, all_entities: dict, all_native_entities: dict,
                              old_native_entities: dict, old_update_entities: dict, intrusive_entities: dict,
                              old_intrusive_entities: dict, pure_accompany_entities: dict,
                              refactor_list: Dict[int, list],
@@ -486,8 +488,7 @@ class BuildModel:
 
                 # 对扩展重构
                 dep_diff_res = self.graph_differ(ent, source_state.longname(), source_state.get_param(),
-                                                 source_state.file_path,
-                                                 aosp_entity_map, extensive_entity_map)
+                                                 source_state.file_path)
                 if dep_diff_res == -1 and ent.id in keys_pure_accompany_entities:
                     ent.set_honor(1)
                     self.owner_proc[ent.id]['dep_diff'] = '1'
@@ -543,8 +544,7 @@ class BuildModel:
                 self.owner_proc_count['parent_ref'] += 1
                 return
 
-            dep_diff_res = self.graph_differ(ent, source_name, source_param, source_file, aosp_entity_map,
-                                             extensive_entity_map)
+            dep_diff_res = self.graph_differ(ent, source_name, source_param, source_file)
             detect_count(ent, dep_diff_res)
             if ent.id in keys_old_native_entities or ent.id in keys_old_update_entities:
                 ent.set_honor(0)
@@ -569,8 +569,8 @@ class BuildModel:
         for entity in self.entity_extensive:
             self.owner_proc[entity.id]['refactor'] = 'null'
             if entity.above_file_level():
-                owner = 0 if self.graph_differ(entity, entity.qualifiedName, entity.parameter_names, entity.file_path,
-                                               aosp_entity_map, extensive_entity_map) >= 0 else 1
+                owner = 0 if self.graph_differ(entity, entity.qualifiedName, entity.parameter_names,
+                                               entity.file_path) >= 0 else 1
                 entity.set_honor(owner)
                 self.owner_proc[entity.id]['dep_diff'] = 'ignore'
                 self.owner_proc[entity.id]['git_blame'] = 'ignore'
@@ -589,14 +589,117 @@ class BuildModel:
                 entity.set_honor(0)
                 # if entity.category == Constant.E_method and not entity.hidden:
                 #     entity.set_hidden(['hidden'])
-                self.graph_differ(entity, entity.qualifiedName, entity.parameter_names, entity.file_path,
-                                  aosp_entity_map, extensive_entity_map)
+                self.graph_differ(entity, entity.qualifiedName, entity.parameter_names, entity.file_path)
                 self.owner_proc[entity.id]['dep_diff'] = 'any'
                 self.owner_proc[entity.id]['git_blame'] = '000'
                 self.owner_proc_count['dep_any'] += 1
                 self.owner_proc_count['git_pure_native'] += 1
             else:
                 detect_ownership(entity, refactor_list, entity.qualifiedName, entity.parameter_names, entity.file_path)
+
+    def struct_detect_ownership(self, all_entities: dict,
+                                all_native_entities: dict,
+                                old_native_entities: dict, old_update_entities: dict, intrusive_entities: dict,
+                                old_intrusive_entities: dict, pure_accompany_entities: dict):
+        # start detect ownership
+        keys_all_entities = all_entities.keys()
+        keys_intrusive_entities = intrusive_entities.keys()
+        keys_old_intrusive_entities = old_intrusive_entities.keys()
+        keys_pure_accompany_entities = pure_accompany_entities.keys()
+        keys_old_native_entities = old_native_entities.keys()
+        keys_old_update_entities = old_update_entities.keys()
+        keys_all_native_entities = all_native_entities.keys()
+
+
+
+
+        mapping_failed_list: List[int] = []
+
+        for ent in self.entity_extensive:
+            if ent.above_file_level():
+                owner = 0 if self.struct_info_mapping(ent) >= 0 else 1
+                ent.set_honor(owner)
+            # 解耦仓实体
+            elif ent.is_decoupling > 1:
+                ent.set_honor(1)
+            elif StringUtils.find_str_in_short_list(ent.file_path, Constant.module_files):
+                ent.set_honor(1)
+            elif ent.id not in keys_all_entities:
+                ent.set_honor(0)
+                # if entity.category == Constant.E_method and not entity.hidden:
+                #     entity.set_hidden(['hidden'])
+                owner = self.struct_info_mapping(ent)
+                if owner < 0:
+                    # todo: 可能发生外部重构
+                    pass
+            else:
+                self.strict_mapping_entity_get_ownership(ent, mapping_failed_list)
+        for ent in mapping_failed_list:
+            # 粗略检测
+            pass
+
+    def struct_info_mapping(self, entity: Entity):
+        aosp_list_full: List[int] = self.aosp_entity_set[entity.category][entity.qualifiedName][entity.file_path]
+        extensive_list_full: List[int] = self.extensive_entity_set[entity.category][entity.qualifiedName][
+            entity.file_path]
+
+        aosp_list: List[int] = [ent for ent in aosp_list_full if self.entity_android[ent].entity_mapping == -1]
+        extensive_list: List[int] = [ent for ent in extensive_list_full if
+                                     self.entity_extensive[ent].entity_mapping == -1]
+        aosp_list.sort()
+        extensive_list.sort()
+
+        if not aosp_list:
+            return -1
+        elif len(aosp_list) == len(extensive_list):
+            for aosp_ent, extensive_ent in zip(aosp_list, extensive_list):
+                self.get_entity_map(self.entity_android[aosp_ent], self.entity_extensive[extensive_ent])
+            return entity.entity_mapping
+        else:
+            """
+            /* 基础结构信息匹配，基于实体类型划分匹配规则，主要是方法的匹配
+            """
+            if entity.category == Constant.E_class and entity.anonymous != -1:
+                for item_id in aosp_list:
+                    if self.entity_android[item_id].raw_type == entity.raw_type and \
+                            self.entity_android[self.entity_android[item_id].anonymous].name == \
+                            self.entity_extensive[entity.anonymous].name:
+                        self.get_entity_map(entity, self.entity_android[item_id])
+                        return item_id
+            elif entity.category == Constant.E_class or entity.category == Constant.E_interface:
+                for item_id in aosp_list:
+                    if self.entity_android[item_id].abstract == entity.abstract:
+                        self.get_entity_map(entity, self.entity_android[item_id])
+                        return item_id
+            elif Constant.anonymous_class in entity.qualifiedName:
+                map_parent_anonymous_class = get_parent_anonymous_class(entity.id, self.entity_extensive).id
+                for item_id in aosp_list:
+                    aosp_parent_anonymous_class = get_parent_anonymous_class(item_id,
+                                                                             self.entity_android).entity_mapping
+                    if aosp_parent_anonymous_class == map_parent_anonymous_class:
+                        self.get_entity_map(entity, self.entity_android[item_id])
+                        return item_id
+            elif entity.category == Constant.E_method or entity.category == Constant.E_variable:
+                for item_id in aosp_list:
+                    if self.entity_android[item_id].parameter_names == entity.parameter_names and \
+                            (not (entity.not_aosp == 0 and entity.is_intrusive == 0) or
+                             (self.entity_android[item_id].parameter_types == entity.parameter_types)):
+                        self.get_entity_map(entity, self.entity_android[item_id])
+                        return item_id
+            else:
+                return aosp_list[0]
+            return -1
+
+    def strict_mapping_entity_get_ownership(self, ent: Entity, mapping_failed_list: List[int]):
+        owner = self.struct_info_mapping(ent)
+        if owner > -1:
+            # 基于历史信息获取归属方
+            pass
+        else:
+            mapping_failed_list.append(ent.id)
+
+    def rough_mapping_entity_get_ownership(self, ent: Entity, mapping_failed_list: List[int]):
+        pass
 
     def load_entity_ownership_from_catch(self):
         owners = FileCSV.read_from_file_csv(os.path.join(self.out_path, 'final_ownership.csv'), True)
@@ -609,10 +712,10 @@ class BuildModel:
                 self.get_entity_map(self.entity_extensive[int(owner[0])], self.entity_android[int(owner[7])])
 
     # graph differ
-    def graph_differ(self, entity: Entity, search_name: str, search_param: str, search_file: str,
-                     aosp_entity_set: defaultdict, extensive_entity_set: defaultdict):
-        aosp_list_full: List[int] = aosp_entity_set[entity.category][search_name][search_file]
-        extensive_list_full: List[int] = extensive_entity_set[entity.category][entity.qualifiedName][entity.file_path]
+    def graph_differ(self, entity: Entity, search_name: str, search_param: str, search_file: str):
+        aosp_list_full: List[int] = self.aosp_entity_set[entity.category][search_name][search_file]
+        extensive_list_full: List[int] = self.extensive_entity_set[entity.category][entity.qualifiedName][
+            entity.file_path]
 
         aosp_list: List[int] = [ent for ent in aosp_list_full if self.entity_android[ent].entity_mapping == -1]
         extensive_list: List[int] = [ent for ent in extensive_list_full if

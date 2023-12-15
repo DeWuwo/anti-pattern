@@ -58,18 +58,25 @@ class Script:
         #     git_log_fetch_commands = []
 
         if os.path.exists(aosp_dep_path) and os.path.exists(assi_dep_path):
-            dep_commands = []
+            dep_commands = [
+                f'java -Xmx20g -jar {self.ref_path} -nc {aosp_code_path} {aosp_commit} {assi_code_path} {assi_commit}']
+
+        ref_util = os.path.join(self.ref_path, 'RefactoringMiner')
+        ref_out = os.path.join(out_path, 'refactor.json')
+        ref_commands: List[str] = [
+            f'{ref_util} -nc {aosp_code_path} {aosp_commit} {assi_code_path} {assi_commit} -json {ref_out}'
+        ]
 
         detect_commands: List[str] = [
             f'python main.py -ra {aosp_code_path} -re {assi_code_path} -a {aosp_dep_path} -e {assi_dep_path} -ref {self.ref_path} -o {out_path}'
         ]
-        return branch_checkout_commands, dep_commands, detect_commands
+        return branch_checkout_commands, dep_commands, detect_commands, ref_commands
 
     def run_gum_diff(self, aosp_code_path, assi_code_path, aosp_dep_path, assi_dep_path, base_aosp_dep_path,
                      aosp_commit,
                      assi_commit, aosp_base_commit, out_path, aosp_hidden, assi_hidden):
         gum_commands: List[str] = []
-        pkg = ""
+        pkg = r"services\core\java\com\android\server\pm"
         os.makedirs(os.path.join(out_path, 'gumdiff'), exist_ok=True)
         for file in FileCommon.get_files_list(os.path.join(aosp_code_path, pkg), ['java']):
             up_path = os.path.join(aosp_code_path, pkg, file).replace('/', '\\')
@@ -83,7 +90,7 @@ class Script:
 
     def run_command(self):
         for item in self.oss.get_all_os():
-            branch_checkout_commands, dep_commands, detect_commands = self.get_command(
+            branch_checkout_commands, dep_commands, detect_commands, ref_commands = self.get_command(
                 *self.oss.get_path(*item))
             for cmd in branch_checkout_commands:
                 print(cmd)
@@ -102,10 +109,16 @@ class Script:
             for cmd in gum_diff_cmd:
                 Command.command_run(cmd)
             end_time = time()
-            FileCSV.write_dict_to_csv('D\\Honor\\gumdiff', 'runtime',
+            FileCSV.write_dict_to_csv('E:\\Graduate\\baseline\\gumdiff', 'runtime',
                                       [{'count': len(gum_diff_cmd), 'time': end_time - start_time}], 'a')
             Compare().compare_file_gumtree(self.out_path)
-
+            # 生成ref
+            start_time = time()
+            for cmd in ref_commands:
+                Command.command_run(cmd)
+            end_time = time()
+            FileCSV.write_dict_to_csv('E:\\Graduate\\baseline\\RefactoringMiner', 'runtime',
+                                      [{'time': end_time - start_time}], 'a')
     def get_honor_command(self):
         commands: List[str] = []
         aosp_code_path = 'D:\\HONOR_code\\RAOSP\\base'
