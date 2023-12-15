@@ -112,8 +112,8 @@ class FileCSV:
         headers = []
         if data:
             headers = [item for item in data[0].keys()]
-        if os.path.exists(file_path):
-            write_header = False
+        if not write_header and not os.path.exists(file_path):
+            write_header = True
         with open(file_path, mode, newline='') as f:
             f_writer = csv.DictWriter(f, headers)
             if write_header:
