@@ -84,6 +84,32 @@ def resolve_unsure(repo_path: Path, not_sure_line: OwnerShipData, sorted_commits
     return related_moves
 
 
+def resolve_unsure_new(repo_path: Path, not_sure_line: OwnerShipData, sorted_commits: Dict[str, int],
+                       refactor_data: Dict[str, List[dict]], flag: bool):
+    unsure_longname = not_sure_line["Entity"]
+    unsure_filepath = not_sure_line["file path"]
+    unsure_param = not_sure_line["param_names"]
+    unsure_category = not_sure_line["category"]
+    related_moves = []
+    if flag:
+        unsure_id = not_sure_line['id']
+        related_moves = search_refactoring_by_id(unsure_category, unsure_longname, unsure_param,
+                                                 unsure_filepath, refactor_data[unsure_id])
+    else:
+        try:
+            refactor_info = refactor_data[list(refactor_data.keys())[0]]
+        except KeyError:
+            refactor_info = {}
+        if refactor_info:
+            related_moves = search_refactoring(unsure_category, unsure_longname, unsure_param, unsure_filepath,
+                                               refactor_info, str(list(refactor_data.keys())[0]))
+        else:
+            related_moves = []
+    if not related_moves:
+        return None
+    return related_moves
+
+
 RefactorData = Dict[str, List[dict]]
 
 
@@ -167,8 +193,9 @@ def load_entity_refactor(repo_path: str, refactor_path: str, sorted_extensive_co
     # unsure_ownership = unsure_ownership
     refactor_cache = False
     if unsure_path.exists():
-        refactor_data = load_refactor_data_id(unsure_path)
-        refactor_cache = True
+        # refactor_data = load_refactor_data_id(unsure_path)
+        refactor_data = load_refactor_data(refactor_path, ref_data)
+        # refactor_cache = True
     else:
         refactor_data = load_refactor_data(refactor_path, ref_data)
     # not_sure_rows = load_not_sure_lines(Path(unsure_ownership))
@@ -190,7 +217,7 @@ def load_entity_refactor(repo_path: str, refactor_path: str, sorted_extensive_co
             print("\r", end="")
             print(f"       Refactor detect: {i}/{total}", end="")
             sys.stdout.flush()
-            moves = resolve_unsure(repo_path, row, sorted_commits, refactor_data, refactor_cache)
+            moves = resolve_unsure_new(repo_path, row, sorted_commits, refactor_data, refactor_cache)
             if moves:
                 row_dict = dict()
                 for k, v in row.items():
@@ -205,7 +232,7 @@ def load_entity_refactor(repo_path: str, refactor_path: str, sorted_extensive_co
         return move_list_write, move_list
 
     ref_ent_write, ref_ent = resolve_refactor_to_entity(not_sure_rows)
-    with open(f"{out_path}/unsure_resolution.json", "w") as file:
+    with open(f"{out_path}/refactor_entities.json", "w") as file:
         json.dump(ref_ent_write, file, indent=4)
     return ref_ent
 

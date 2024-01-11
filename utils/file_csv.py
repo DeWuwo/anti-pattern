@@ -25,7 +25,7 @@ class FileCSV:
             try:
                 res = []
                 reader = csv.DictReader(f)
-                next(reader)
+                # next(reader)
                 for line in reader:
                     res.append(line)
                 return res

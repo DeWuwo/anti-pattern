@@ -6,7 +6,7 @@ from functools import partial
 from model.dependency.entity import Entity, set_package, set_parameters
 from model.dependency.relation import Relation
 from model.dependency.graph import Graph
-from model.git_history import GitHistory
+from model.generate_history import GenerateHistory
 from model.blamer.entity_tracer import BaseState
 from utils import Constant, FileCSV, FileJson, Compare, StringUtils
 
@@ -36,7 +36,7 @@ MoveClassRefactoring = [
 
 class BuildModel:
     # blame data
-    git_history: GitHistory
+    generate_history: GenerateHistory
     # base info
     entity_android: List[Entity]
     entity_extensive: List[Entity]
@@ -90,9 +90,9 @@ class BuildModel:
     extensive_entity_set: defaultdict
 
     def __init__(self, entities_extensive, cells_extensive, statistics_extensive: Dict, entities_android, cells_android,
-                 statistics_android: Dict, git_history: GitHistory, out_path: str):
+                 statistics_android: Dict, generate_history: GenerateHistory, out_path: str):
         # first init
-        self.git_history = git_history
+        self.generate_history = generate_history
         self.out_path = out_path
         self.entity_android = []
         self.entity_extensive = []
@@ -286,14 +286,14 @@ class BuildModel:
 
     # Get data of blame
     def get_blame_data(self):
-        all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities = self.git_history.divide_owner()
+        all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities = self.generate_history.divide_owner()
 
         print('get possible refactor entity')
         possible_refactor_entities = []
         possible_refactor_entities.extend(intrusive_entities.values())
         possible_refactor_entities.extend(old_intrusive_entities.values())
         # possible_refactor_entities.extend(pure_accompany_entities.values())
-        refactor_list = self.git_history.load_refactor_entity(possible_refactor_entities)
+        refactor_list = self.generate_history.load_refactor_entity(possible_refactor_entities)
         return all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities, refactor_list
 
     # get owner string '01', '10', '11' or '00'
@@ -609,9 +609,6 @@ class BuildModel:
         keys_old_native_entities = old_native_entities.keys()
         keys_old_update_entities = old_update_entities.keys()
         keys_all_native_entities = all_native_entities.keys()
-
-
-
 
         mapping_failed_list: List[int] = []
 
@@ -974,8 +971,9 @@ class BuildModel:
                             file_total_count[extensive_entity.file_path]['class_var_modify'] += 1
 
             for rel in self.import_extensive_relation:
-                total_count['import_extensive'] += 1
-                file_total_count[self.entity_extensive[rel.src].file_path]['import_extensive'] += 1
+                if self.entity_extensive[rel.src].not_aosp == 0:
+                    total_count['import_extensive'] += 1
+                    file_total_count[self.entity_extensive[rel.src].file_path]['import_extensive'] += 1
 
             for entity_id in self.inner_extensive_class_entities:
                 total_count['inner_extensive_class'] += 1

@@ -95,7 +95,8 @@ class Constant:
     HD_greylist_max = re.compile('greylist-max-(.*)')
     HD_whitelist: str = 'whitelist'
     HD_greylist_max_label = 'greylist-max-'
-    HD_greylist_max_list: List[str] = ['greylist-max-o', 'greylist-max-p']
+    HD_greylist_max_list: List[str] = ['greylist-max-o', 'greylist-max-p', 'greylist-max-q', 'greylist-max-r',
+                                       'greylist-max-s', 'greylist-max-t', 'greylist-max-u']
 
     HD_hidden = 'hidden'
 
