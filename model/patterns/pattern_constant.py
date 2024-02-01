@@ -146,8 +146,10 @@ class PatternCons:
     pattern_access = PatternRules('AccessibilityModify', {
         'native_class_access_modify': {
             'aggre': [[], []],
-            'metrics': {MetricCons.Me_native_used_frequency: [0, 1], MetricCons.Me_stability: [0, 1]},
-            'metrics_filter': [{MetricCons.Me_native_used_frequency: [0, 1]}],
+            'metrics': {MetricCons.Me_native_used_frequency: [0, 1], MetricCons.Me_stability: [0, 1],
+                        MetricCons.Me_native_used_effectiveness: [0, 1]},
+            'metrics_filter': [
+                {MetricCons.Me_native_used_frequency: [0, 1], MetricCons.Me_native_used_effectiveness: [0, 1]}],
             'rules': [
                 {
                     'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},

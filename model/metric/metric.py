@@ -228,10 +228,12 @@ class Metric:
                 'used_by_native': self.entity_extensive[entity_id].called - len(res)
             }
         elif self.entity_extensive[entity_id].category == Constant.E_class:
-            res = self.query_relation[Constant.typed]['10'][Constant.E_variable][entity_id]
+            aggr_res = self.query_relation[Constant.typed]['10'][Constant.E_variable][entity_id]
+            inherit_res = self.query_relation[Constant.inherit]['10'][Constant.E_class][entity_id]
             used_frequency = {
-                'used_by_extension': len(res),
-                'used_by_native': len(self.dest_relation[entity_id][Constant.typed]) - len(res)
+                'used_by_extension': len(aggr_res) + len(inherit_res),
+                'used_by_native': len(self.dest_relation[entity_id][Constant.typed]) + len(
+                    self.dest_relation[entity_id][Constant.inherit]) - len(aggr_res) - len(inherit_res)
             }
         metrics[MetricCons.Me_native_used_frequency] = used_frequency
 
@@ -264,12 +266,23 @@ class Metric:
         metrics[MetricCons.Me_native_used_effectiveness]['used_by_extension_saturatedly'] = 0
         source_domain = Constant.accessible_level[current_entity.intrusive_modify['access_modify'].split('-')[0]]
         target_domain = Constant.accessible_level[current_entity.intrusive_modify['access_modify'].split('-')[1]]
-        for rel in self.query_relation[Constant.call]['10'][Constant.E_method][entity_id]:
-            access_domain = get_accessible_domain(current_entity, self.entity_extensive[rel.src], self.entity_extensive)
-            if access_domain == target_domain:
-                metrics[MetricCons.Me_native_used_effectiveness]['used_by_extension_saturatedly'] += 1
-            elif source_domain < access_domain < target_domain:
-                metrics[MetricCons.Me_native_used_effectiveness]['used_by_extension_effectively'] += 1
+        if self.entity_extensive[entity_id].category == Constant.E_method:
+            for rel in self.query_relation[Constant.call]['10'][Constant.E_method][entity_id]:
+                access_domain = get_accessible_domain(current_entity, self.entity_extensive[rel.src],
+                                                      self.entity_extensive)
+                if access_domain == target_domain:
+                    metrics[MetricCons.Me_native_used_effectiveness]['used_by_extension_saturatedly'] += 1
+                elif source_domain < access_domain < target_domain:
+                    metrics[MetricCons.Me_native_used_effectiveness]['used_by_extension_effectively'] += 1
+        elif self.entity_extensive[entity_id].category == Constant.E_class:
+            for rel in self.query_relation[Constant.typed]['10'][Constant.E_variable][entity_id] + \
+                       self.query_relation[Constant.inherit]['10'][Constant.E_variable][entity_id]:
+                access_domain = get_accessible_domain(current_entity, self.entity_extensive[rel.src],
+                                                      self.entity_extensive)
+                if access_domain == target_domain:
+                    metrics[MetricCons.Me_native_used_effectiveness]['used_by_extension_saturatedly'] += 1
+                elif source_domain < access_domain < target_domain:
+                    metrics[MetricCons.Me_native_used_effectiveness]['used_by_extension_effectively'] += 1
 
     def handle_metrics_filter_native_used_effectiveness(self, metrics: dict, indicate: list):
         if metrics[MetricCons.Me_native_used_frequency]['used_by_extension'] == 0:
