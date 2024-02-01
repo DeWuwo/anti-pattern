@@ -2,7 +2,7 @@ import os
 from time import time
 from typing import List
 from script.open_os import OpenOS
-from utils import Command, FileCommon, FileCSV
+from utils import Command, FileCommon, FileCSV, FileJson
 from baseline.compare import Compare
 
 
@@ -25,6 +25,25 @@ class Script:
     def get_command(self, aosp_code_path, assi_code_path, aosp_dep_path, assi_dep_path, base_aosp_dep_path, aosp_commit,
                     assi_commit, aosp_base_commit, out_path, aosp_hidden, assi_hidden):
         self.out_path = out_path
+
+        def compare():
+            # 比较ref结果
+            old: dict = FileJson.read_base_json(os.path.join(out_path, 'unsure_resolution.json'))
+            new: dict = FileJson.read_base_json(os.path.join(out_path, 'refactor_entities.json'))
+            old_ents = old.keys()
+            new_ents = new.keys()
+            cmp_res = {}
+            cmp_res["old_count"] = len(old_ents)
+            cmp_res["new_count"] = len(new_ents)
+            cmp_res["same"] = len(list(set(old_ents) & set(new_ents)))
+            cmp_res["left"] = [int(num) for num in list(set(old_ents) - set(new_ents))]
+            cmp_res["right"] = [int(num) for num in (list(set(new_ents) - set(old_ents)))]
+            cmp_res["left"].sort()
+            cmp_res["right"].sort()
+            FileCSV.write_dict_to_csv("E:\\Graduate\\baseline\\test", "refcmp", [cmp_res], 'a', False)
+
+        # compare()
+
         branch_checkout_commands: List[str] = [
             f'git -C {aosp_code_path} clean -d -fx',
             f'git -C {aosp_code_path} checkout .',
@@ -38,9 +57,6 @@ class Script:
             f'git -C {assi_code_path} checkout .',
             f'git -C {assi_code_path} checkout {assi_commit}',
         ]
-        # git_log_fetch_commands: List[str] = [
-        #     f'git -C {assi_code_path} log --numstat --date=iso > {out_path}/mc/gitlog'
-        # ]
 
         dep_commands: List[str] = [
             f'java -Xmx20g -jar {self.dep_path} java {aosp_code_path} base -o {aosp_base_commit}{aosp_hidden}',
@@ -54,23 +70,20 @@ class Script:
         if not os.path.exists(os.path.join(out_path, 'mc')):
             os.makedirs(os.path.join(out_path, 'mc'))
 
-        # if os.path.exists(os.path.join(out_path, 'mc', 'gitlog')):
-        #     git_log_fetch_commands = []
-
         if os.path.exists(aosp_dep_path) and os.path.exists(assi_dep_path):
-            dep_commands = [
-                f'java -Xmx20g -jar {self.ref_path} -nc {aosp_code_path} {aosp_commit} {assi_code_path} {assi_commit}']
+            dep_commands = []
 
-        ref_util = os.path.join(self.ref_path, 'RefactoringMiner')
-        ref_out = os.path.join(out_path, 'refactor.json')
-        ref_commands: List[str] = [
-            f'{ref_util} -nc {aosp_code_path} {aosp_commit} {assi_code_path} {assi_commit} -json {ref_out}'
-        ]
+        # ref_util = os.path.join(self.ref_path, 'RefactoringMiner')
+        # ref_out = os.path.join(out_path, 'refactor.json')
+        # ref_commands: List[str] = [
+        #     f'{ref_util} -nc {aosp_code_path} {aosp_commit} {assi_code_path} {assi_commit} -json {ref_out}'
+        # ]
 
         detect_commands: List[str] = [
-            f'python main.py -ra {aosp_code_path} -re {assi_code_path} -a {aosp_dep_path} -e {assi_dep_path} -ref {self.ref_path} -o {out_path}'
+            f'python main.py -rpa {aosp_code_path} -rpe {assi_code_path} -rela {aosp_dep_path} -rele {assi_dep_path} ' +
+            f'-ca {aosp_commit} -ce {assi_commit} -ref {self.ref_path} -o {out_path}'
         ]
-        return branch_checkout_commands, dep_commands, detect_commands, ref_commands
+        return branch_checkout_commands, dep_commands, detect_commands
 
     def run_gum_diff(self, aosp_code_path, assi_code_path, aosp_dep_path, assi_dep_path, base_aosp_dep_path,
                      aosp_commit,
@@ -90,35 +103,36 @@ class Script:
 
     def run_command(self):
         for item in self.oss.get_all_os():
-            branch_checkout_commands, dep_commands, detect_commands, ref_commands = self.get_command(
+            branch_checkout_commands, dep_commands, detect_commands = self.get_command(
                 *self.oss.get_path(*item))
             for cmd in branch_checkout_commands:
                 print(cmd)
                 Command.command_run(cmd)
-            # for cmd in git_log_fetch_commands:
-            #     print(cmd)
-            #     Command.command_run(cmd)
-            # for cmd in dep_commands:
-            #     print(cmd)
-            #     Command.command_run(cmd)
-            # for cmd in detect_commands:
-            #     print(cmd)
-            #     Command.command_run(cmd)
-            gum_diff_cmd = self.run_gum_diff(*self.oss.get_path(*item))
-            start_time = time()
-            for cmd in gum_diff_cmd:
+            for cmd in dep_commands:
+                print(cmd)
                 Command.command_run(cmd)
-            end_time = time()
-            FileCSV.write_dict_to_csv('E:\\Graduate\\baseline\\gumdiff', 'runtime',
-                                      [{'count': len(gum_diff_cmd), 'time': end_time - start_time}], 'a')
-            Compare().compare_file_gumtree(self.out_path)
+            for cmd in detect_commands:
+                print(cmd)
+                Command.command_run(cmd)
+
+            # gumdiff
+            # gum_diff_cmd = self.run_gum_diff(*self.oss.get_path(*item))
+            # start_time = time()
+            # for cmd in gum_diff_cmd:
+            #     Command.command_run(cmd)
+            # end_time = time()
+            # FileCSV.write_dict_to_csv('E:\\Graduate\\baseline\\gumdiff', 'runtime',
+            #                           [{'count': len(gum_diff_cmd), 'time': end_time - start_time}], 'a')
+            # Compare().compare_file_gumtree(self.out_path)
+
             # 生成ref
-            start_time = time()
-            for cmd in ref_commands:
-                Command.command_run(cmd)
-            end_time = time()
-            FileCSV.write_dict_to_csv('E:\\Graduate\\baseline\\RefactoringMiner', 'runtime',
-                                      [{'time': end_time - start_time}], 'a')
+            # start_time = time()
+            # for cmd in ref_commands:
+            #     Command.command_run(cmd)
+            # end_time = time()
+            # FileCSV.write_dict_to_csv('E:\\Graduate\\baseline\\RefactoringMiner', 'runtime',
+            #                           [{'time': end_time - start_time}], 'a')
+
     def get_honor_command(self):
         commands: List[str] = []
         aosp_code_path = 'D:\\HONOR_code\\RAOSP\\base'

@@ -8,32 +8,45 @@ from script.intrusive_type import IntrusiveType
 from script.facade_top_file import FileTop
 from script.intrusive_filter import IntrusiveFilter
 from script.file_move import FileMove
+from script.metric_filter import MetricFilter
 from utils import Constant, FileCSV
 
 import sys
 import time
 
 if __name__ == '__main__':
-    Script('E:\\Graduate\\RefactoringMine\\utils\\bin').run_command()
-    lineage = [('lineage-16.0', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-16.0'),
-               ('lineage-17.1', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-17.1'),
-               ('lineage-18.1', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-18.1'),
-               ('lineage-19.1', 'D:\\Honor\\match_res\\LineageOS\\base\\lineage-19.1')]
-    calyx = [('CalyxOS-12', 'D:\\Honor\\match_res\\CalyxOS\\base\\android12'),
-             ('CalyxOS-11', 'D:\\Honor\\match_res\\CalyxOS\\base\\android11')]
-    omni = [('OmniROM-12', 'D:\\Honor\\match_res\\OmniROM\\base\\android-12.0'),
-            ('OmniROM-11', 'D:\\Honor\\match_res\\OmniROM\\base\\android-11'),
-            ('OmniROM-10', 'D:\\Honor\\match_res\\OmniROM\\base\\android-10'),
-            ('OmniROM-9', 'D:\\Honor\\match_res\\OmniROM\\base\\android-9')]
-    aospa = [
-        ('aospa-quartz', 'D:\\Honor\\match_res\\aospa\\base\\quartz-dev'),
-        ('aospa-ruby', 'D:\\Honor\\match_res\\aospa\\base\\ruby-staging'),
-        ('aospa-sapphire', 'D:\\Honor\\match_res\\aospa\\base\\sapphire')
-    ]
-    honor = [
-        ('honor_r', 'D:\\Honor\\match_res\\Honor\\base\\honor_r'),
-        ('honor_s', 'D:\\Honor\\match_res\\Honor\\base\\honor_s'),
-    ]
+    # Script('E:\\Graduate\\RefactoringMine\\utils-3.0.2-modify\\bin').run_command()
+    out_dir = 'D:\\Honor\\match_res_new'
+
+
+    def get_out_path(out_path: str, tail_path=''):
+        lineage = [('lineage-16.0', f'{out_path}\\LineageOS\\base\\lineage-16.0\\{tail_path}'),
+                   ('lineage-17.1', f'{out_path}\\LineageOS\\base\\lineage-17.1\\{tail_path}'),
+                   ('lineage-18.1', f'{out_path}\\LineageOS\\base\\lineage-18.1\\{tail_path}'),
+                   ('lineage-19.1', f'{out_path}\\LineageOS\\base\\lineage-19.1\\{tail_path}')]
+        omni = [
+            ('OmniROM-9', f'{out_path}\\OmniROM\\base\\android-9\\{tail_path}'),
+            ('OmniROM-10', f'{out_path}\\OmniROM\\base\\android-10\\{tail_path}'),
+            ('OmniROM-11', f'{out_path}\\OmniROM\\base\\android-11\\{tail_path}'),
+            ('OmniROM-12', f'{out_path}\\OmniROM\\base\\android-12.0\\{tail_path}')]
+        calyx = [('CalyxOS-11', f'{out_path}\\CalyxOS\\base\\android11\\{tail_path}'),
+                 ('CalyxOS-12', f'{out_path}\\CalyxOS\\base\\android12\\{tail_path}')]
+        aospa = [
+            ('aospa-quartz', f'{out_path}\\aospa\\base\\quartz-dev\\{tail_path}'),
+            ('aospa-ruby', f'{out_path}\\aospa\\base\\ruby-staging\\{tail_path}'),
+            ('aospa-sapphire', f'{out_path}\\aospa\\base\\sapphire\\{tail_path}')
+        ]
+        honor = [
+            ('honor_r', 'D:\\Honor\\match_res\\Honor\\base\\honor_r'),
+            ('honor_s', 'D:\\Honor\\match_res\\Honor\\base\\honor_s'),
+            ('honor_t1', 'D:\\Honor\\match_res\\Honor\\base\\honor_t`'),
+            ('honor_t2', 'D:\\Honor\\match_res\\Honor\\base\\honor_t2'),
+            ('honor_t3', 'D:\\Honor\\match_res\\Honor\\base\\honor_t3'),
+            ('honor_u', 'D:\\Honor\\match_res\\Honor\\base\\honor_u'),
+        ]
+        return lineage + calyx + omni + aospa
+
+
     # ins_a = IntrusiveCompare()
     # ins_a.get_intrusive_commit(lineage + calyx + omni + aospa)
 
@@ -41,7 +54,10 @@ if __name__ == '__main__':
     # ins_a.start_analysis(2, 1, lineage_s=lineage[2:], omnirom_s=omni[2:], calyx=calyx, aospa=aospa, honor=honor)
     # lineage=lineage, omnirom=omni, calyx=calyx,aospa=aospa, honor=honor
 
-    # 筛选切面依赖
+    """
+     :param
+     筛选切面依赖
+    """
     # res = []
     # for proj in aospa + calyx + lineage + omni + honor:
     #     f_f = FacadeFilter(proj[1], 'facade.json',
@@ -71,12 +87,17 @@ if __name__ == '__main__':
     # 移动文件
     # method_file = ['']
     #
-    result_data = ['E:\\数据\\anti_data\\',
-                   ['facade.json']]
+    result_data = ['E:\\数据\\ground_truth\\',
+                   ['res_metric_statistic.json']]
+    old_paths = get_out_path('D:\\Honor\\match_res')
+    new_paths = get_out_path('D:\\Honor\\match_res_new', "metric_filter")
 
-    # for proj in aospa + calyx + lineage + omni:
-    #     FileMove.file_move(proj[1], os.path.join(result_data[0], proj[0]),
-    #                        result_data[1])
+    # for new in new_paths:
+    #     FileMove.file_move(new[1], f"{result_data[0]}\\{new[0]}", result_data[1])
+    patterns = ["FinalDel", "AccessibilityModify", "HiddenApi", "ParameterListModifyDep", "InheritExtension",
+                "ImplementExtension", "ReflectUse"]
+    for new in new_paths:
+        MetricFilter(f"{new[1]}\\res_metric_statistic.json", "E:\\数据\\metric").handle_count(patterns)
 
     # 切面依赖模块统计
     # FacadeFilter(aospa[2][1], 'facade.json',

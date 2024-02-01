@@ -17,7 +17,7 @@ class OpenOS:
     def __init__(self):
         self.source_code_path = 'D:\\Honor\\source_code\\'
         self.source_dep_path = 'D:\\Honor\\dep_res\\'
-        self.out_path = 'D:\\Honor\\match_res\\'
+        self.out_path = 'D:\\Honor\\match_res_new\\'
         self.android = {
             'android-12': 'cebf5c06997b64f4e47a1611edb5f97044509d76',
             'android-11': '34a1b9c951c38537ab96b69bc308f6e0884823f5',
@@ -76,6 +76,8 @@ class OpenOS:
             ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66', '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null', 'android-12']
         ]
 
+    # -nc D:\Honor\source_code\android\base 49d8b986dddd441df741698541788c5f3a9c465f D:\Honor\source_code\LineageOS\base 7f7fc2562a95be630dbe609e8fb70383dcfada4f -json E:\test\1.json
+    # -c D:\Honor\source_code\LineageOS\base 3874e9c876bac28279c389a8e6cb82ad951546dc -json E:\test\2.json
     def get_all_os(self):
         # return self.test
         return self.LineageOS + self.CalyxOS + self.OmniROM + self.AOSPA
