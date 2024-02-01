@@ -411,3 +411,74 @@ class FacadeFilter:
             temp_node.add(edge['dest'])
         for node in temp_node:
             filter_nodes.append(nodes_map[node])
+
+    def filter_hidden_in_facade(self):
+        res = defaultdict(partial(defaultdict, int))
+        intrusive_res = {}
+        hidden_json = defaultdict(list)
+        rel_json = defaultdict(list)
+        facade_info = FileJson.read_base_json(self.file_name)
+        n2e: List[dict] = facade_info['res']['n2e']
+        e2n: List[dict] = facade_info['res']['e2n']
+        heads_hd_rel = []
+        heads_hd_intrusive = []
+        hidden_level = [Constant.HD_blacklist, Constant.HD_greylist,
+                        Constant.HD_whitelist] + Constant.HD_greylist_max_list
+        for label in hidden_level:
+            for rel in Constant.Relations:
+                heads_hd_rel.append(f'{label}_{rel}')
+        for label in hidden_level:
+            heads_hd_intrusive.append(f'{label}_1')
+            intrusive_res.update({f'{label}_1': 0, f'{label}_0': 0})
+            heads_hd_intrusive.append(f'{label}_0')
+
+        for rel in e2n:
+            src_e = rel['src']
+            dest_e = rel['dest']
+            rel_type: str = ''
+            for k in rel['values'].keys():
+                rel_type = str(k)
+                break
+            try:
+                if rel_type == Constant.R_annotate:
+                    hidden_flag = Constant.hidden_map(src_e['hidden'].split(" "))
+                    is_intrusive = src_e['isIntrusive']
+                    qualifiedName = src_e['qualifiedName']
+                else:
+                    hidden_flag = Constant.hidden_map(dest_e['hidden'].split(" "))
+                    is_intrusive = dest_e['isIntrusive']
+                    qualifiedName = dest_e['qualifiedName']
+                if src_e['not_aosp'] != dest_e['not_aosp'] and \
+                        hidden_flag in hidden_level:
+                    res[qualifiedName][hidden_flag + '_' + rel_type] += 1
+                    if rel_type == Constant.call:
+                        intrusive_res[f'{hidden_flag}_{is_intrusive}'] += 1
+                    hidden_json[hidden_flag + '_' + rel_type + '_e2n'].append(rel)
+            except KeyError:
+                pass
+        for rel in n2e:
+            src_e = rel['src']
+            dest_e = rel['dest']
+            rel_type: str = ''
+            for k in rel['values'].keys():
+                rel_type = str(k)
+                break
+            try:
+                if rel_type == Constant.R_annotate:
+                    hidden_flag = Constant.hidden_map(dest_e['hidden'])
+                else:
+                    hidden_flag = Constant.hidden_map(src_e['hidden'])
+                if src_e['not_aosp'] != dest_e['not_aosp'] and \
+                        hidden_flag in [Constant.HD_blacklist,
+                                        Constant.HD_greylist, Constant.HD_whitelist] + Constant.HD_greylist_max_list:
+                    # res[src_e['qualifiedName']][hidden_flag + '_' + rel_type + '_n2e'] += 1
+                    hidden_json[hidden_flag + '_' + rel_type + '_n2e'].append(rel)
+            except KeyError:
+                pass
+        FileCSV.write_file_to_csv(self.file_path, 'facade_hidden_filter', res, 'name', heads_hd_rel)
+        FileCSV.write_dict_to_csv(self.file_path, 'facade_hidden_intrusive_count', [intrusive_res], 'w')
+        FileJson.write_data_to_json(self.file_path, hidden_json, 'facade_hidden_hidden.json')
+        # FileJson.write_data_to_json(self.file_path, rel_json, 'facade_hidden_rel.json')
+
+if __name__ == '__main__':
+    FacadeFilter("D:\\Honor\\match_res\\LineageOS\\base\\lineage-18.1", "facade.json", []).filter_hidden_in_facade()
