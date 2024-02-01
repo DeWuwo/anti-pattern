@@ -84,7 +84,7 @@ class GitHistory:
     def divide_owner(self):
         all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities = \
             get_entity_owner(self.get_path('base_commits.csv'), self.get_path('old_base_commits.csv'),
-                             self.get_path('only_accompany_commits.csv'), self.get_path('ownership.csv'), self.out_path)
+                             self.get_path('only_accompany_commits.csv'), self.get_path('entity_commits'), self.out_path)
 
         return all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities
 

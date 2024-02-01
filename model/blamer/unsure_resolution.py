@@ -185,17 +185,17 @@ def resolution_entry():
 
 
 def load_entity_refactor(repo_path: str, refactor_path: str, sorted_extensive_commits: list,
-                         ref_data: List, unsure_refactor: str,
+                         ref_data: List, refactor_entity_cache: str,
                          not_sure_rows: List[dict], out_path: str):
     refactor_path = Path(refactor_path)
     repo_path = Path(repo_path)
-    unsure_path = Path(unsure_refactor)
+    refactor_entity_cache = Path(refactor_entity_cache)
     # unsure_ownership = unsure_ownership
     refactor_cache = False
-    if unsure_path.exists():
-        # refactor_data = load_refactor_data_id(unsure_path)
-        refactor_data = load_refactor_data(refactor_path, ref_data)
-        # refactor_cache = True
+    if refactor_entity_cache.exists():
+        refactor_data = load_refactor_data_id(refactor_entity_cache)
+        # refactor_data = load_refactor_data(refactor_path, ref_data)
+        refactor_cache = True
     else:
         refactor_data = load_refactor_data(refactor_path, ref_data)
     # not_sure_rows = load_not_sure_lines(Path(unsure_ownership))

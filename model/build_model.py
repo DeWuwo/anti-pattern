@@ -289,9 +289,9 @@ class BuildModel:
         all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities = self.generate_history.divide_owner()
 
         print('get possible refactor entity')
-        possible_refactor_entities = []
-        possible_refactor_entities.extend(intrusive_entities.values())
-        possible_refactor_entities.extend(old_intrusive_entities.values())
+        possible_refactor_entities = {}
+        possible_refactor_entities.update(intrusive_entities)
+        possible_refactor_entities.update(old_intrusive_entities)
         # possible_refactor_entities.extend(pure_accompany_entities.values())
         refactor_list = self.generate_history.load_refactor_entity(possible_refactor_entities)
         return all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities, refactor_list
@@ -744,6 +744,7 @@ class BuildModel:
                     if aosp_parent_anonymous_class == map_parent_anonymous_class:
                         self.get_entity_map(entity, self.entity_android[item_id])
                         return item_id
+            # 这里把成员变量 与 局部变量都单独抽出来
             elif entity.category == Constant.E_method or entity.category == Constant.E_variable:
                 for item_id in aosp_list:
                     if self.entity_android[item_id].parameter_names == search_param and \

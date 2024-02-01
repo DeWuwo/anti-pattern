@@ -95,8 +95,8 @@ class Constant:
     HD_greylist_max = re.compile('greylist-max-(.*)')
     HD_whitelist: str = 'whitelist'
     HD_greylist_max_label = 'greylist-max-'
-    HD_greylist_max_list: List[str] = ['greylist-max-o', 'greylist-max-p', 'greylist-max-q', 'greylist-max-r',
-                                       'greylist-max-s', 'greylist-max-t', 'greylist-max-u']
+    versions = ['o', 'p', 'q', 'r', 's', 't', 'u']
+    HD_greylist_max_list: List[str] = [f"greylist-max-{ver}" for ver in versions]
 
     HD_hidden = 'hidden'
 
@@ -118,6 +118,7 @@ class Constant:
                 match = cls.HD_greylist_max.match(max_label)
                 if match:
                     return max_label
+                return "null"
 
     Owner_actively_native = 'actively native'
     Owner_obsoletely_native = 'obsoletely native'

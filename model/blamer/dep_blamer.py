@@ -9,7 +9,7 @@ from typing import Optional, Set, Dict, List, IO, Iterable, Callable
 
 import git
 
-from utils import MyThread
+from utils import DynamicThread
 
 
 def range_intersection(x: range, y: range) -> Optional[range]:
@@ -151,7 +151,7 @@ class BlameObject:
     stop: int
 
 
-def create_blame_dict(file_set: Set[Path], repo: git.Repo, commit: str) -> Dict[Path, List[BlameObject]]:
+def create_blame_dict(file_set: Set[Path], repo: git.Repo, commit: str, *index) -> Dict[Path, List[BlameObject]]:
     file_blame_dict: Dict[Path, List[BlameObject]] = dict()
     for file_path in file_set:
         try:
@@ -169,7 +169,7 @@ def contain_commit(blame_entries: List[BlameObject], commits: Set[str]) -> bool:
     return False
 
 
-def create_blamer(file_blame_dict: Dict[Path, List[BlameObject]]) -> Callable[[Path, int, int], Set[str]]:
+def create_entity_blamer(file_blame_dict: Dict[Path, List[BlameObject]]) -> Callable[[Path, int, int], Set[str]]:
     def blame(path: Path, start_line: int, end_line: int) -> Set[str]:
         ret = set()
         for blame_entry in file_blame_dict[path]:
@@ -220,61 +220,6 @@ def load_blame_dict(file_path: Path) -> Dict[Path, List[BlameObject]]:
     return ret
 
 
-def entry():
-    start_time = time()
-    # analyzed_root = "D:\\Master\\CodeSmell\\Refactor\\frameworks\\base"
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--repo", dest="repo_path", action="store")
-    parser.add_argument("--dep", dest="accompany_dep", action="store")
-    parser.add_argument("--base_commits", dest="base_commits", action="store")
-    parser.add_argument("--only_accompany_commits", dest="only_accompany_commits", action="store")
-    parser.add_argument("--blame_cache", dest="blame_cache", action="store")
-    args = parser.parse_args()
-    analyzed_root = args.repo_path
-    # repo_path = Path("D:\\Master\\CodeSmell\\Refactor\\frameworks\\base")
-    repo_path = Path(analyzed_root)
-    sha = get_sha(repo_path)
-    print(f"{sha} @ {analyzed_root}")
-    dep_data = DepData(repo_path, Path(analyzed_root), Path(args.accompany_dep))
-    current_commit = sha
-    ents = dep_data.get_dep_ents()
-    ownership_data = []
-    only_accompany_commits = load_commits(Path(args.only_accompany_commits))
-
-    file_set = collect_all_file(ents)
-
-    blame_dict_path = Path(f"blame_dict_{analyzed_root}_{sha}")
-    if args.blame_cache:
-        blame_dict = load_blame_dict(Path(args.blame_cache))
-    elif not blame_dict_path.exists():
-        blame_dict = create_blame_dict(file_set, git.Repo(repo_path), current_commit)
-        dump_blame_dict(blame_dict, blame_dict_path)
-    else:
-        blame_dict = load_blame_dict(blame_dict_path)
-
-    def is_accompany_file(f: Path):
-        return contain_commit(blame_dict[f], only_accompany_commits)
-
-    accompany_file_set = set(filter(is_accompany_file, file_set))
-    blame = create_blamer(blame_dict)
-    for ent in ents:
-        print(ent)
-        if ent.path not in accompany_file_set:
-            continue
-        ent_commits = blame(ent.path, ent.start_line, ent.end_line)
-        ownership_data.append(EntOwnership(ent, ent_commits))
-    with open(f"{analyzed_root}_{sha}_ownership.csv", "w", encoding="utf-8", newline="") as f:
-        dump_ownership(ownership_data, f)
-
-    # with open(f"{analyzed_root}_ownership_lineageos_{sha}.csv", "w", newline="") as f:
-    #     f.writelines(str(f) + "\n" for f in file_set)
-
-    # with open("blame_dict", "wb") as f:
-    #     pickle.dump(blame_dict, f)
-    end_time = time()
-    print(end_time - start_time)
-
-
 def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str, only_accompany_commits: str,
                        blame_cache: str, out_path: str):
     start_time = time()
@@ -298,11 +243,14 @@ def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str
     if not blame_dict_path.exists():
         blame_dict = {}
         repo = git.Repo(repo_path)
-        blame_th = MyThread(10, create_blame_dict, list(file_set))
-        res = blame_th.get_res(False, repo, current_commit)
-        for th_res in res:
-            blame_dict.update(th_res.result())
+        res = DynamicThread(create_blame_dict, list(file_set), 8, 10, repo, current_commit).get_final_res()
+        # 旧版线程
+        # blame_th = MyThread(10, create_blame_dict, list(file_set))
+        # res = blame_th.get_res(False, repo, current_commit)
+        # for th_res in res:
+        #     blame_dict.update(th_res.result())
         # blame_dict = create_blame_dict(file_set, repo, current_commit)
+        blame_dict = res
         dump_blame_dict(blame_dict, blame_dict_path)
     else:
         blame_dict = load_blame_dict(blame_dict_path)
@@ -314,16 +262,18 @@ def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str
             return False
 
     filter_file_set = set(filter(is_accompany_file, file_set))
-    blame = create_blamer(blame_dict)
+
+    blame = create_entity_blamer(blame_dict)
+
     print(' get entities commits')
-    if os.path.exists(f"{out_path}/ownership.csv"):
-        print(' entities commits existed')
+    if os.path.exists(f"{out_path}/entity_commits"):
+        print(' load ownership')
         # for ent in ents:
         #     if ent.path not in filter_file_set:
         #         continue
         #     ent_commits = blame(ent.path, ent.start_line, ent.end_line)
         #     ownership_data.append(EntOwnership(ent, ent_commits))
-        # with open(f"{out_path}/ownership.csv", "w", encoding="utf-8", newline="") as f:
+        # with open(f"{out_path}/entity_commits", "w", encoding="utf-8", newline="") as f:
         #     dump_ownership(ownership_data, f)
     else:
         for ent in ents:
@@ -331,7 +281,7 @@ def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str
                 continue
             ent_commits = blame(ent.path, ent.start_line, ent.end_line)
             ownership_data.append(EntOwnership(ent, ent_commits))
-        with open(f"{out_path}/ownership.csv", "w", encoding="utf-8", newline="") as f:
+        with open(f"{out_path}/entity_commits", "w", encoding="utf-8", newline="") as f:
             dump_ownership(ownership_data, f)
 
         # with open(f"{analyzed_root}_ownership_lineageos_{sha}.csv", "w", newline="") as f:
@@ -344,4 +294,4 @@ def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str
 
 
 if __name__ == '__main__':
-    entry()
+    pass

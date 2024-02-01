@@ -10,6 +10,7 @@ from model.blamer.dep_blamer import get_entity_commits
 from model.blamer.tagging_ownership import get_entity_owner
 from model.blamer.unsure_resolution import load_entity_refactor
 from model.blamer.refactor_format import get_name_from_sig
+from model.blamer.refactor import Refactor
 from utils import Command, FileJson, DynamicThread
 
 
@@ -17,7 +18,6 @@ class GenerateHistory:
     repo_path_aosp: str
     repo_path_accompany: str
     accompany_relation_path: str
-    sorted_extensive_commits: list
     refactor_miner: str
     out_path: str
     ref_miner_data: List
@@ -30,7 +30,6 @@ class GenerateHistory:
         self.aosp_commit = aosp_commit
         self.accompany_commit = accompany_commit
         self.accompany_relation_path = accompany_relation_path
-        self.sorted_extensive_commits = []
         self.refactor_miner = refactor_miner
         self.out_path = out_path
         self.pre_run()
@@ -60,10 +59,7 @@ class GenerateHistory:
             Command.command_run(cmd)
 
     def get_commits_and_ref(self):
-        extension_commits = entry_get_commits(self.repo_path_aosp, self.repo_path_accompany, self.out_path)
-        repo = git.Repo(self.repo_path_accompany)
-        self.sorted_extensive_commits = list(sorted(extension_commits,
-                                                    key=lambda k: repo.commit(k).committed_datetime, reverse=False))
+        entry_get_commits(self.repo_path_aosp, self.repo_path_accompany, self.out_path)
         ref_cache = self.get_path('refactor.json')
         if os.path.exists(ref_cache):
             self.ref_miner_data = []
@@ -87,7 +83,7 @@ class GenerateHistory:
     def divide_owner(self):
         all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities = \
             get_entity_owner(self.get_path('base_commits.csv'), self.get_path('old_base_commits.csv'),
-                             self.get_path('only_accompany_commits.csv'), self.get_path('ownership.csv'), self.out_path)
+                             self.get_path('only_accompany_commits.csv'), self.get_path('entity_commits'), self.out_path)
 
         return all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities
 
@@ -113,9 +109,9 @@ class GenerateHistory:
         print('   get refactor info')
         try:
             t1 = time.perf_counter()
-            res = load_entity_refactor(self.repo_path_accompany, self.get_path('refactor.json'),
-                                       self.sorted_extensive_commits, self.ref_miner_data,
-                                       self.get_path('refactor_entities.json'), entity_possible_refactor, self.out_path)
+            res = Refactor(self.out_path).fetch_refactor_entities(entity_possible_refactor,
+                                                                  self.get_path('refactor.json'))
+
             t2 = time.perf_counter()
             print(f'\n get entity refactor data time cost: {t2 - t1} s')
             return res

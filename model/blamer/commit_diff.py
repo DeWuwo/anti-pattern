@@ -94,7 +94,6 @@ def entry_get_commits(repo_path_base, repo_path_accompany, out_path):
     with open(f"{out_path}/only_accompany_commits.csv", "w", newline="") as file:
         write_all_commits(file, only_accompany_commits)
 
-    return only_accompany_commits
 
 if __name__ == '__main__':
     entry()
