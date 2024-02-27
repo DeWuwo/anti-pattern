@@ -21,6 +21,8 @@ class GenerateHistory:
     refactor_miner: str
     out_path: str
     ref_miner_data: List
+    aosp_modify_files: List
+    extensive_modify_files: List
 
     def __init__(self, repo_path_aosp: str, repo_path_accompany: str, aosp_commit: str, accompany_commit: str,
                  accompany_relation_path: str, refactor_miner: str,
@@ -32,6 +34,8 @@ class GenerateHistory:
         self.accompany_relation_path = accompany_relation_path
         self.refactor_miner = refactor_miner
         self.out_path = out_path
+        self.aosp_modify_files = []
+        self.extensive_modify_files = []
         self.pre_run()
 
     def get_path(self, short_path: str):
@@ -58,6 +62,11 @@ class GenerateHistory:
         for cmd in commands:
             Command.command_run(cmd)
 
+    def get_diff_files(self):
+        for file_changed in git.Repo(self.repo_path_accompany).commit(self.aosp_commit).diff(self.accompany_commit):
+            self.aosp_modify_files.append(file_changed.a_path)
+            self.extensive_modify_files.append(file_changed.b_path)
+
     def get_commits_and_ref(self):
         entry_get_commits(self.repo_path_aosp, self.repo_path_accompany, self.out_path)
         ref_cache = self.get_path('refactor.json')
@@ -73,6 +82,7 @@ class GenerateHistory:
             self.ref_miner_data = ref_res
 
     def get_entity_commits(self):
+        self.get_diff_files()
         try:
             get_entity_commits(self.repo_path_accompany, self.accompany_relation_path,
                                self.get_path('old_base_commits.csv'), self.get_path('only_accompany_commits.csv'),

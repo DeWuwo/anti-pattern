@@ -7,6 +7,7 @@ from typing import Set, IO
 import git
 
 from model.blamer.dep_blamer import get_sha
+from utils import Command
 
 
 def get_all_commits(repo: git.Repo) -> Set[str]:
@@ -19,6 +20,14 @@ def get_all_aosp_commits(repo: git.Repo) -> Set[str]:
     for tag in repo.tags:
         all_commits = all_commits | set([str(commit) for commit in repo.iter_commits(tag)])
     return all_commits
+
+
+def get_all_aosp_commits_by_command(repo: git.Repo) -> Set[str]:
+    # all_commits = git.Git(repo.working_dir).execute(["git", "rev-list", "--all"])
+    # git rev-list --all
+    commits = repo.iter_commits("--all")
+    commit_hashes = [commit.hexsha for commit in commits]
+    return set(commit_hashes)
 
 
 def read_all_commits(file_path: str) -> Set[str]:
@@ -61,6 +70,15 @@ def entry():
         write_all_commits(file, only_accompany_commits)
 
 
+# 基于diff 获取差异文件
+def get_diff_files(repo_path_accompany, aosp_commit, extensive_commit):
+    aosp_modify_list = []
+    extensive_modify_list = []
+    for file_changed in git.Repo(repo_path_accompany).commit(aosp_commit).diff(extensive_commit):
+        aosp_modify_list.append(file_changed.a_path)
+        extensive_modify_list.append(file_changed.b_path)
+
+
 def entry_get_commits(repo_path_base, repo_path_accompany, out_path):
     tag = get_sha(Path(repo_path_accompany))
     repo_base = git.Repo(repo_path_base)
@@ -68,7 +86,7 @@ def entry_get_commits(repo_path_base, repo_path_accompany, out_path):
     if os.path.exists(f"{out_path}/all_base_commits.csv"):
         all_base_commits = read_all_commits(f"{out_path}/all_base_commits.csv")
     else:
-        all_base_commits = get_all_aosp_commits(repo_base)
+        all_base_commits = get_all_aosp_commits_by_command(repo_base)
         with open(f"{out_path}/all_base_commits.csv", "w", newline="") as file:
             write_all_commits(file, all_base_commits)
     base_commits = get_all_commits(repo_base)
@@ -96,4 +114,5 @@ def entry_get_commits(repo_path_base, repo_path_accompany, out_path):
 
 
 if __name__ == '__main__':
-    entry()
+    print(get_diff_files("D:\\Honor\\source_code\\LineageOS\\base", "9cdf73f7cbed891c433d278d533f0e0113d68efc",
+                         "484c59b972c1772f75a4b1b9fce7512eee517dcb"))
