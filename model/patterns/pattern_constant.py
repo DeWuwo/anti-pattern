@@ -194,7 +194,8 @@ class PatternCons:
                         'dest': {'id': [-1], 'category': Constant.E_method,
                                  'attrs': {'hidden': [Constant.HD_blacklist,
                                                       Constant.HD_greylist] + Constant.HD_greylist_max_list},
-                                 'filter': {'qualified_name': filter_list}},
+                                 'filter': {}},
+                                 # 'filter': {'qualified_name': filter_list}},
                         'direction': '10'
                     }
                 ]},
@@ -210,7 +211,42 @@ class PatternCons:
                         'dest': {'id': [-1], 'category': Constant.E_variable,
                                  'attrs': {'hidden': [Constant.HD_blacklist,
                                                       Constant.HD_greylist] + Constant.HD_greylist_max_list},
-                                 'filter': {'qualified_name': filter_list}},
+                                 'filter': {}},
+                                 # 'filter': {'qualified_name': filter_list}},
+                        'direction': '10'
+                    }
+
+                ]
+            },
+            'call_native_hidden_modify_method': {
+                'aggre': [[1, 0], [0]],
+                'metrics': {MetricCons.Me_acceptable_hidden: [0, 1], MetricCons.Me_stability: [0, 1]},
+                'metrics_filter': [{MetricCons.Me_acceptable_hidden: [0, 1]}],
+                'rules': [
+                    {
+                        'src': {'id': [-1], 'category': Constant.E_method,
+                                'attrs': {}},
+                        'rel': {'type': Constant.call, 'attrs': {}},
+                        'dest': {'id': [-1], 'category': Constant.E_method,
+                                 'attrs': {'hidden_modify': True},
+                                 'filter': {}},
+                        # 'filter': {'qualified_name': filter_list}},
+                        'direction': '10'
+                    }
+                ]},
+            'use_native_hidden_modify_variable': {
+                'aggre': [[1, 0], [0]],
+                'metrics': {MetricCons.Me_acceptable_hidden: [0, 1], MetricCons.Me_stability: [0, 1]},
+                'metrics_filter': [{MetricCons.Me_acceptable_hidden: [0, 1]}],
+                'rules': [
+                    {
+                        'src': {'id': [-1], 'category': Constant.E_method,
+                                'attrs': {}},
+                        'rel': {'type': Constant.use, 'attrs': {}},
+                        'dest': {'id': [-1], 'category': Constant.E_variable,
+                                 'attrs': {'hidden_modify': True},
+                                 'filter': {}},
+                        # 'filter': {'qualified_name': filter_list}},
                         'direction': '10'
                     }
 
