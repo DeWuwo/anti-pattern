@@ -23,6 +23,7 @@ class Match:
     match_result_union: List[Dict[str, Dict[str, Dict[str, Dict[str, List[dict]]]]]]
     match_result_metric: List[Dict[str, Dict[str, Dict[str, Dict[str, List[dict]]]]]]
     match_result_base_statistic: Dict[str, Dict[str, int]]
+    file_stab_metric = {}
     # 不同粒度数量统计
     statistic_pkgs: Dict[str, Dict[str, int]]
     statistic_files: Dict[str, Dict[str, int]]
@@ -41,6 +42,7 @@ class Match:
         self.match_result_union = []
         self.match_result_metric = []
         self.match_result_base_statistic = {}
+        self.file_stab_metric = {}
         self.statistic_files = {}
         self.statistic_files_detail = {}
         self.statistic_pkgs = {}
@@ -203,17 +205,18 @@ class Match:
         res_with_metric = {}
         res_with_metric_and_filter = {}
         res_with_metric_statistic = {}
+        res_only_metric_file_stab = {}
         for style in rule.styles:
             mode_set = []
             filter_set = []
             self.handle_matching(mode_set, filter_set, [], [], [False for _ in range(0, len(style.rules))], style.rules,
                                  0)
             # res[style.name] = {'res': mode_set, 'filter': filter_set}
-            res_metric, res_metric_filter, res_metric_statistic = \
+            res_metric, res_metric_filter, res_metric_statistic, res_metric_file_stab = \
                 self.aggregate_res_and_get_metrics(mode_set, style.union_point,
                                                    style.union_edge, style.metrics,
                                                    style.metrics_filter, metric_cal_datas)
-            res_filter_metric, res_filter_metric_filter, res_filter_metric_statistic = \
+            res_filter_metric, res_filter_metric_filter, res_filter_metric_statistic, res_metric_file_stab_filter = \
                 self.aggregate_res_and_get_metrics(filter_set,
                                                    style.union_point,
                                                    style.union_edge,
@@ -233,6 +236,10 @@ class Match:
                 'res': res_metric_statistic,
                 'filter': res_filter_metric_statistic
             }
+
+            # 新增统计反模式有关所有文件稳定性
+            res_only_metric_file_stab[style.name] = res_metric_file_stab
+            self.file_stab_metric.update(res_only_metric_file_stab)
 
         self.match_result_union.append({rule.name: res_with_metric})
         self.match_result.append({rule.name: res_with_metric_and_filter})
@@ -318,8 +325,13 @@ class Match:
                 metric_cal_datas.handle_metrics_statistics(metrics_values, metrics_statistic, **metrics)
                 if metric_cal_datas.handle_metrics_filter(metrics_values, metrics_filter):
                     final_res_metrics_filter.append({'metrics': metrics_values, 'value': exa})
-
-        return final_res, final_res_metrics_filter, metrics_statistic
+        metrics_file_list_stab = {}
+        try:
+            metric_cal_datas.handle_metrics_statistics_stability_file(metrics_file_list_stab, res_copy,
+                                                                      metrics['stability'])
+        except KeyError:
+            pass
+        return final_res, final_res_metrics_filter, metrics_statistic, metrics_file_list_stab
 
     def get_statistics(self, res_of_detect):
         print('get statistics')
@@ -587,6 +599,19 @@ class Match:
         # 输出metric统计
         FileJson.write_to_json(self.out_path, self.match_result_metric, 'res_metric_statistic')
         # self.output_module_res(pattern.ident)
+        FileJson.write_to_json(self.out_path, self.file_stab_metric, "file_stab_metric")
+        for pattern_name, obj in self.file_stab_metric.items():
+            temp = {'project': self.out_path.replace("\\", '/').rsplit('\\')[0]}
+            for mc_key in ['average_val', 'un_average_val', 'average_rank', 'un_average_rank']:
+                for mc_name in ['#author', '#cmt', 'changeloc', '#issue', '#issue-cmt', 'issueLoc']:
+                    temp[f"{mc_key}_{mc_name}"] = 0
+            for key, val in obj.items():
+                if key == "file_count":
+                    temp[key] = val
+                else:
+                    for mc_name, mc_val in val.items():
+                        temp[f"{key}_{mc_name}"] = mc_val
+            FileCSV.write_dict_to_csv(f"E:\\test", pattern_name, [temp], 'a', False)
         return self.match_result_union
 
     def output_res(self, pattern_type: str, match_set, match_set_union_relation, match_set_union_entity,

@@ -16,6 +16,7 @@ class Metric:
     dest_relation: defaultdict
     mc_data: defaultdict
     mc_data_rank: defaultdict
+    mc_data_total: defaultdict
     conflict_info: dict
     query_relation: defaultdict
     entity_native: List[Entity]
@@ -29,6 +30,7 @@ class Metric:
         self.dest_relation = defaultdict(partial(defaultdict, list))
         self.mc_data = defaultdict(partial(defaultdict))
         self.mc_data_rank = defaultdict(partial(defaultdict))
+        self.mc_data_total = defaultdict(partial(defaultdict))
         for rel in relations:
             self.src_relation[rel.src][rel.rel].append(rel)
             self.dest_relation[rel.dest][rel.rel].append(rel)
@@ -40,8 +42,28 @@ class Metric:
             mc_data_ext = []
         for data in mc_data_nat:
             self.mc_data['nat'][str(data['filename']).replace('\\', '/')] = data
+            # 新增数值汇总
+            for key, mc in data.items():
+                if key == 'filename' or key == 'file_count':
+                    continue
+                val = int(mc)
+                try:
+                    self.mc_data_total['nat'][key] += val
+                except KeyError:
+                    self.mc_data_total['nat'][key] = 0
+                    self.mc_data_total['nat'][key] += val
         for data in mc_data_ext:
             self.mc_data['ext'][str(data['filename']).replace('\\', '/')] = data
+            # 新增数值汇总
+            for key, mc in data.items():
+                if key == 'filename' or key == 'file_count':
+                    continue
+                val = int(mc)
+                try:
+                    self.mc_data_total['ext'][key] += val
+                except KeyError:
+                    self.mc_data_total['ext'][key] = 0
+                    self.mc_data_total['ext'][key] += val
         try:
             mc_data_rank_nat = FileCSV.read_dict_from_csv(os.path.join(data_path, 'mc/file-mc_rank_nat.csv'))
             mc_data_rank_ext = FileCSV.read_dict_from_csv(os.path.join(data_path, 'mc/file-mc_rank_ext.csv'))
@@ -726,3 +748,54 @@ class Metric:
             metrics_statistics[MetricCons.Me_open_in_sdk]['all_in_sdk'] += 1
         else:
             metrics_statistics[MetricCons.Me_open_in_sdk]['mix_in_sdk'] += 1
+
+    def handle_metrics_statistics_stability_file(self, metrics: dict, exas: List[List[Relation]], target_entity: list):
+        file_list = set()
+        for exa in exas:
+            entity_id = exa[target_entity[0]].dest if target_entity[1] else exa[target_entity[1]].src
+            file_list.add(self.entity_extensive[entity_id].file_path)
+
+        metrics["file_count"] = len(file_list)
+        metrics['average_val'] = {}
+        metrics['un_average_val'] = {}
+        metrics['average_rank'] = {}
+        metrics['un_average_rank'] = {}
+        # metrics['details'] = {}
+        for file_name in file_list:
+            # metrics['details'].update({
+            #     file_name: {
+            #         'native': self.mc_data_rank['nat'][file_name],
+            #         'extensive': self.mc_data_rank['ext'][file_name]
+            #     }})
+            if file_name in self.mc_data['ext'].keys():
+                for key, mc in self.mc_data['ext'][file_name].items():
+                    if key == 'filename' or key == 'file_count':
+                        continue
+                    index = int(mc)
+                    try:
+                        metrics['average_val'][key] += index
+                    except KeyError:
+                        metrics['average_val'][key] = 0
+                        metrics['average_val'][key] += index
+
+                for key, mc in self.mc_data_rank['ext'][file_name].items():
+                    if key == 'filename' or key == 'file_count':
+                        continue
+                    index = int(mc)
+                    try:
+                        metrics['average_rank'][key] += index
+                    except KeyError:
+                        metrics['average_rank'][key] = 0
+                        metrics['average_rank'][key] += index
+        total_file_count = len(self.mc_data['ext'])
+        for key, mc in metrics['average_val'].items():
+            metrics['un_average_val'][key] = round(
+                (self.mc_data_total['ext'][key] - mc) / (total_file_count - len(file_list))
+            )
+            metrics['average_val'][key] = round(mc / len(file_list))
+
+        for key, mc in metrics['average_rank'].items():
+            metrics['un_average_rank'][key] = round(
+                ((total_file_count + 1) * total_file_count / 2 - mc) / (total_file_count - len(file_list))
+            )
+            metrics['average_rank'][key] = round(mc / len(file_list))
