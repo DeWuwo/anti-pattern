@@ -7,6 +7,7 @@ from utils.compare import Compare
 from utils.string_utils import StringUtils
 from utils.thread import MyThread
 from utils.dynamic_thread import DynamicThread
+from utils.hash import Hash
 
 __all__ = [
     'FileJson',
@@ -17,5 +18,6 @@ __all__ = [
     'FileCommon',
     'StringUtils',
     'MyThread',
-    'DynamicThread'
+    'DynamicThread',
+    'Hash'
 ]

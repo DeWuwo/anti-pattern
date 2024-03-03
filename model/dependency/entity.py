@@ -12,6 +12,7 @@ class Entity:
     raw_type: str
     parameter_types: str
     parameter_names: str
+    parameter_entities: List[int]
     file_path: str
     package_name: str
     not_aosp: int
@@ -44,10 +45,16 @@ class Entity:
     parent_class: str
     parent_interface: List[str]
     called: int
+    called_entities: List[int]
+    call_entities: List[int]
     conflict_times: int
     conflict_blocks: int
     conflict_loc: int
     degree: Degree
+    extract_to: List[int]
+    children: set
+    total_hash: str
+    body_hash: str
 
     def __init__(self, **args):
         self.qualifiedName = args['qualifiedName']
@@ -85,6 +92,13 @@ class Entity:
         self.conflict_blocks = 0
         self.conflict_loc = 0
         self.degree = Degree()
+        self.extract_to = []
+        self.called_entities = []
+        self.call_entities = []
+        self.children = set()
+        self.total_hash = ""
+        self.body_hash = ""
+        self.parameter_entities = []
         try:
             self.start_line = args['location']['startLine']
             self.start_column = args['location']['startColumn']
@@ -169,7 +183,7 @@ class Entity:
     def to_owner(self):
         return {'id': self.id, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp, 'isIntrusive': self.is_intrusive,
                 'ownership': self.get_ownership(), 'category': self.category, 'qualifiedName': self.qualifiedName,
-                'file_path': self.file_path, 'mapping': self.entity_mapping}
+                'file_path': self.file_path, 'mapping': self.entity_mapping, 'modify': self.intrusive_modify}
 
     def handle_to_format(self, to_format: str):
         method = getattr(self, f'handle_to_{to_format}', None)
@@ -184,6 +198,9 @@ class Entity:
         return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName,
                 'file_path': self.file_path, 'not_aosp': self.not_aosp, 'old_aosp': self.old_aosp,
                 'isIntrusive': self.is_intrusive}
+
+    def handle_to_hash(self):
+        return {'id': self.id, 'total_hash': self.total_hash, 'body_hash': self.body_hash}
 
     def handle_to_csv(self):
         return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName}
@@ -227,6 +244,9 @@ class Entity:
     @classmethod
     def get_csv_header(cls):
         return ['id', 'category', 'qualifiedName', 'conflict_loc', 'conflict_blocks', 'conflict_times']
+
+    def get_var_entity_length(self):
+        return self.end_column - self.start_column + 1 if self.start_line == self.end_line else -1
 
     def get_ownership(self):
         if self.not_aosp == 1:
@@ -329,6 +349,9 @@ class Entity:
         self.parameter_types = parameter_types
         self.parameter_names = parameter_names
 
+    def set_param_entities(self, param: int):
+        self.parameter_entities.append(param)
+
     def set_commits(self, commits: List[str]):
         self.commits = commits
 
@@ -358,8 +381,12 @@ class Entity:
     def set_parent_interface(self, parent_interface: str):
         self.parent_interface.append(parent_interface)
 
-    def set_called_count(self):
+    def set_called_count(self, entID):
         self.called += 1
+        self.called_entities.append(entID)
+
+    def set_call_count(self, entID):
+        self.call_entities.append(entID)
 
     def set_hidden(self, hidden: list):
         self.hidden = hidden
@@ -374,6 +401,18 @@ class Entity:
 
     def set_degree(self, **kwargs):
         self.degree.handle_set_degree(**kwargs)
+
+    def set_extract_to(self, entity_id):
+        self.extract_to.append(entity_id)
+
+    def set_children(self, entity_id):
+        self.children.add(entity_id)
+
+    def set_total_hash(self, hash_val):
+        self.total_hash = hash_val
+
+    def set_body_hash(self, hash_val):
+        self.body_hash = hash_val
 
     def above_file_level(self):
         return self.category == Constant.E_file or self.category == Constant.E_package

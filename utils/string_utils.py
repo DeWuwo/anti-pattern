@@ -48,11 +48,17 @@ class StringUtils:
                 return True
         return False
 
+    @classmethod
+    def compact_string(cls, string: str):
+        return ''.join(string.split())
+
 
 if __name__ == '__main__':
     a = '12315'
-    print(StringUtils.find_str_in_short_list('android.util.Slog.w', ['android.util', 'android.os.Message', 'com.android.internal.logging',
-                   'com.android.internal.os', 'android.os', 'com.android.server.utils',
-                   'hihonor.android.utils', 'android.os.ServiceManager', 'com.android.server.LocalServices',
-                   'android.provider.Settings.Secure', 'android.provider.Settings.System',
-                   'com.android.telephony.Rlog']))
+    print(StringUtils.find_str_in_short_list('android.util.Slog.w',
+                                             ['android.util', 'android.os.Message', 'com.android.internal.logging',
+                                              'com.android.internal.os', 'android.os', 'com.android.server.utils',
+                                              'hihonor.android.utils', 'android.os.ServiceManager',
+                                              'com.android.server.LocalServices',
+                                              'android.provider.Settings.Secure', 'android.provider.Settings.System',
+                                              'com.android.telephony.Rlog']))

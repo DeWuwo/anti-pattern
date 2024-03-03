@@ -16,7 +16,7 @@ class Refactor:
     def __init__(self, out_path):
         self.out_path = out_path
 
-    def load_refactor_entity(self, entities: Dict[str, dict], refactor_res_path: str):
+    def load_refactor_entity(self, entities: Dict[int, dict], refactor_res_path: str):
         refactor_data = RefMinerPaser.get_refactoring_of_first_commit(Path(refactor_res_path))
         parse_all_refactors = RefMinerPaser.distill_move_edit_list(refactor_data)
 
@@ -59,28 +59,35 @@ class Refactor:
             json.dump(refactor_entities_list_write, file, indent=4)
         return refactor_entities_list
 
-    def load_refactor_entity_from_file_cache(self, entities: Dict[str, dict], refactor_entities_path: Path):
+    def load_refactor_entity_from_file_cache(self, entities: Dict[int, dict], refactor_entities_path: Path):
         refactor_data = self.load_refactor_data_id(refactor_entities_path)
         refactor_entities_list: Dict[int, list] = {}
-        for ent_id, moves in refactor_data:
+        for ent_id, moves in refactor_data.items():
             parse_moves = RefMinerPaser.distill_move_edit_list(moves)
             if not parse_moves:
                 # 跳转至正常重新加载
                 pass
-            current_moves = list(parse_moves.values())[0]
-            row_dict = dict()
-            for k, v in entities[ent_id].items():
+            # current_moves = list(parse_moves.values())[0]
+            for current_moves in list(parse_moves.values()):
                 try:
-                    row_dict[k] = json.loads(v)
-                except json.JSONDecodeError:
-                    row_dict[k] = v
-            row_dict["Moves"] = [m.refactor_obj for m in current_moves]
-            refactor_entities_list[int(row_dict['id'])] = [row_dict,
-                                                           [[m.refactor_obj['type'], m.src_state, m.to_state] for m in
-                                                            current_moves]]
+                    if current_moves[0].to_state.get_category() != entities[int(ent_id)]['category']:
+                        continue
+                    row_dict = dict()
+                    for k, v in entities[int(ent_id)].items():
+                        try:
+                            row_dict[k] = json.loads(v)
+                        except json.JSONDecodeError:
+                            row_dict[k] = v
+                    row_dict["Moves"] = [m.refactor_obj for m in current_moves]
+                    refactor_entities_list[int(row_dict['id'])] = [row_dict,
+                                                                   [[m.refactor_obj['type'], m.src_state, m.to_state] for m
+                                                                    in current_moves]]
+                except KeyError:
+                    print("key error")
+                    pass
         return refactor_entities_list
 
-    def fetch_refactor_entities(self, entities: Dict[str, dict], refactor_path: str):
+    def fetch_refactor_entities(self, entities: Dict[int, dict], refactor_path: str):
         refactor_entities_path = Path(self.out_path, "refactor_entities.json")
         if refactor_entities_path.exists():
             refactor_res = self.load_refactor_entity_from_file_cache(entities, refactor_entities_path)
