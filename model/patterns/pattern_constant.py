@@ -281,7 +281,7 @@ class PatternCons:
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_method, 'attrs': {'intrusive': True},
-                                'filter': {'qualified_name': filter_list}},
+                                'filter': {}},
                         'rel': {'type': Constant.param, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_variable,
                                  'attrs': {}},
@@ -303,7 +303,7 @@ class PatternCons:
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_class, 'attrs': {},
-                                'filter': {'qualified_name': filter_list}},
+                                'filter': {}},
                         'rel': {'type': Constant.define, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_class, 'attrs': {}},
                         'direction': '01'
@@ -346,7 +346,7 @@ class PatternCons:
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_class,
-                                'attrs': {'accessible': []}, 'filter': {'qualified_name': filter_list}},
+                                'attrs': {'accessible': []}, 'filter': {}},
                         'rel': {'type': Constant.inherit, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_class,
                                  'attrs': {'accessible': []}},
@@ -366,7 +366,7 @@ class PatternCons:
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_class,
-                                'attrs': {'accessible': []}, 'filter': {'qualified_name': filter_list}},
+                                'attrs': {'accessible': []}, 'filter': {}},
                         'rel': {'type': Constant.implement, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_interface,
                                  'attrs': {'accessible': []}},
@@ -644,7 +644,7 @@ class PatternCons:
                         'dest': {'id': [-1], 'category': Constant.E_method,
                                  'attrs': {
                                      'accessible': [Constant.accessible_list[2]]},
-                                 'filter': {'qualified_name': filter_list}
+                                 'filter': {}
                                  },
                         'direction': '10'
                     },
