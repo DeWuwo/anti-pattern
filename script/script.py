@@ -45,9 +45,9 @@ class Script:
         # compare()
 
         branch_checkout_commands: List[str] = [
-            f'git -C {aosp_code_path} clean -d -fx',
-            f'git -C {aosp_code_path} checkout .',
-            f'git -C {aosp_code_path} checkout {aosp_base_commit}',
+            # f'git -C {aosp_code_path} clean -d -fx',
+            # f'git -C {aosp_code_path} checkout .',
+            # f'git -C {aosp_code_path} checkout {aosp_base_commit}',
 
             f'git -C {aosp_code_path} clean -d -fx',
             f'git -C {aosp_code_path} checkout .',
@@ -59,8 +59,8 @@ class Script:
         ]
 
         dep_commands: List[str] = [
-            f'java -Xmx20g -jar {self.dep_path} java {aosp_code_path} base -o {aosp_base_commit}{aosp_hidden}',
-            f'move /Y {self.proj_path}{aosp_base_commit}.json {base_aosp_dep_path}',
+            # f'java -Xmx20g -jar {self.dep_path} java {aosp_code_path} base -o {aosp_base_commit}{aosp_hidden}',
+            # f'move /Y {self.proj_path}{aosp_base_commit}.json {base_aosp_dep_path}',
             f'java -Xmx20g -jar {self.dep_path} java {aosp_code_path} base -o {aosp_commit}{aosp_hidden}',
             f'move /Y {self.proj_path}{aosp_commit}.json {aosp_dep_path}',
             f'java -Xmx20g -jar {self.dep_path} java {assi_code_path} base -o {assi_commit}{assi_hidden}',

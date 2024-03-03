@@ -38,12 +38,19 @@ class OpenOS:
             ['LineageOS', 'lineage-19.1', 'base', '484c59b972c1772f75a4b1b9fce7512eee517dcb',
              '9cdf73f7cbed891c433d278d533f0e0113d68efc', 'hiddenapi-flags-lineage19.csv', 'hiddenapi-flags-12.csv',
              'android-12'],
+            ['LineageOS', 'lineage-20.0', 'base', '3af7ee5c7fd07853b9579f64cc48fb398e6b4b9b',
+             '5c8d1d9', 'null', 'null', 'android-12'],
+            ['LineageOS', 'lineage-21.0', 'base', 'bd2fc2feee2009b186dbb83487ee804574caa3c4',
+             'c43d4f8', 'null', 'null', 'android-12'],
+
         ]
 
         self.CalyxOS = [
             ['CalyxOS', 'android11', 'base', '687846d3b443e9a740c73d628c60f3d725f4a95c', '49d8b986dddd', 'null',
              'null', 'android-11'],
             ['CalyxOS', 'android12', 'base', 'ca93c649fb376e572dc9fcc1242fd9ba316c37d7', '187a94cca708', 'null', 'null',
+             'android-12'],
+            ['CalyxOS', 'android13', 'base', 'd42f8d774901e8bcdf2c83b61b01fad79ce2f69f', '5c8d1d9', 'null', 'null',
              'android-12']
         ]
 
@@ -55,7 +62,12 @@ class OpenOS:
             ['OmniROM', 'android-11', 'base', 'a362a5abfe0dbcf48877c5b02d1a8da8d9c504c6',
              'ba595d5debf2a214e05a8a774be658b09b354d1a', 'null', 'null', 'android-11'],
             ['OmniROM', 'android-12.0', 'base', 'c4f3170b13b0189af9b8addebf3587bd013576c6',
-             '4bd4cf2ac7dd470de97c673f086133b7e7e4d5d3', 'null', 'null', 'android-12']
+             '4bd4cf2ac7dd470de97c673f086133b7e7e4d5d3', 'null', 'null', 'android-12'],
+            ['OmniROM', 'android-13.0', 'base', '47f9587',
+             '2391f08', 'null', 'null', 'android-12'],
+            ['OmniROM', 'android-14.0', 'base', '573d475',
+             'c43d4f8', 'null', 'null', 'android-12']
+
         ]
 
         self.AOSPA = [
@@ -64,7 +76,9 @@ class OpenOS:
             ['aospa', 'ruby-staging', 'base', '3b08012599a6b4fb556dddd1e1e8972b2a2730fe', 'ca05b4c5f776', 'null',
              'null', 'android-11'],
             ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66',
-             '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null', 'android-12']
+             '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null', 'android-12'],
+            ['aospa', 'topaz', 'base', 'da4e6b0612a340b211f987fecb5db178aff14400',
+             '5d817b2', 'null', 'null', 'android-12'],
         ]
 
         self.test = [
@@ -73,14 +87,28 @@ class OpenOS:
             # ['LineageOS', 'lineage-18.1', 'base', '7f7fc2562a95be630dbe609e8fb70383dcfada4f',
             #  '49d8b986dddd441df741698541788c5f3a9c465f', 'hiddenapi-flags-lineage18.csv', 'hiddenapi-flags-11.csv',
             #  'android-11'],
-            ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66', '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null', 'android-12']
+            # ['OmniROM', 'android-11', 'base', 'a362a5abfe0dbcf48877c5b02d1a8da8d9c504c6',
+            #  'ba595d5debf2a214e05a8a774be658b09b354d1a', 'null', 'null', 'android-11'],
+            # ['aospa', 'sapphire', 'base', '15d9159eb00fb7fd92f9dc249af588f655fd8f66', '898ad0236f79d81514806e4f4ca3a2fe401e0705', 'null', 'null', 'android-12'],
+            ['LineageOS', 'lineage-20.0', 'base', '3af7ee5c7fd07853b9579f64cc48fb398e6b4b9b',
+             '5c8d1d9', 'null', 'null', 'android-12'],
+            ['LineageOS', 'lineage-21.0', 'base', 'bd2fc2feee2009b186dbb83487ee804574caa3c4',
+             'c43d4f8', 'null', 'null', 'android-12'],
+            ['CalyxOS', 'android13', 'base', 'd42f8d774901e8bcdf2c83b61b01fad79ce2f69f', '5c8d1d9', 'null', 'null',
+             'android-12'],
+            ['OmniROM', 'android-13.0', 'base', '47f9587',
+             '2391f08', 'null', 'null', 'android-12'],
+            ['OmniROM', 'android-14.0', 'base', '573d475',
+             'c43d4f8', 'null', 'null', 'android-12'],
+            ['aospa', 'topaz', 'base', 'da4e6b0612a340b211f987fecb5db178aff14400',
+             '5d817b2', 'null', 'null', 'android-12'],
         ]
 
     # -nc D:\Honor\source_code\android\base 49d8b986dddd441df741698541788c5f3a9c465f D:\Honor\source_code\LineageOS\base 7f7fc2562a95be630dbe609e8fb70383dcfada4f -json E:\test\1.json
     # -c D:\Honor\source_code\LineageOS\base 3874e9c876bac28279c389a8e6cb82ad951546dc -json E:\test\2.json
     def get_all_os(self):
-        # return self.test
-        return self.LineageOS + self.CalyxOS + self.OmniROM + self.AOSPA
+        return self.test
+        # return self.LineageOS + self.CalyxOS + self.OmniROM + self.AOSPA
 
     def get_path(self, os_name: str, os_version: str, pkg: str, os_commit, aosp_commit: str, os_hidden: str,
                  aosp_hidden, aosp_base_version: str):
