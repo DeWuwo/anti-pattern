@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from typing import List
 from collections import defaultdict
 from functools import partial
-from utils import FileCSV, FileJson, Constant
+from utils import FileCSV, FileJson
+from constant.constant import Constant
 
 
 class FacadeFilter:
