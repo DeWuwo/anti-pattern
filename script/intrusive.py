@@ -1,7 +1,8 @@
 import os
 import csv
 from typing import List
-from utils import FileCSV, Constant
+from utils import FileCSV
+from constant.constant import Constant
 
 
 class IntrusiveCompare:
@@ -72,7 +73,7 @@ class IntrusiveCompare:
         final_res_total = []
         for project in projects:
             res = {}
-            for cat in [Constant.E_class, Constant.E_interface, Constant.E_annotation, 'Enum', 'Enum Constant',
+            for cat in [Constant.E_class, Constant.E_interface, Constant.E_annotation, 'Enum', 'Enum constant',
                         Constant.E_method,
                         Constant.E_variable]:
                 res[cat] = {'1': 0, '2': 0, '3': 0, '>3': 0}

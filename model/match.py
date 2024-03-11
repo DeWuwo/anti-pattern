@@ -7,7 +7,8 @@ from model.dependency.relation import Relation
 from model.dependency.entity import Entity
 from model.build_model import BuildModel
 from model.patterns.pattern_type import PatternType
-from utils import FileJson, FileCSV, Constant
+from utils import FileJson, FileCSV
+from constant.constant import Constant
 from model.blame_field import BlameField
 from model.patterns.pattern_rules import PatternRules, RelationRule
 from model.patterns.pattern_constant import filter_list
@@ -32,6 +33,7 @@ class Match:
     statistic_modules: Dict[str, Dict[str, int]]
     module_blame: defaultdict
     code_extension: str
+    file_stab_metric_all_pattern: dict
     metric_cal_datas: Metric
 
     def __init__(self, build_model: BuildModel, output: str, blame_path: str, code_extension: str):
@@ -43,6 +45,7 @@ class Match:
         self.match_result_metric = []
         self.match_result_base_statistic = {}
         self.file_stab_metric = {}
+        self.file_stab_metric_all_pattern = {}
         self.statistic_files = {}
         self.statistic_files_detail = {}
         self.statistic_pkgs = {}
@@ -213,15 +216,20 @@ class Match:
                                  0)
             # res[style.name] = {'res': mode_set, 'filter': filter_set}
             res_metric, res_metric_filter, res_metric_statistic, res_metric_file_stab = \
-                self.aggregate_res_and_get_metrics(mode_set, style.union_point,
-                                                   style.union_edge, style.metrics,
-                                                   style.metrics_filter, metric_cal_datas)
+                self.aggregate_res_and_get_metrics(mode_set,
+                                                   style.union_point,
+                                                   style.union_edge,
+                                                   style.metrics,
+                                                   style.metrics_filter,
+                                                   self.file_stab_metric_all_pattern,
+                                                   metric_cal_datas)
             res_filter_metric, res_filter_metric_filter, res_filter_metric_statistic, res_metric_file_stab_filter = \
                 self.aggregate_res_and_get_metrics(filter_set,
                                                    style.union_point,
                                                    style.union_edge,
                                                    style.metrics,
                                                    style.metrics_filter,
+                                                   {},
                                                    metric_cal_datas)
             # res[style.name] = {'res': }
             res_with_metric[style.name] = {
@@ -278,7 +286,7 @@ class Match:
 
     #
     def aggregate_res_and_get_metrics(self, res: List[List[Relation]], points, edges, metrics: dict,
-                                      metrics_filter: list, metric_cal_datas: Metric):
+                                      metrics_filter: list, metrics_all_pattern, metric_cal_datas: Metric):
         final_res = []
         final_res_metrics_filter = []
         res_copy = res.copy()
@@ -325,13 +333,13 @@ class Match:
                 metric_cal_datas.handle_metrics_statistics(metrics_values, metrics_statistic, **metrics)
                 if metric_cal_datas.handle_metrics_filter(metrics_values, metrics_filter):
                     final_res_metrics_filter.append({'metrics': metrics_values, 'value': exa})
-        metrics_file_list_stab = {}
+        metrics_by_pattern = {}
         try:
-            metric_cal_datas.handle_metrics_statistics_stability_file(metrics_file_list_stab, res_copy,
+            metric_cal_datas.handle_metrics_statistics_stability_file(metrics_by_pattern, metrics_all_pattern, res_copy,
                                                                       metrics['stability'])
         except KeyError:
             pass
-        return final_res, final_res_metrics_filter, metrics_statistic, metrics_file_list_stab
+        return final_res, final_res_metrics_filter, metrics_statistic, metrics_by_pattern
 
     def get_statistics(self, res_of_detect):
         print('get statistics')
@@ -464,6 +472,7 @@ class Match:
         union_temp_entities = set()
         re_map = defaultdict(int)
         res = {}
+        res_count = {}
         total_count = 0
         res['modeCount'] = len(res_of_detect)
         res['totalCount'] = total_count
@@ -515,6 +524,7 @@ class Match:
                                 if re_map[s2d] == 0:
                                     re_map[s2d] = 1
                                     union_temp_relation.append(self.to_detail_json(rel))
+                    res_count.update({style_name: len(res_temp)})
                     style_res['resCount'] = len(res_temp)
                     style_res['filterCount'] = len(filter_temp)
                     style_res['res'] = res_temp
@@ -533,7 +543,7 @@ class Match:
                 res_filter['values'][mode]['count'] = pattern_count_filter
                 res_filter['values'][mode]['res'] = anti_temp_filter
         res['totalCount'] = total_count
-        return match_set, union_temp_relation, union_temp_entities, res, res_filter, out_path
+        return match_set, res_count, union_temp_relation, union_temp_entities, res, res_filter, out_path
 
     def deal_res_for_db(self, res_of_detect, scan_id):
         print('to db')
@@ -582,15 +592,19 @@ class Match:
                    ['com.android.systemui.qs']]
 
         def output_to_file(file_list, res_of_detect, out_put):
-            match_set, match_set_union_relation, match_set_union_entity, match_set_json_res, match_set_json_res_filter, out_path = \
+            match_set, res_count, match_set_union_relation, match_set_union_entity, match_set_json_res, match_set_json_res_filter, out_path = \
                 self.deal_res_for_output(file_list, res_of_detect, out_put)
             self.output_res(pattern.ident, match_set, match_set_union_relation, match_set_union_entity,
                             match_set_json_res,
                             match_set_json_res_filter, out_path)
+            FileCSV.write_dict_to_csv(out_path, "pattern_count", [res_count], 'w')
             simple_stat, metrics_statistic = self.get_statistics(match_set_json_res)
             self.output_statistic(pattern.ident, pattern.patterns, pattern.styles, simple_stat, metrics_statistic,
                                   out_path)
 
+        '''
+        开始处理反模式输出
+        '''
         for target in targets:
             output_to_file(target, self.match_result_union, self.out_path)
 
@@ -600,6 +614,7 @@ class Match:
         FileJson.write_to_json(self.out_path, self.match_result_metric, 'res_metric_statistic')
         # self.output_module_res(pattern.ident)
         FileJson.write_to_json(self.out_path, self.file_stab_metric, "file_stab_metric")
+        # 反模式为一个表格输出维护成本
         for pattern_name, obj in self.file_stab_metric.items():
             temp = {'project': self.out_path.replace("\\", '/').rsplit('\\')[0]}
             for mc_key in ['average_val', 'un_average_val', 'average_rank', 'un_average_rank']:
@@ -612,6 +627,27 @@ class Match:
                     for mc_name, mc_val in val.items():
                         temp[f"{key}_{mc_name}"] = mc_val
             FileCSV.write_dict_to_csv(f"E:\\test", pattern_name, [temp], 'a', False)
+        # 输出所有反模式结果
+        temp = {'project': str(self.out_path).replace("\\", '/').rsplit('/')[-1], 'pattern_file': 0,
+                'facade_file': len(self.base_model.facade_relations_on_file.keys()), 'total_file': 0}
+        for mc_name in ['#author', '#cmt', 'changeloc', '#issue', '#issue-cmt', 'issueLoc']:
+            for mc_key in ['average_val', 'un_average_val', 'average_rank', 'un_average_rank']:
+                temp[f"{mc_key}_{mc_name}"] = 0
+        for key, val in self.file_stab_metric_all_pattern.items():
+            if key == "file_count":
+                pattern_files = {"project": str(self.out_path).replace("\\", '/').rsplit('/')[-3],
+                                 "version": str(self.out_path).replace("\\", '/').rsplit('/')[-1],
+                                 "aff_files": ",".join(list(val)),
+                                 "aff_files_count": len(val)}
+                FileCSV.write_dict_to_csv(f"E:\\test", 'total_pattern_files', [pattern_files], 'a', False)
+                temp['pattern_file'] = len(val)
+            elif key == 'total_file':
+                temp[key] = val
+            else:
+                for mc_name, mc_val in val.items():
+                    temp[f"{key}_{mc_name}"] = mc_val
+
+        FileCSV.write_dict_to_csv(f"E:\\test", 'total_mc_metric', [temp], 'a', False)
         return self.match_result_union
 
     def output_res(self, pattern_type: str, match_set, match_set_union_relation, match_set_union_entity,

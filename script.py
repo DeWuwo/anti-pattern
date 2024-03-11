@@ -9,13 +9,14 @@ from script.facade_top_file import FileTop
 from script.intrusive_filter import IntrusiveFilter
 from script.file_move import FileMove
 from script.metric_filter import MetricFilter
-from utils import Constant, FileCSV
+from utils import FileCSV
+from constant.constant import Constant
 
 import sys
 import time
 
 if __name__ == '__main__':
-    # Script('E:\\Graduate\\RefactoringMine\\utils-3.0.2-modify\\bin').run_command()
+    Script('E:\\Graduate\\RefactoringMine\\utils-3.0.2-modify\\bin').run_command()
     out_dir = 'D:\\Honor\\match_res_new'
 
 
@@ -61,8 +62,8 @@ if __name__ == '__main__':
     # res = []
     # for proj in aospa + calyx + lineage + omni + honor:
     #     f_f = FacadeFilter(proj[1], 'facade.json',
-    #                        [Constant.implement, Constant.inherit, Constant.call, Constant.override, Constant.R_cast,
-    #                         Constant.R_annotate, Constant.reflect]).get_facade_conf(proj[0])
+    #                        [constant.implement, constant.inherit, constant.call, constant.override, constant.R_cast,
+    #                         constant.R_annotate, constant.reflect]).get_facade_conf(proj[0])
     #     res.append(f_f)
     # FileCSV.write_dict_to_csv('D:\\Honor\\match_res\\analysis\\intrusive_conf\\', 'res', res, 'w')
     # 切面top file
@@ -87,27 +88,27 @@ if __name__ == '__main__':
     # 移动文件
     # method_file = ['']
     #
-    result_data = ['E:\\数据\\ground_truth\\',
-                   ['res_metric_statistic.json']]
+    result_data = ['E:\\数据\\mc\\',
+                   ['file-mc_ext.csv', 'file-mc_rank_ext.csv']]
     old_paths = get_out_path('D:\\Honor\\match_res')
-    new_paths = get_out_path('D:\\Honor\\match_res_new', "metric_filter")
+    new_paths = get_out_path('D:\\Honor\\match_res_new', "")
 
     # for new in new_paths:
     #     FileMove.file_move(new[1], f"{result_data[0]}\\{new[0]}", result_data[1])
     patterns = ["FinalDel", "AccessibilityModify", "HiddenApi", "ParameterListModifyDep", "InheritExtension",
                 "ImplementExtension", "ReflectUse"]
     for new in new_paths:
-        MetricFilter(f"{new[1]}\\res_metric_statistic.json", "E:\\数据\\metric").handle_count(patterns)
+        MetricFilter(f"{new[1]}\\res_metric_statistic.json", "E:\\Graduate\\datas\\反模式\\反模式分级").handle_count(patterns, new[0])
 
     # 切面依赖模块统计
     # FacadeFilter(aospa[2][1], 'facade.json',
-    #              [Constant.implement, Constant.inherit, Constant.R_aggregate]).get_module_stat_2(f'{aospa[2][0]}_facade_stat_class')
+    #              [constant.implement, constant.inherit, constant.R_aggregate]).get_module_stat_2(f'{aospa[2][0]}_facade_stat_class')
     #
     # FacadeFilter(aospa[2][1], 'facade.json',
-    #              [Constant.call]).get_module_stat_2(f'{aospa[2][0]}_facade_stat_method')
+    #              [constant.call]).get_module_stat_2(f'{aospa[2][0]}_facade_stat_method')
     #
     # FacadeFilter(lineage[2][1], 'facade.json',
-    #              [Constant.implement, Constant.inherit, Constant.R_aggregate]).get_module_stat_2(f'{lineage[2][0]}_facade_stat_class')
+    #              [constant.implement, constant.inherit, constant.R_aggregate]).get_module_stat_2(f'{lineage[2][0]}_facade_stat_class')
     #
     # FacadeFilter(lineage[2][1], 'facade.json',
-    #              [Constant.call]).get_module_stat_2(f'{lineage[2][0]}_facade_stat_method')
+    #              [constant.call]).get_module_stat_2(f'{lineage[2][0]}_facade_stat_method')

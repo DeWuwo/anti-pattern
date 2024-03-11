@@ -1,5 +1,5 @@
 import argparse
-from utils import FileJson, FileCSV, Constant
+from utils import FileJson, FileCSV
 from model.build_model import BuildModel
 # from model.anti_pattern import AntiPattern
 # from model.coupling_pattern import CouplingPattern
@@ -7,6 +7,7 @@ from model.patterns.coupling_patterns import CouplingPattern
 from model.match import Match
 from model.generate_history import GenerateHistory
 from model.mc.mc import MC
+from constant.constant import Constant
 
 access_map = {'': '0', 'Private': '1', 'Protected': '2', 'Public': '3'}
 

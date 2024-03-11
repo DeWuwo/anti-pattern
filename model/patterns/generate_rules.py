@@ -1,4 +1,4 @@
-from utils import Constant
+from constant.constant import Constant
 
 
 class RuleGen:

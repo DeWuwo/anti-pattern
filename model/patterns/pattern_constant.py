@@ -1,5 +1,5 @@
 from model.patterns.pattern_rules import PatternRules
-from utils import Constant
+from constant.constant import Constant
 from model.metric.metric_constant import MetricCons
 
 filter_list = ['android.util', 'android.os.Message', 'com.android.internal.logging',
@@ -132,10 +132,10 @@ class PatternCons:
             #     'metrics_filter': [],
             #     'rules': [
             #         {
-            #             'src': {'id': [-1], 'category': Constant.E_method,
+            #             'src': {'id': [-1], 'category': constant.E_method,
             #                     'attrs': {'final': True, 'intrusive': True}},
-            #             'rel': {'type': Constant.define, 'attrs': {}},
-            #             'dest': {'id': [-1], 'category': Constant.E_variable,
+            #             'rel': {'type': constant.define, 'attrs': {}},
+            #             'dest': {'id': [-1], 'category': constant.E_variable,
             #                      'attrs': {'final': True, 'intrusive': True}},
             #             'direction': '00'
             #         },
@@ -258,11 +258,11 @@ class PatternCons:
             #     'metrics_filter': [],
             #     'rules': [
             #         {
-            #             'src': {'id': [-1], 'category': Constant.E_method,
+            #             'src': {'id': [-1], 'category': constant.E_method,
             #                     'attrs': {}},
-            #             'rel': {'type': Constant.call, 'attrs': {}},
-            #             'dest': {'id': [-1], 'category': Constant.E_method,
-            #                      'attrs': {'hidden': [Constant.HD_hidden]},
+            #             'rel': {'type': constant.call, 'attrs': {}},
+            #             'dest': {'id': [-1], 'category': constant.E_method,
+            #                      'attrs': {'hidden': [constant.HD_hidden]},
             #                      'filter': {'qualified_name': filter_list}},
             #             'direction': '10'
             #         }

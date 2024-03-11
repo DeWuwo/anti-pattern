@@ -4,7 +4,7 @@ from typing import List, Dict
 
 from model.dependency.entity import Entity
 from model.blamer.entity_tracer import BaseState
-from utils import Constant
+from constant.constant import Constant
 
 MoveMethodRefactorings = {
     "Move And Rename Method": ["rename", "move"],
@@ -48,8 +48,6 @@ class Mapping:
         self.extensive_entities_um = extensive_entities_um
 
     def exactly_match(self, entity: Entity, search_name: str, search_param: str, search_file: str):
-        if entity.above_file_level():
-            return
         aosp_list_full: List[int] = self.aosp_entities_dict[entity.category][search_name][search_file]
         extensive_list_full: List[int] = self.extensive_entities_dict[entity.category][entity.qualifiedName][
             entity.file_path]
@@ -60,7 +58,10 @@ class Mapping:
 
         aosp_list.sort()
         extensive_list.sort()
-
+        if entity.above_file_level():
+            if len(aosp_list) > 0 and len(extensive_list) > 0:
+                self.entity_mapping(self.aosp_entities[aosp_list[0]], entity)
+            return
         # if not aosp_list_full:
         #     return
         if len(aosp_list) == 1 and len(extensive_list) == 1:
@@ -87,7 +88,7 @@ class Mapping:
                 aosp_list: List[int] = [ent for ent in aosp_list_full if self.aosp_entities[ent].entity_mapping == -1]
                 extensive_list: List[int] = [ent for ent in extensive_list_full if
                                              self.extensive_entities[ent].entity_mapping == -1]
-                # 第二轮 type bind_name
+                # 第二轮 type bind
                 for aosp_id in aosp_list:
                     for ext_id in extensive_list:
                         aosp_ent = self.aosp_entities[aosp_id]
@@ -297,6 +298,7 @@ class Mapping:
                 for move_name in MoveMethodRefactorings[move_type]:
                     entity.set_intrusive_modify(move_name, '-')
             elif move_type in ExtractMethodRefactorings.keys():
+                # 当外部类发生MOVE时，Extract的 source state无法基于ref结果追踪qualifiedName，但归属方与修改类型不影响
                 entity.set_honor(1)
                 entity.set_intrusive(1)
                 # for ent in child_param[ent.id]:
@@ -380,47 +382,12 @@ class Mapping:
             return True
         return False
 
-    def get_ownership(self, chang_files: List[str], all_entities: dict, all_native_entities: dict,
-                      old_native_entities: dict, old_update_entities: dict, intrusive_entities: dict,
-                      old_intrusive_entities: dict, pure_accompany_entities: dict):
-        keys_all_entities = all_entities.keys()
-        keys_intrusive_entities = intrusive_entities.keys()
-        keys_old_intrusive_entities = old_intrusive_entities.keys()
-        keys_pure_accompany_entities = pure_accompany_entities.keys()
-        keys_old_native_entities = old_native_entities.keys()
-        keys_old_update_entities = old_update_entities.keys()
-        keys_all_native_entities = all_native_entities.keys()
-        for entity in self.extensive_entities:
-            if not entity.above_file_level() and entity.not_aosp == -2:
-                if entity.entity_mapping >= 0:
-                    if entity.id in keys_old_native_entities or entity.id in keys_old_update_entities:
-                        entity.set_honor(0)
-                        entity.set_old_aosp(1)
-                    elif entity.id in keys_old_intrusive_entities:
-                        entity.set_honor(0)
-                        entity.set_old_aosp(1)
-                        entity.set_intrusive(1)
-                    elif entity.id in keys_all_native_entities:
-                        entity.set_honor(0)
-                    else:
-                        entity.set_honor(0)
-                        entity.set_intrusive(1)
-                else:
-                    if entity.id in keys_old_native_entities or entity.id in keys_old_update_entities:
-                        entity.set_honor(0)
-                        entity.set_old_aosp(1)
-                    elif entity.id in keys_old_intrusive_entities:
-                        entity.set_honor(0)
-                        entity.set_old_aosp(1)
-                        entity.set_intrusive(1)
-                    elif entity.id in keys_all_native_entities:
-                        entity.set_honor(0)
-                    else:
-                        entity.set_honor(1)
-
     def get_ownership_by_body(self, chang_files: List[str]):
         for entity in self.extensive_entities:
-            if (not entity.above_file_level()) and entity.not_aosp == -2:
+            if entity.above_file_level():
+                if entity.entity_mapping >= 0:
+                    entity.set_honor(0)
+            elif entity.not_aosp == -2:
                 if entity.file_path in chang_files:
                     if entity.entity_mapping >= 0:
                         entity.set_honor(0)

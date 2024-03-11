@@ -69,22 +69,22 @@ class Refactor:
                 pass
             # current_moves = list(parse_moves.values())[0]
             for current_moves in list(parse_moves.values()):
-                try:
-                    if current_moves[0].to_state.get_category() != entities[int(ent_id)]['category']:
-                        continue
-                    row_dict = dict()
-                    for k, v in entities[int(ent_id)].items():
-                        try:
-                            row_dict[k] = json.loads(v)
-                        except json.JSONDecodeError:
-                            row_dict[k] = v
-                    row_dict["Moves"] = [m.refactor_obj for m in current_moves]
-                    refactor_entities_list[int(row_dict['id'])] = [row_dict,
-                                                                   [[m.refactor_obj['type'], m.src_state, m.to_state] for m
-                                                                    in current_moves]]
-                except KeyError:
-                    print("key error")
-                    pass
+                # try:
+                if current_moves[0].to_state.get_category() != entities[int(ent_id)]['category']:
+                    continue
+                row_dict = dict()
+                for k, v in entities[int(ent_id)].items():
+                    try:
+                        row_dict[k] = json.loads(v)
+                    except json.JSONDecodeError:
+                        row_dict[k] = v
+                row_dict["Moves"] = [m.refactor_obj for m in current_moves]
+                refactor_entities_list[int(row_dict['id'])] = [row_dict,
+                                                               [[m.refactor_obj['type'], m.src_state, m.to_state] for m
+                                                                in current_moves]]
+                # except KeyError:
+                #     print("key error")
+                #     pass
         return refactor_entities_list
 
     def fetch_refactor_entities(self, entities: Dict[int, dict], refactor_path: str):

@@ -266,7 +266,7 @@ def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str
     blame = create_entity_blamer(blame_dict)
 
     print(' get entities commits')
-    if os.path.exists(f"{out_path}/entity_commits"):
+    if os.path.exists(f"{out_path}/entity_commits.csv"):
         print(' load ownership')
         # for ent in ents:
         #     if ent.path not in filter_file_set:
@@ -281,7 +281,7 @@ def get_entity_commits(repo_path: str, accompany_dep: str, old_base_commits: str
                 continue
             ent_commits = blame(ent.path, ent.start_line, ent.end_line)
             ownership_data.append(EntOwnership(ent, ent_commits))
-        with open(f"{out_path}/entity_commits", "w", encoding="utf-8", newline="") as f:
+        with open(f"{out_path}/entity_commits.csv", "w", encoding="utf-8", newline="") as f:
             dump_ownership(ownership_data, f)
 
         # with open(f"{analyzed_root}_ownership_lineageos_{sha}.csv", "w", newline="") as f:

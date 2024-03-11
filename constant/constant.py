@@ -13,7 +13,7 @@ class Constant:
     E_annotation: str = 'Annotation'
     E_annotation_mem: str = 'Annotation Member'
     E_enum: str = 'Enum'
-    E_enum_cnt: str = 'Enum constant'
+    E_enum_cnt: str = 'Enum Constant'
 
     # relation type
     contain: str = "Contain"

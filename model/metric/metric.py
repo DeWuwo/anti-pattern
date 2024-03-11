@@ -6,7 +6,8 @@ from functools import partial
 from model.dependency.relation import Relation
 from model.dependency.entity import Entity, get_accessible_domain
 from model.metric.metric_constant import MetricCons
-from utils import FileCSV, Constant, FileCommon
+from utils import FileCSV, FileCommon
+from constant.constant import Constant
 from model.metric.sdk_api import SDKApi
 from model.metric.conflicts.conflict import Conflict
 
@@ -138,9 +139,9 @@ class Metric:
                 metrics[key]['final'] = 0
                 for access in Constant.accessible_list:
                     metrics[key][access] = 0
-                # metrics[key][Constant.E_variable] = 0
-                # metrics[key][Constant.E_method] = 0
-                # metrics[key][Constant.E_class] = 0
+                # metrics[key][constant.E_variable] = 0
+                # metrics[key][constant.E_method] = 0
+                # metrics[key][constant.E_class] = 0
             elif key == MetricCons.Me_anonymous_class:
                 metrics[key] = {}
             elif key == MetricCons.Me_open_in_sdk:
@@ -469,7 +470,7 @@ class Metric:
 
     def handle_metrics_statistics_stability(self, metrics: dict, metrics_statistics: dict):
         entity = self.entity_extensive[int(metrics[MetricCons.Me_stability]['entity'].split('#')[0])]
-        # if metrics[MetricCons.Me_stability]['entity'].split('#')[1] == Constant.E_method:
+        # if metrics[MetricCons.Me_stability]['entity'].split('#')[1] == constant.E_method:
         try:
             if metrics[MetricCons.Me_stability]['history_commits']['actively_native'] < 10:
                 metrics_statistics[MetricCons.Me_stability]['history_commits']['0-10'] += 1
@@ -749,17 +750,18 @@ class Metric:
         else:
             metrics_statistics[MetricCons.Me_open_in_sdk]['mix_in_sdk'] += 1
 
-    def handle_metrics_statistics_stability_file(self, metrics: dict, exas: List[List[Relation]], target_entity: list):
+    def handle_metrics_statistics_stability_file(self, metrics_by_pattern: dict, metrics_total_pattern: dict,
+                                                 exas: List[List[Relation]], target_entity: list):
         file_list = set()
         for exa in exas:
             entity_id = exa[target_entity[0]].dest if target_entity[1] else exa[target_entity[1]].src
             file_list.add(self.entity_extensive[entity_id].file_path)
 
-        metrics["file_count"] = len(file_list)
-        metrics['average_val'] = {}
-        metrics['un_average_val'] = {}
-        metrics['average_rank'] = {}
-        metrics['un_average_rank'] = {}
+        metrics_by_pattern["file_count"] = len(file_list)
+        metrics_by_pattern['average_val'] = {}
+        metrics_by_pattern['un_average_val'] = {}
+        metrics_by_pattern['average_rank'] = {}
+        metrics_by_pattern['un_average_rank'] = {}
         # metrics['details'] = {}
         for file_name in file_list:
             # metrics['details'].update({
@@ -773,29 +775,73 @@ class Metric:
                         continue
                     index = int(mc)
                     try:
-                        metrics['average_val'][key] += index
+                        metrics_by_pattern['average_val'][key] += index
                     except KeyError:
-                        metrics['average_val'][key] = 0
-                        metrics['average_val'][key] += index
+                        metrics_by_pattern['average_val'][key] = 0
+                        metrics_by_pattern['average_val'][key] += index
 
                 for key, mc in self.mc_data_rank['ext'][file_name].items():
                     if key == 'filename' or key == 'file_count':
                         continue
                     index = int(mc)
                     try:
-                        metrics['average_rank'][key] += index
+                        metrics_by_pattern['average_rank'][key] += index
                     except KeyError:
-                        metrics['average_rank'][key] = 0
-                        metrics['average_rank'][key] += index
+                        metrics_by_pattern['average_rank'][key] = 0
+                        metrics_by_pattern['average_rank'][key] += index
         total_file_count = len(self.mc_data['ext'])
-        for key, mc in metrics['average_val'].items():
-            metrics['un_average_val'][key] = round(
+        for key, mc in metrics_by_pattern['average_val'].items():
+            metrics_by_pattern['un_average_val'][key] = round(
                 (self.mc_data_total['ext'][key] - mc) / (total_file_count - len(file_list))
             )
-            metrics['average_val'][key] = round(mc / len(file_list))
+            metrics_by_pattern['average_val'][key] = round(mc / len(file_list))
 
-        for key, mc in metrics['average_rank'].items():
-            metrics['un_average_rank'][key] = round(
+        for key, mc in metrics_by_pattern['average_rank'].items():
+            metrics_by_pattern['un_average_rank'][key] = round(
                 ((total_file_count + 1) * total_file_count / 2 - mc) / (total_file_count - len(file_list))
             )
-            metrics['average_rank'][key] = round(mc / len(file_list))
+            metrics_by_pattern['average_rank'][key] = round(mc / len(file_list))
+
+        # 计算所有反模式的
+        if "file_count" not in metrics_total_pattern.keys():
+            metrics_total_pattern["file_count"] = set()
+        current_total_file_list = set(metrics_total_pattern["file_count"]) | file_list
+        metrics_total_pattern["file_count"] = current_total_file_list
+        metrics_total_pattern["total_file"] = total_file_count
+        metrics_total_pattern['average_val'] = {}
+        metrics_total_pattern['un_average_val'] = {}
+        metrics_total_pattern['average_rank'] = {}
+        metrics_total_pattern['un_average_rank'] = {}
+        for file_name in metrics_total_pattern["file_count"]:
+            if file_name in self.mc_data['ext'].keys():
+                for key, mc in self.mc_data['ext'][file_name].items():
+                    if key == 'filename' or key == 'file_count':
+                        continue
+                    index = int(mc)
+                    try:
+                        metrics_total_pattern['average_val'][key] += index
+                    except KeyError:
+                        metrics_total_pattern['average_val'][key] = 0
+                        metrics_total_pattern['average_val'][key] += index
+
+                for key, mc in self.mc_data_rank['ext'][file_name].items():
+                    if key == 'filename' or key == 'file_count':
+                        continue
+                    index = int(mc)
+                    try:
+                        metrics_total_pattern['average_rank'][key] += index
+                    except KeyError:
+                        metrics_total_pattern['average_rank'][key] = 0
+                        metrics_total_pattern['average_rank'][key] += index
+        total_file_count = len(self.mc_data['ext'])
+        for key, mc in metrics_total_pattern['average_val'].items():
+            metrics_total_pattern['un_average_val'][key] = round(
+                (self.mc_data_total['ext'][key] - mc) / (total_file_count - len(current_total_file_list))
+            )
+            metrics_total_pattern['average_val'][key] = round(mc / len(current_total_file_list))
+
+        for key, mc in metrics_total_pattern['average_rank'].items():
+            metrics_total_pattern['un_average_rank'][key] = round(
+                ((total_file_count + 1) * total_file_count / 2 - mc) / (total_file_count - len(current_total_file_list))
+            )
+            metrics_total_pattern['average_rank'][key] = round(mc / len(current_total_file_list))

@@ -1,5 +1,6 @@
 from typing import List
-from utils import Constant, StringUtils
+from utils import StringUtils
+from constant.constant import Constant
 from model.dependency.entity import Entity
 
 

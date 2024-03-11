@@ -1,5 +1,5 @@
 from typing import List
-from utils.constant import Constant
+from constant.constant import Constant
 from model.dependency.degree import Degree
 
 
@@ -32,6 +32,10 @@ class Entity:
     start_column: int
     end_line: int
     end_column: int
+    body_start_line: int
+    body_start_column: int
+    body_end_line: int
+    body_end_column: int
     hidden: List[str]
     commits: List[str]
     commits_count: dict
@@ -109,6 +113,16 @@ class Entity:
             self.start_column = -1
             self.end_line = -1
             self.end_column = -1
+        try:
+            self.body_start_line = args['blockLoc']['startLine']
+            self.body_start_column = args['blockLoc']['startColumn']
+            self.body_end_line = args['blockLoc']['endLine']
+            self.body_end_column = args['blockLoc']['endColumn']
+        except KeyError:
+            self.body_start_line = -1
+            self.body_start_column = -1
+            self.body_end_line = -1
+            self.body_end_column = -1
         try:
             self.file_path = args['File']
         except KeyError:

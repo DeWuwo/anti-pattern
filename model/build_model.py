@@ -8,32 +8,38 @@ from model.dependency.relation import Relation
 from model.dependency.graph import Graph
 from model.generate_history import GenerateHistory
 from model.blamer.entity_tracer import BaseState
-from utils import Constant, FileCSV, FileJson, Compare, StringUtils, Hash, FileCommon
+from utils import FileCSV, FileJson, Compare, StringUtils, Hash, FileCommon
+from constant.constant import Constant
 from time import time
 from model.differ.mapping import Mapping
 
-MoveMethodRefactorings = [
-    "Move And Rename Method",
-    "Move Method",
-    "Rename Method",
-]
+MoveMethodRefactorings = {
+    "Move And Rename Method": ["rename", "move"],
+    "Move Method": ["move"],
+    "Rename Method": ["rename"],
+}
 
-ExtractMethodRefactorings = [
-    "Extract Method",
-    "Extract And Move Method"
-]
+ExtractMethodRefactorings = {
+    "Extract Method": ["extract"],
+    "Extract And Move Method": ["extract", "move"]
+}
 
-MoveMethodParamRefactorings = [
-    "Rename Parameter",
-    "Add Parameter",
-    "Remove Parameter",
-]
+MoveMethodParamRefactorings = {
+    "Rename Parameter": ["param_modify"],
+    "Add Parameter": ["param_modify"],
+    "Remove Parameter": ["param_modify"],
+}
 
-MoveClassRefactoring = [
-    "Rename Class",
-    "Move Class",
-    "Move And Rename Class"
-]
+MoveClassRefactoring = {
+    "Rename Class": ["rename"],
+    "Move Class": ["move"],
+    "Move And Rename Class": ["rename", "move"]
+}
+
+all_refactor_type = MoveClassRefactoring.copy()
+all_refactor_type.update(MoveMethodRefactorings)
+all_refactor_type.update(MoveMethodParamRefactorings)
+all_refactor_type.update(ExtractMethodRefactorings)
 
 
 class BuildModel:
@@ -111,6 +117,7 @@ class BuildModel:
         self.hidden_modify_entities = []
         self.access_modify_entities = []
         self.final_modify_entities = []
+        self.modifier_modify_entities = []
         self.annotation_modify_entities: List[int] = []
         self.return_type_modify_entities: List[int] = []
         self.type_modify_entities: List[int] = []
@@ -140,6 +147,12 @@ class BuildModel:
             "Rename Class": [],
             "Move Class": [],
             "Move And Rename Class": []
+        }
+        self.refactor_entities_new = {
+            "rename": [],
+            "extract": [],
+            "move": [],
+            "param_modify": [],
         }
         self.agg_relations = []
         self.facade_relations = []
@@ -182,8 +195,7 @@ class BuildModel:
                 set_parameters(entity, self.entity_android)
                 self.entity_android.append(entity)
                 self.aosp_entity_set[entity.category][entity.qualifiedName][entity.file_path].append(entity.id)
-                if not entity.above_file_level():
-                    self.aosp_entity_set_um[entity.id] = entity
+                self.aosp_entity_set_um[entity.id] = entity
                 if entity.category == Constant.E_file:
                     self.file_set_android.add(entity.file_path)
                 elif entity.category == Constant.E_class and entity.name == Constant.anonymous_class:
@@ -198,8 +210,7 @@ class BuildModel:
                 set_parameters(entity, self.entity_extensive)
                 self.entity_extensive.append(entity)
                 self.extensive_entity_set[entity.category][entity.qualifiedName][entity.file_path].append(entity.id)
-                if not entity.above_file_level():
-                    self.extensive_entity_set_um[entity.id] = entity
+                self.extensive_entity_set_um[entity.id] = entity
                 self.owner_proc.append(entity.to_csv())
                 if entity.category == Constant.E_file:
                     self.file_set_extension.add(entity.file_path)
@@ -272,11 +283,11 @@ class BuildModel:
         all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities, refactor_list = self.get_blame_data()
 
         #
-        for ent_id, ent in all_entities.items():
-            self.entity_extensive[int(ent_id)].set_commits_count(
-                {'actively_native': len(json.loads(ent['base commits'])),
-                 'obsolotely_native': len(json.loads(ent['old base commits'])),
-                 'extensive': len(json.loads(ent['accompany commits']))})
+        # for ent_id, ent in all_entities.items():
+        #     self.entity_extensive[int(ent_id)].set_commits_count(
+        #         {'actively_native': len(json.loads(ent['base commits'])),
+        #          'obsolotely_native': len(json.loads(ent['old base commits'])),
+        #          'extensive': len(json.loads(ent['accompany commits']))})
 
         # 计算部分实体hash
         self.cal_entity_hash()
@@ -345,6 +356,17 @@ class BuildModel:
                     )
                     hash_str = Hash.get_hash_from_list(content)
                     entity.set_total_hash(hash_str)
+                    # body_content = FileCommon.read_file_to_line(
+                    #     self.get_complete_file_path(entity.file_path, is_ext),
+                    #     entity.body_start_line, entity.body_end_line
+                    # )
+                    # 暂时先处理成方法整体
+                    body_content = FileCommon.read_file_to_line(
+                        self.get_complete_file_path(entity.file_path, is_ext),
+                        entity.start_line, entity.end_line
+                    )
+                    hash_str = Hash.get_hash_from_list(body_content)
+                    entity.set_body_hash(hash_str)
                 elif entity.category == Constant.E_variable:
                     entity.set_total_hash(
                         Hash.get_hash_from_list(
@@ -370,6 +392,8 @@ class BuildModel:
             aosp_hash = FileCSV.read_dict_from_csv(f"{self.out_path}/aosp_hash.csv")
             for ent_hash in aosp_hash:
                 self.entity_android[int(ent_hash['id'])].set_total_hash(ent_hash['total_hash'])
+                if self.entity_android[int(ent_hash['id'])].category == Constant.E_method:
+                    self.entity_android[int(ent_hash['id'])].set_total_hash(ent_hash['body_hash'])
         else:
             aosp_hash_cache = []
             print("cal aosp entity content hash")
@@ -380,6 +404,8 @@ class BuildModel:
             extensive_hash = FileCSV.read_dict_from_csv(f"{self.out_path}/extensive_hash.csv")
             for ent_hash in extensive_hash:
                 self.entity_extensive[int(ent_hash['id'])].set_total_hash(ent_hash['total_hash'])
+                if self.entity_extensive[int(ent_hash['id'])].category == Constant.E_method:
+                    self.entity_extensive[int(ent_hash['id'])].set_total_hash(ent_hash['body_hash'])
         else:
             extensive_hash_cache = []
             print("cal extensive entity content hash")
@@ -603,24 +629,24 @@ class BuildModel:
                     {'type': move_type, 'source_name': source_state.longname(),
                      'source_param': source_state.get_param()})
                 move_list.add(move_type)
-                if move_type in MoveClassRefactoring:
+                if move_type in MoveClassRefactoring.keys():
                     ent.set_honor(0)
                     ent.set_intrusive(1)
                     detect_refactor_entities_son(child_define[ent.id], source_state.longname(),
                                                  source_state.get_param(), source_state.file_path)
-                elif move_type in MoveMethodRefactorings:
+                elif move_type in MoveMethodRefactorings.keys():
                     ent.set_honor(0)
                     ent.set_intrusive(1)
                     detect_refactor_entities_son(child_define[ent.id] + child_param[ent.id], source_state.longname(),
                                                  source_state.get_param(), source_state.file_path)
-                elif move_type in ExtractMethodRefactorings:
+                elif move_type in ExtractMethodRefactorings.keys():
                     ent.set_honor(1)
                     ent.set_intrusive(1)
                     for ent in child_param[ent.id]:
                         ent.set_honor(1)
                     detect_refactor_entities_son(child_define[ent.id], source_state.longname(),
                                                  source_state.get_param(), source_state.file_path)
-                elif move_type in MoveMethodParamRefactorings:
+                elif move_type in MoveMethodParamRefactorings.keys():
                     if ent.category == Constant.E_method:
                         ent.set_honor(0)
                         ent.set_intrusive(1)
@@ -628,10 +654,10 @@ class BuildModel:
                                                      source_state.longname(),
                                                      source_state.get_param(), source_state.file_path)
                     else:
-                        if move_type == MoveMethodParamRefactorings[0]:
+                        if move_type == "Rename Parameter":
                             ent.set_honor(0)
                             ent.set_intrusive(1)
-                        elif move_type == MoveMethodParamRefactorings[1]:
+                        elif move_type == "Add Parameter":
                             ent.set_honor(1)
                 else:
                     ent.set_honor(0)
@@ -643,6 +669,8 @@ class BuildModel:
             for move in move_list:
                 self.owner_proc_count[move] += 1
                 self.refactor_entities[move].append(ent.id)
+                for mv_type in all_refactor_type[move]:
+                    self.refactor_entities_new[mv_type].append(ent.id)
 
         def detect_un_refactor_entities(ent: Entity, source_name: str, source_param: str, source_file: str):
             if ent.not_aosp != -2:
@@ -692,7 +720,7 @@ class BuildModel:
 
             elif detect_git_must_native(entity):
                 entity.set_honor(0)
-                # if entity.category == Constant.E_method and not entity.hidden:
+                # if entity.category == constant.E_method and not entity.hidden:
                 #     entity.set_hidden(['hidden'])
                 self.graph_differ(entity, entity.qualifiedName, entity.parameter_names, entity.file_path)
                 self.owner_proc[entity.id]['dep_diff'] = 'any'
@@ -728,7 +756,7 @@ class BuildModel:
                 ent.set_honor(1)
             elif ent.id not in keys_all_entities:
                 ent.set_honor(0)
-                # if entity.category == Constant.E_method and not entity.hidden:
+                # if entity.category == constant.E_method and not entity.hidden:
                 #     entity.set_hidden(['hidden'])
                 owner = self.struct_info_mapping(ent)
                 if owner < 0:
@@ -992,7 +1020,7 @@ class BuildModel:
 
         def get_intrusive_count():
             total_count = {}
-            header = ['access_modify', 'final_modify', 'annotation_modify', 'static_modify',
+            header = ['access_modify', 'final_modify', 'annotation_modify', 'modifier_modify',
                       'param_modify', 'return_type_modify', 'type_modify',
                       'import_extensive',
                       'parent_class_modify', 'parent_interface_modify',
@@ -1010,6 +1038,13 @@ class BuildModel:
                 if extensive_entity.is_intrusive and extensive_entity.entity_mapping != -1:
                     # and extensive_entity.not_aosp == 0:
                     native_entity = self.entity_android[extensive_entity.entity_mapping]
+                    # 提取方法不识别签名的修改
+                    if extensive_entity.category == Constant.E_method and extensive_entity.id != native_entity.entity_mapping:
+                        extensive_entity.set_intrusive_modify('extracted', '-')
+                        self.refactor_entities_new['extract'].append(extensive_entity.id)
+                        total_count['Extract Method'] += 1
+                        file_total_count[extensive_entity.file_path]['Extract Method'] += 1
+                        continue
                     if extensive_entity.hidden:
                         source_hd = Constant.hidden_map(native_entity.hidden)
                         update_hd = Constant.hidden_map(extensive_entity.hidden)
@@ -1030,11 +1065,11 @@ class BuildModel:
                                                                   extensive_entity.final))
                         total_count['final_modify'] += 1
                         file_total_count[extensive_entity.file_path]['final_modify'] += 1
-                    if extensive_entity.static != native_entity.static:
-                        self.final_modify_entities.append(extensive_entity.id)
-                        extensive_entity.set_intrusive_modify('static_modify', '-')
-                        total_count['static_modify'] += 1
-                        file_total_count[extensive_entity.file_path]['static_modify'] += 1
+                    if extensive_entity.static != native_entity.static or extensive_entity.is_global != native_entity.is_global:
+                        self.modifier_modify_entities.append(extensive_entity.id)
+                        extensive_entity.set_intrusive_modify('modifier_modify', '-')
+                        total_count['modifier_modify'] += 1
+                        file_total_count[extensive_entity.file_path]['modifier_modify'] += 1
                     if not Compare.compare_list(extensive_entity.annotations, native_entity.annotations):
                         self.annotation_modify_entities.append(extensive_entity.id)
                         extensive_entity.set_intrusive_modify('annotation_modify',
@@ -1043,7 +1078,7 @@ class BuildModel:
                         file_total_count[extensive_entity.file_path]['annotation_modify'] += 1
                     if extensive_entity.name != native_entity.name:
                         if extensive_entity.id == native_entity.entity_mapping:
-                            # self.refactor_entities.append(extensive_entity.id)
+                            self.refactor_entities_new["rename"].append(extensive_entity.id)
                             extensive_entity.set_intrusive_modify('rename', '-')
                     if extensive_entity.category in [Constant.E_class, Constant.E_interface]:
                         if extensive_entity.total_hash != native_entity.total_hash:
@@ -1065,30 +1100,23 @@ class BuildModel:
                             file_total_count[extensive_entity.file_path]['parent_interface_modify'] += 1
                     # todo 识别方法体的修改
                     if extensive_entity.category == Constant.E_method:
-                        # 提取方法不识别签名的修改
-                        if extensive_entity.id != native_entity.entity_mapping:
-                            # self.refactor_entities.append(extensive_entity.id)
-                            extensive_entity.set_intrusive_modify('extracted', '-')
-                            total_count['Extract Method'] += 1
-                            file_total_count[extensive_entity.file_path]['Extract Method'] += 1
-                        else:
-                            # 有body位置可以精确识别，暂时全部标记为body change
-                            self.method_body_modify_entities.append(extensive_entity.id)
-                            extensive_entity.set_intrusive_modify('body_modify', '-')
-                            total_count['method_body_modify'] += 1
-                            file_total_count[extensive_entity.file_path]['method_body_modify'] += 1
-                            if extensive_entity.parameter_names != native_entity.parameter_names:
-                                self.params_modify_entities.append(extensive_entity.id)
-                                extensive_entity.set_intrusive_modify('param_modify',
-                                                                      native_entity.parameter_names + '-' + extensive_entity.parameter_names)
-                                total_count['param_modify'] += 1
-                                file_total_count[extensive_entity.file_path]['param_modify'] += 1
-                            if extensive_entity.raw_type.rsplit('.')[-1] != native_entity.raw_type.rsplit('.')[-1]:
-                                self.return_type_modify_entities.append(extensive_entity.id)
-                                extensive_entity.set_intrusive_modify('return_type_modify',
-                                                                      native_entity.raw_type + '-' + extensive_entity.raw_type)
-                                total_count['return_type_modify'] += 1
-                                file_total_count[extensive_entity.file_path]['return_type_modify'] += 1
+                        # 有body位置可以精确识别，暂时全部标记为body change
+                        self.method_body_modify_entities.append(extensive_entity.id)
+                        extensive_entity.set_intrusive_modify('body_modify', '-')
+                        total_count['method_body_modify'] += 1
+                        file_total_count[extensive_entity.file_path]['method_body_modify'] += 1
+                        if extensive_entity.parameter_names != native_entity.parameter_names:
+                            self.params_modify_entities.append(extensive_entity.id)
+                            extensive_entity.set_intrusive_modify('param_modify',
+                                                                  native_entity.parameter_names + '-' + extensive_entity.parameter_names)
+                            total_count['param_modify'] += 1
+                            file_total_count[extensive_entity.file_path]['param_modify'] += 1
+                        if extensive_entity.raw_type.rsplit('.')[-1] != native_entity.raw_type.rsplit('.')[-1]:
+                            self.return_type_modify_entities.append(extensive_entity.id)
+                            extensive_entity.set_intrusive_modify('return_type_modify',
+                                                                  native_entity.raw_type + '-' + extensive_entity.raw_type)
+                            total_count['return_type_modify'] += 1
+                            file_total_count[extensive_entity.file_path]['return_type_modify'] += 1
                     if extensive_entity.category == Constant.E_variable:
                         if extensive_entity.raw_type.rsplit('.')[-1] != native_entity.raw_type.rsplit('.')[-1]:
                             self.type_modify_entities.append(extensive_entity.id)
@@ -1099,7 +1127,7 @@ class BuildModel:
                         if extensive_entity.is_param != -1:
                             pass
                         else:
-                            # 当前enre抽取变量位置，全局变量与局部变量 从变量名开始
+                            # 当前enre抽取变量位置，全局变量与局部变量 从变量名开始，参数则包含全部内容，因此特殊处理
                             # 如果不包含变量赋值部分，暂时不做处理
                             if extensive_entity.get_var_entity_length() == len(extensive_entity.name) and \
                                     extensive_entity.get_var_entity_length() == len(native_entity.name):
@@ -1111,7 +1139,6 @@ class BuildModel:
                                     else:
                                         # 排除法识别一部分body change
                                         if extensive_entity.modifiers == native_entity.modifiers and \
-                                                extensive_entity.annotations == native_entity.modifiers and \
                                                 extensive_entity.raw_type.rsplit('.', 1)[-1] == \
                                                 native_entity.raw_type.rsplit('.', 1)[-1]:
                                             extensive_entity.set_intrusive_modify('body_modify', '-')
