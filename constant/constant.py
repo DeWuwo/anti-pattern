@@ -14,6 +14,7 @@ class Constant:
     E_annotation_mem: str = 'Annotation Member'
     E_enum: str = 'Enum'
     E_enum_cnt: str = 'Enum Constant'
+    E_type_parameter: str = 'Type Parameter'
 
     # relation type
     contain: str = "Contain"
@@ -35,7 +36,7 @@ class Constant:
     R_set: str = 'Set'
 
     entities: List[str] = [E_package, E_file, E_class, E_interface, E_method, E_variable, E_annotation,
-                           E_annotation_mem, E_enum, E_enum_cnt]
+                           E_annotation_mem, E_enum, E_enum_cnt, E_type_parameter]
 
     Relations: List[str] = [call, define, use, R_aggregate, typed, R_set, R_modify, R_annotate, param, reflect,
                             override, implement, inherit, R_cast, R_super_call, contain, R_import]
