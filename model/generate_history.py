@@ -47,6 +47,8 @@ class GenerateHistory:
         self.get_git_log()
         print('start get all commits')
         self.get_commits_and_ref()
+        print('get diff files')
+        self.get_diff_files()
         print('start get all entities\' commits')
         self.get_entity_commits()
 
@@ -82,7 +84,6 @@ class GenerateHistory:
             self.ref_miner_data = ref_res
 
     def get_entity_commits(self):
-        self.get_diff_files()
         try:
             get_entity_commits(self.repo_path_accompany, self.accompany_relation_path,
                                self.get_path('old_base_commits.csv'), self.get_path('only_accompany_commits.csv'),
