@@ -1,9 +1,9 @@
 import argparse
 from utils import FileJson, FileCSV
 from model.build_model import BuildModel
-# from model.anti_pattern import AntiPattern
-# from model.coupling_pattern import CouplingPattern
+from model.patterns.anti_patterns import AntiPattern
 from model.patterns.coupling_patterns import CouplingPattern
+from model.patterns.graduate_anti import GraAntiPattern
 from model.match import Match
 from model.generate_history import GenerateHistory
 from model.mc.mc import MC
@@ -83,8 +83,11 @@ def dispatch(args):
         pattern_match.start_match_pattern(coupling_pattern)
 
         # match anti pattern
-        # special_anti_pattern = AntiPattern()
-        # pattern_match.start_match_pattern(special_anti_pattern)
+        special_anti_pattern = AntiPattern()
+        pattern_match.start_match_pattern(special_anti_pattern)
+        #
+        gra_anti_pattern = GraAntiPattern()
+        pattern_match.start_match_pattern(gra_anti_pattern)
     except FileNotFoundError as e:
         print(e)
 
