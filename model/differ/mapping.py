@@ -61,6 +61,8 @@ class Mapping:
         if entity.above_file_level():
             if len(aosp_list) > 0 and len(extensive_list) > 0:
                 self.entity_mapping(self.aosp_entities[aosp_list[0]], entity)
+            else:
+                entity.set_honor(1)
             return
         # if not aosp_list_full:
         #     return
@@ -271,8 +273,33 @@ class Mapping:
                 if right_neighbor_ent.name == entity.name:
                     self.children_match(entity, right_neighbor_ent.qualifiedName, right_neighbor_ent.parameter_names,
                                         right_neighbor_ent.file_path)
-        elif entity.category == Constant.E_variable:
-            pass
+        elif entity.category == Constant.E_variable and (
+                self.extensive_entities[entity.parentId].category == Constant.E_class or entity.is_param):
+            # 可能的重命名
+            if left_neighbor_mapping > 0 and \
+                    self.get_neighbor_entity(
+                        self.aosp_entities[left_neighbor_mapping],
+                        self.aosp_entities,
+                        self.aosp_entities[left_neighbor_mapping].category,
+                        'right'
+                    ) in self.aosp_entities_um.keys():
+                possible_match_ent = self.aosp_entities[
+                    self.get_neighbor_entity(
+                        self.aosp_entities[left_neighbor_mapping],
+                        self.aosp_entities,
+                        self.aosp_entities[left_neighbor_mapping].category,
+                        'right'
+                    )
+                ]
+                # 被夹逼的成员变量
+                if right_neighbor_mapping > 0 and right_neighbor_mapping == self.get_neighbor_entity(
+                        possible_match_ent,
+                        self.aosp_entities,
+                        possible_match_ent.category,
+                        'right'
+                ):
+                    self.children_match(entity, possible_match_ent.qualifiedName, possible_match_ent.parameter_names,
+                                        possible_match_ent.file_path)
 
     def refactor_match(self, entity: Entity, ent_refactor_info: list):
         move_list = set()
@@ -340,6 +367,9 @@ class Mapping:
     def start_mapping(self, refactor_list: Dict[int, list]):
         # 第一轮
         for entity in self.extensive_entities:
+            if entity.is_decoupling > 1:
+                entity.set_honor(1)
+                continue
             if entity.id in self.extensive_entities_um.keys():
                 self.exactly_match(entity, entity.qualifiedName, entity.parameter_names, entity.file_path)
 
@@ -387,6 +417,8 @@ class Mapping:
             if entity.above_file_level():
                 if entity.entity_mapping >= 0:
                     entity.set_honor(0)
+                    if entity.file_path in chang_files:
+                        entity.set_intrusive(1)
             elif entity.not_aosp == -2:
                 if entity.file_path in chang_files:
                     if entity.entity_mapping >= 0:
