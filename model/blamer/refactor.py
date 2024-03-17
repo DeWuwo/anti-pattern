@@ -43,17 +43,18 @@ class Refactor:
                         ent_refactors.append(refactor)
             except KeyError:
                 continue
-            row_dict = dict()
-            for k, v in ent.items():
-                try:
-                    row_dict[k] = json.loads(v)
-                except json.JSONDecodeError:
-                    row_dict[k] = v
-            row_dict["Moves"] = [m.refactor_obj for m in ent_refactors]
-            refactor_entities_list_write[int(row_dict['id'])] = row_dict
-            refactor_entities_list[int(row_dict['id'])] = [row_dict,
-                                                           [[m.refactor_obj['type'], m.src_state, m.to_state] for m in
-                                                            ent_refactors]]
+            if len(ent_refactors):
+                row_dict = dict()
+                for k, v in ent.items():
+                    try:
+                        row_dict[k] = json.loads(v)
+                    except json.JSONDecodeError:
+                        row_dict[k] = v
+                row_dict["Moves"] = [m.refactor_obj for m in ent_refactors]
+                refactor_entities_list_write[int(row_dict['id'])] = row_dict
+                refactor_entities_list[int(row_dict['id'])] = [row_dict,
+                                                               [[m.refactor_obj['type'], m.src_state, m.to_state] for m in
+                                                                ent_refactors]]
 
         with open(f"{self.out_path}/refactor_entities.json", "w") as file:
             json.dump(refactor_entities_list_write, file, indent=4)
