@@ -805,8 +805,11 @@ class Metric:
         # 计算所有反模式的
         if "file_count" not in metrics_total_pattern.keys():
             metrics_total_pattern["file_count"] = set()
+        if "pattern_count" not in metrics_total_pattern.keys():
+            metrics_total_pattern["pattern_count"] = 0
         current_total_file_list = set(metrics_total_pattern["file_count"]) | file_list
         metrics_total_pattern["file_count"] = current_total_file_list
+        metrics_total_pattern["pattern_count"] += len(exas)
         metrics_total_pattern["total_file"] = total_file_count
         metrics_total_pattern['average_val'] = {}
         metrics_total_pattern['un_average_val'] = {}
