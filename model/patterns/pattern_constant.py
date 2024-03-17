@@ -72,61 +72,61 @@ class PatternCons:
                         'direction': '00'
                     },
                 ]},
-            'del_native_class_final_for_var': {
-                'aggre': [[1, 0], [0]],
-                'metrics': {MetricCons.Me_is_inherit: [0, 0], MetricCons.Me_stability: [0, 0],
-                            MetricCons.Me_interface_number: [0, 0]},
-                'metrics_filter': [],
-                'rules': [
-                    {
-                        'src': {'id': [-1], 'category': Constant.E_class,
-                                'attrs': {'final': True, 'intrusive': True}},
-                        'rel': {'type': Constant.define, 'attrs': {}},
-                        'dest': {'id': [-1], 'category': Constant.E_variable,
-                                 'attrs': {'final': True, 'intrusive': True}},
-                        'direction': '00'
-                    },
-                ]
-            },
-            'del_native_class_final_for_inherit_and_override': {
-                'aggre': [[1, 1, 0, 0, 0, 0, 0, 0], [1, 2, 3]],
-                'metrics': {MetricCons.Me_stability: [0, 1], MetricCons.Me_extensive_access_frequency: [2, 1]},
-                'metrics_filter': [],
-                'rules': [
-                    {
-                        'src': {'id': [-1], 'category': Constant.E_class,
-                                'attrs': {}},
-                        'rel': {'type': Constant.inherit, 'attrs': {}},
-                        'dest': {'id': [-1], 'category': Constant.E_class,
-                                 'attrs': {'final': True, 'intrusive': True}},
-                        'direction': '10'
-                    },
-                    {
-                        'src': {'id': ['id', 0, 0], 'category': Constant.E_class,
-                                'attrs': {}},
-                        'rel': {'type': Constant.define, 'attrs': {}},
-                        'dest': {'id': [-1], 'category': Constant.E_method,
-                                 'attrs': {}},
-                        'direction': '11'
-                    },
-                    {
-                        'src': {'id': ['id', 1, 1], 'category': Constant.E_method,
-                                'attrs': {}},
-                        'rel': {'type': Constant.override, 'attrs': {}},
-                        'dest': {'id': [-1], 'category': Constant.E_method,
-                                 'attrs': {}},
-                        'direction': '10'
-                    },
-                    {
-                        'src': {'id': ['id', 0, 1], 'category': Constant.E_class,
-                                'attrs': {}},
-                        'rel': {'type': Constant.define, 'attrs': {}},
-                        'dest': {'id': ['id', 2, 1], 'category': Constant.E_method,
-                                 'attrs': {}},
-                        'direction': '00'
-                    },
-                ]
-            },
+            # 'del_native_class_final_for_var': {
+            #     'aggre': [[1, 0], [0]],
+            #     'metrics': {MetricCons.Me_is_inherit: [0, 0], MetricCons.Me_stability: [0, 0],
+            #                 MetricCons.Me_interface_number: [0, 0]},
+            #     'metrics_filter': [],
+            #     'rules': [
+            #         {
+            #             'src': {'id': [-1], 'category': Constant.E_class,
+            #                     'attrs': {'final': True, 'intrusive': True}},
+            #             'rel': {'type': Constant.define, 'attrs': {}},
+            #             'dest': {'id': [-1], 'category': Constant.E_variable,
+            #                      'attrs': {'final': True, 'intrusive': True}},
+            #             'direction': '00'
+            #         },
+            #     ]
+            # },
+            # 'del_native_class_final_for_inherit_and_override': {
+            #     'aggre': [[1, 1, 0, 0, 0, 0, 0, 0], [1, 2, 3]],
+            #     'metrics': {MetricCons.Me_stability: [0, 1], MetricCons.Me_extensive_access_frequency: [2, 1]},
+            #     'metrics_filter': [],
+            #     'rules': [
+            #         {
+            #             'src': {'id': [-1], 'category': Constant.E_class,
+            #                     'attrs': {}},
+            #             'rel': {'type': Constant.inherit, 'attrs': {}},
+            #             'dest': {'id': [-1], 'category': Constant.E_class,
+            #                      'attrs': {'final': True, 'intrusive': True}},
+            #             'direction': '10'
+            #         },
+            #         {
+            #             'src': {'id': ['id', 0, 0], 'category': Constant.E_class,
+            #                     'attrs': {}},
+            #             'rel': {'type': Constant.define, 'attrs': {}},
+            #             'dest': {'id': [-1], 'category': Constant.E_method,
+            #                      'attrs': {}},
+            #             'direction': '11'
+            #         },
+            #         {
+            #             'src': {'id': ['id', 1, 1], 'category': Constant.E_method,
+            #                     'attrs': {}},
+            #             'rel': {'type': Constant.override, 'attrs': {}},
+            #             'dest': {'id': [-1], 'category': Constant.E_method,
+            #                      'attrs': {}},
+            #             'direction': '10'
+            #         },
+            #         {
+            #             'src': {'id': ['id', 0, 1], 'category': Constant.E_class,
+            #                     'attrs': {}},
+            #             'rel': {'type': Constant.define, 'attrs': {}},
+            #             'dest': {'id': ['id', 2, 1], 'category': Constant.E_method,
+            #                      'attrs': {}},
+            #             'direction': '00'
+            #         },
+            #     ]
+            # },
             # 'del_method_final_for_var': {
             #     'metrics': {},
             #     'metrics_filter': [],
@@ -346,7 +346,7 @@ class PatternCons:
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_class,
-                                'attrs': {'accessible': []}, 'filter': {}},
+                                'attrs': {'parent_class': True}, 'filter': {}},
                         'rel': {'type': Constant.inherit, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_class,
                                  'attrs': {'accessible': []}},
@@ -366,7 +366,7 @@ class PatternCons:
                 'rules': [
                     {
                         'src': {'id': [-1], 'category': Constant.E_class,
-                                'attrs': {'accessible': []}, 'filter': {}},
+                                'attrs': {'parent_interface': True}, 'filter': {}},
                         'rel': {'type': Constant.implement, 'attrs': {}},
                         'dest': {'id': [-1], 'category': Constant.E_interface,
                                  'attrs': {'accessible': []}},
