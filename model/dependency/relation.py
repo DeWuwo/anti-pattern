@@ -115,6 +115,10 @@ class Relation:
             "facade": self.facade
         }
 
+    def handle_to_vf(self):
+        label = Constant.Relations.index(self.rel)
+        return [str(self.src), str(self.dest), str(label)]
+
     def set_not_aosp(self, not_aosp):
         self.not_aosp = not_aosp
 

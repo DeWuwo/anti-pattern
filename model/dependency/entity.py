@@ -10,6 +10,7 @@ class Entity:
     category: str
     parentId: int
     raw_type: str
+    raw_type_content: str
     parameter_types: str
     parameter_names: str
     parameter_entities: List[int]
@@ -103,6 +104,8 @@ class Entity:
         self.total_hash = ""
         self.body_hash = ""
         self.parameter_entities = []
+        self.raw_type_content = "null"
+        self.outer = []
         try:
             self.start_line = args['location']['startLine']
             self.start_column = args['location']['startColumn']
@@ -219,6 +222,11 @@ class Entity:
     def handle_to_csv(self):
         return {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName}
 
+    def handle_to_vf(self):
+        category = Constant.entities.index(self.category)
+        label = -1 * category if self.not_aosp > 0 else category
+        return [str(self.id), str(label)]
+
     def handle_to_db(self):
         temp = {'id': self.id, 'category': self.category, 'qualifiedName': self.qualifiedName,
                 'ownership': self.get_ownership(), 'name': self.name,
@@ -263,7 +271,7 @@ class Entity:
         return self.end_column - self.start_column + 1 if self.start_line == self.end_line else -1
 
     def get_ownership(self):
-        if self.not_aosp == 1:
+        if self.not_aosp == 1 or self.not_aosp == -2:
             return Constant.Owner_extensive
         elif self.is_intrusive == 1:
             return Constant.Owner_intrusive_native
@@ -416,6 +424,9 @@ class Entity:
     def set_degree(self, **kwargs):
         self.degree.handle_set_degree(**kwargs)
 
+    def set_out_ent(self, rel: int):
+        self.outer.append(rel)
+
     def set_extract_to(self, entity_id):
         self.extract_to.append(entity_id)
 
@@ -434,6 +445,13 @@ class Entity:
     def is_core_entity(self):
         return self.category == Constant.E_method or self.category == Constant.E_class or self.category == Constant.E_interface or \
                self.category == Constant.E_variable
+
+    def get_raw_type(self, content: str):
+        clem = content.split(" ")
+        for item in clem:
+            if self.raw_type.split(".")[-1] in item:
+                self.raw_type_content = item
+                break
 
 
 def set_package(entity: Entity, entities: List[Entity]):

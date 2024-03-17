@@ -150,7 +150,7 @@ class BuildModel:
         }
         self.refactor_entities_new = {
             "rename": [],
-            "extract": [],
+            "extracted": [],
             "move": [],
             "param_modify": [],
         }
@@ -166,6 +166,7 @@ class BuildModel:
         self.owner_proc_count = {}
         self.aosp_entity_set_um = {}
         self.extensive_entity_set_um = {}
+        self.file_change_entities = {}
 
         print("load conflict entity")
         conf_entities = {}
@@ -218,6 +219,18 @@ class BuildModel:
                     entity.set_anonymous_class(True)
                 if entity.qualifiedName in conf_entities.keys():
                     entity.set_conf_data(len(conf_entities['times']), conf_entities['blocks'], conf_entities['loc'])
+                if entity.file_path in self.generate_history.extensive_modify_files:
+                    self.file_change_entities.update(
+                        {
+                            entity.id: {
+                                "id": str(entity.id),
+                                "Entity": entity.qualifiedName,
+                                "file path": entity.file_path,
+                                "category": entity.category,
+                                "param_names": entity.parameter_names
+                            }
+                        }
+                    )
         # init dep
         print("start init model deps")
         import_relation_set = defaultdict(int)
@@ -232,11 +245,11 @@ class BuildModel:
             elif relation.rel == Constant.typed:
                 self.entity_android[relation.src].set_typed(relation.dest)
             elif relation.rel == Constant.R_annotate:
-                self.entity_android[relation.dest].set_annotations(self.entity_android[relation.src].qualifiedName)
+                self.entity_android[relation.dest].set_annotations(self.entity_android[relation.src].name)
             elif relation.rel == Constant.inherit:
-                self.entity_android[relation.src].set_parent_class(self.entity_android[relation.dest].qualifiedName)
+                self.entity_android[relation.src].set_parent_class(self.entity_android[relation.dest].name)
             elif relation.rel == Constant.implement:
-                self.entity_android[relation.src].set_parent_interface(self.entity_android[relation.dest].qualifiedName)
+                self.entity_android[relation.src].set_parent_interface(self.entity_android[relation.dest].name)
             elif relation.rel == Constant.param:
                 self.entity_android[relation.src].set_param_entities(relation.dest)
 
@@ -248,6 +261,9 @@ class BuildModel:
             relation.set_id(index)
             relation.set_files(self.entity_extensive)
             self.relation_extensive.append(relation)
+            if relation.src == relation.dest or relation.src == -1 or relation.dest == -1:
+                continue
+            self.entity_extensive[relation.src].set_out_ent(relation.id)
             if relation.rel == Constant.param:
                 temp_param[relation.src].append(self.entity_extensive[relation.dest])
                 self.entity_extensive[relation.dest].set_is_param(1)
@@ -263,12 +279,12 @@ class BuildModel:
             elif relation.rel == Constant.typed:
                 self.entity_extensive[relation.src].set_typed(relation.dest)
             elif relation.rel == Constant.R_annotate:
-                self.entity_extensive[relation.dest].set_annotations(self.entity_extensive[relation.src].qualifiedName)
+                self.entity_extensive[relation.dest].set_annotations(self.entity_extensive[relation.src].name)
             elif relation.rel == Constant.inherit:
-                self.entity_extensive[relation.src].set_parent_class(self.entity_extensive[relation.dest].qualifiedName)
+                self.entity_extensive[relation.src].set_parent_class(self.entity_extensive[relation.dest].name)
             elif relation.rel == Constant.implement:
                 self.entity_extensive[relation.src].set_parent_interface(
-                    self.entity_extensive[relation.dest].qualifiedName)
+                    self.entity_extensive[relation.dest].name)
             elif relation.rel == Constant.call:
                 self.entity_extensive[relation.dest].set_called_count(relation.src)
                 self.entity_extensive[relation.src].set_call_count(relation.dest)
@@ -278,9 +294,10 @@ class BuildModel:
         # for ent in self.entity_extensive:
         #     graph.get_analysis(ent)
 
-        # data get -- blame
-        print('start init owner from blame')
-        all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities, refactor_list = self.get_blame_data()
+        # 计算部分实体hash
+        self.cal_entity_hash()
+        # old method
+        # self.git_detect_ownership(temp_define, temp_param)
 
         #
         # for ent_id, ent in all_entities.items():
@@ -289,26 +306,32 @@ class BuildModel:
         #          'obsolotely_native': len(json.loads(ent['old base commits'])),
         #          'extensive': len(json.loads(ent['accompany commits']))})
 
-        # 计算部分实体hash
-        self.cal_entity_hash()
+        # new method
+        refactor_list = self.generate_history.load_refactor_entity(self.file_change_entities)
+        Mapping(
+            self.entity_android,
+            self.entity_extensive,
+            self.aosp_entity_set,
+            self.extensive_entity_set,
+            self.aosp_entity_set_um,
+            self.extensive_entity_set_um
+        ).run_mapping_and_ownership(
+            refactor_list,
+            self.generate_history.extensive_modify_files
+        )
 
-        print('get ownership')
-        # first get entity owner
-        print('     get entity owner')
-        self.get_entity_ownership(all_entities, all_native_entities,
-                                  old_native_entities, old_update_entities, intrusive_entities,
-                                  old_intrusive_entities, pure_accompany_entities, refactor_list,
-                                  temp_define, temp_param)
 
-        # Mapping(self.entity_android, self.entity_extensive, self.aosp_entity_set, self.extensive_entity_set,
-        #         self.aosp_entity_set_um, self.extensive_entity_set_um).run_mapping_and_ownership(refactor_list,
-        #                                                                                          self.generate_history.extensive_modify_files)
-
+        # 简单修正部分MOVE
+        # for entid in all_native_entities.keys():
+        #     if self.entity_extensive[entid].not_aosp in self.extensive_entity_set_um.keys():
+        #         self.entity_extensive[entid].set_honor(0)
+        #         self.entity_extensive[entid].set_intrusive(0)
         print('     get relation owner')
         self.get_relation_ownership()
 
         print('get filter relation set')
         self.detect_facade()
+        self.gen_vf_files()
 
         # query set build
         print('get relation search dictionary')
@@ -320,6 +343,18 @@ class BuildModel:
         # output facade info
         self.out_facade_info()
 
+    def git_detect_ownership(self, child_define, child_param):
+        # data get -- blame
+        print('start init owner from blame')
+        all_entities, all_native_entities, old_native_entities, old_update_entities, intrusive_entities, old_intrusive_entities, pure_accompany_entities, refactor_list = self.get_blame_data()
+        print('get ownership')
+        # first get entity owner
+        print('     get entity owner')
+        self.get_entity_ownership(all_entities, all_native_entities,
+                                  old_native_entities, old_update_entities, intrusive_entities,
+                                  old_intrusive_entities, pure_accompany_entities, refactor_list,
+                                  child_define, child_param)
+
     def get_complete_file_path(self, file_path, repo_extensive):
         if repo_extensive == 1:
             return os.path.join(self.generate_history.repo_path_accompany, file_path)
@@ -328,6 +363,8 @@ class BuildModel:
 
     def cal_entity_hash_rule(self, entities: List[Entity], modify_files: set, hash_cache: list, is_ext: int):
         for entity in entities:
+            if entity.is_decoupling > 1:
+                continue
             # 只计算发生变更的文件
             if (not entity.above_file_level()) and entity.file_path in modify_files:
                 if entity.category == Constant.E_class and entity.name == Constant.anonymous_class:
@@ -414,6 +451,23 @@ class BuildModel:
             FileCSV.write_entity_to_csv(self.out_path, "extensive_hash", extensive_hash_cache, 'hash')
         end_time = time()
         print("load entity hash cost", end_time - start_time)
+
+    # 生成vf格式文件以进行对比实验
+    def gen_vf_files(self):
+        nodes = []
+        edges = []
+        ent_count = len(self.entity_extensive)
+        nodes.append(str(ent_count) + "\n")
+        for ent in self.entity_extensive:
+            nodes.append(" ".join(ent.handle_to_vf()) + "\n")
+            edges.append(str(len(ent.outer)) + "\n")
+            for rel in ent.outer:
+                edges.append(" ".join(self.relation_extensive[rel].handle_to_vf()) + "\n")
+        with open(f"{self.out_path}/vf.txt", 'w') as f:
+            for node in nodes:
+                f.write(node)
+            for edge in edges:
+                f.write(edge)
 
     # Get data of blame
     def get_blame_data(self):
@@ -913,6 +967,8 @@ class BuildModel:
             temp_aosp_relation_map[str(relation.src) + relation.rel + str(relation.dest)] = relation
 
         for relation in self.relation_extensive:
+            if relation.src == relation.dest or relation.src == -1 or relation.dest == -1:
+                continue
             src = self.entity_extensive[relation.src]
             dest = self.entity_extensive[relation.dest]
             if src.not_aosp == 1 or dest.not_aosp == 1:
@@ -940,9 +996,11 @@ class BuildModel:
                 # 伴生方法不会 有原生参数
                 return False
             return True
-
         facade_entities = set()
+        # enre java bug: 冗余的类自定义依赖，dest为-1的依赖，采取直接过滤措施
         for relation in self.relation_extensive:
+            if relation.src == relation.dest or relation.src == -1 or relation.dest == -1:
+                continue
             src = self.entity_extensive[relation.src]
             dest = self.entity_extensive[relation.dest]
             if not concept_correct(relation):
@@ -1041,7 +1099,7 @@ class BuildModel:
                     # 提取方法不识别签名的修改
                     if extensive_entity.category == Constant.E_method and extensive_entity.id != native_entity.entity_mapping:
                         extensive_entity.set_intrusive_modify('extracted', '-')
-                        self.refactor_entities_new['extract'].append(extensive_entity.id)
+                        self.refactor_entities_new['extracted'].append(extensive_entity.id)
                         total_count['Extract Method'] += 1
                         file_total_count[extensive_entity.file_path]['Extract Method'] += 1
                         continue
@@ -1277,6 +1335,8 @@ class BuildModel:
                 entity_info.update({ent_cat: [0, 0]})
 
             for relation in self.relation_extensive:
+                if relation.src == relation.dest or relation.src == -1 or relation.dest == -1:
+                    continue
                 rel_src[relation.rel][relation.src] += 1
 
             return base_info, relation_info, entity_info, rel_src
