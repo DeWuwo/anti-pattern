@@ -3,6 +3,7 @@ import os
 from typing import List, Dict
 from collections import defaultdict
 from functools import partial
+from time import time
 from model.dependency.relation import Relation
 from model.dependency.entity import Entity
 from model.build_model import BuildModel
@@ -93,6 +94,12 @@ class Match:
 
     def handle_intrusive(self, entity: Entity, intrusive: bool):
         return not intrusive ^ (entity.is_intrusive == 1)
+
+    def handle_parent_interface(self, entity: Entity, parent_interface: bool):
+        return not parent_interface ^ (entity.id in self.base_model.parent_interface_modify_entities)
+
+    def handle_parent_class(self, entity: Entity, parent_class: bool):
+        return not parent_class ^ (entity.id in self.base_model.parent_class_modify_entities)
 
     def handle_hidden(self, entity: Entity, hidden: List[str]):
         if Constant.hidden_map(entity.hidden) in hidden:
@@ -197,7 +204,7 @@ class Match:
                     else:
                         result_set.append(next_stack)
 
-    def general_rule_matching(self, rule: PatternRules, metric_cal_datas: Metric):
+    def general_rule_matching(self, pattern: PatternType, rule: PatternRules, metric_cal_datas: Metric, timecost: dict):
         """
         通用的模式匹配
         :return:
@@ -212,8 +219,11 @@ class Match:
         for style in rule.styles:
             mode_set = []
             filter_set = []
+            start_time = time()
             self.handle_matching(mode_set, filter_set, [], [], [False for _ in range(0, len(style.rules))], style.rules,
                                  0)
+            end_time = time()
+            timecost.update({f"{style.name}": end_time - start_time})
             # res[style.name] = {'res': mode_set, 'filter': filter_set}
             res_metric, res_metric_filter, res_metric_statistic, res_metric_file_stab = \
                 self.aggregate_res_and_get_metrics(mode_set,
@@ -258,6 +268,7 @@ class Match:
         self.match_result_union = []
         self.match_result_metric = []
         self.statistic_pre_del()
+        self.mc_pre_del()
 
     def statistic_pre_del(self):
         self.match_result_base_statistic = {}
@@ -266,6 +277,10 @@ class Match:
         self.statistic_pkgs = {}
         self.statistic_entities = {}
         self.statistic_modules = {}
+
+    def mc_pre_del(self):
+        self.file_stab_metric = {}
+        self.file_stab_metric_all_pattern = {}
 
     # 统计
     def get_root_file(self, entity_id: int) -> Entity:
@@ -579,15 +594,17 @@ class Match:
         print('start detect ', pattern.ident)
         threads = []
         self.pre_del()
+        timecost = {"project": self.out_path.replace("\\", '/').rsplit('\\')[0]}
         for rule in pattern.rules:
-            th = threading.Thread(target=self.general_rule_matching(rule, self.metric_cal_datas))
-            threads.append(th)
-        for th in threads:
-            th.setDaemon(False)
-            th.start()
-        for th in threads:
-            th.join()
-
+            self.general_rule_matching(pattern, rule, self.metric_cal_datas, timecost)
+        #     th = threading.Thread(target=self.general_rule_matching(pattern, rule, self.metric_cal_datas))
+        #     threads.append(th)
+        # for th in threads:
+        #     th.setDaemon(False)
+        #     th.start()
+        # for th in threads:
+        #     th.join()
+        FileCSV.write_dict_to_csv(f"{self.out_path}/{pattern.ident}", "timecost", [timecost], 'w')
         targets = [[], ['com.android.server.am'], ['com.android.server.pm'], ['com.android.systemui.statusbar'],
                    ['com.android.systemui.qs']]
 
@@ -597,7 +614,7 @@ class Match:
             self.output_res(pattern.ident, match_set, match_set_union_relation, match_set_union_entity,
                             match_set_json_res,
                             match_set_json_res_filter, out_path)
-            FileCSV.write_dict_to_csv(out_path, "pattern_count", [res_count], 'w')
+            FileCSV.write_dict_to_csv(f"{out_path}/{pattern.ident}", "pattern_count", [res_count], 'w')
             simple_stat, metrics_statistic = self.get_statistics(match_set_json_res)
             self.output_statistic(pattern.ident, pattern.patterns, pattern.styles, simple_stat, metrics_statistic,
                                   out_path)
@@ -611,43 +628,54 @@ class Match:
         for target in targets:
             output_to_file(target, self.match_result, os.path.join(self.out_path, 'metric_filter'))
         # 输出metric统计
-        FileJson.write_to_json(self.out_path, self.match_result_metric, 'res_metric_statistic')
+        FileJson.write_to_json(self.out_path, self.match_result_metric, f'{pattern.ident}/res_metric_statistic')
         # self.output_module_res(pattern.ident)
-        FileJson.write_to_json(self.out_path, self.file_stab_metric, "file_stab_metric")
-        # 反模式为一个表格输出维护成本
-        for pattern_name, obj in self.file_stab_metric.items():
-            temp = {'project': self.out_path.replace("\\", '/').rsplit('\\')[0]}
-            for mc_key in ['average_val', 'un_average_val', 'average_rank', 'un_average_rank']:
-                for mc_name in ['#author', '#cmt', 'changeloc', '#issue', '#issue-cmt', 'issueLoc']:
+        FileJson.write_to_json(self.out_path, self.file_stab_metric, f'{pattern.ident}/file_stab_metric')
+
+        def output_mc(out_for: str):
+            # 反模式为一个表格输出维护成本
+            for pattern_name, obj in self.file_stab_metric.items():
+                temp = {'project': self.out_path.replace("\\", '/').rsplit('\\')[0]}
+                for mc_key in ['average_val', 'un_average_val', 'average_rank', 'un_average_rank']:
+                    for mc_name in ['#author', '#cmt', 'changeloc', '#issue', '#issue-cmt', 'issueLoc']:
+                        temp[f"{mc_key}_{mc_name}"] = 0
+                for key, val in obj.items():
+                    if key == "file_count":
+                        temp[key] = val
+                    else:
+                        for mc_name, mc_val in val.items():
+                            temp[f"{key}_{mc_name}"] = mc_val
+                FileCSV.write_dict_to_csv(f"E:/test/anti_mc/{out_for}数据/{pattern.ident}", pattern_name, [temp], 'a',
+                                          False)
+            # 输出所有反模式结果
+            temp = {'project': str(self.out_path).replace("\\", '/').rsplit('/')[-1],
+                    'pattern_file': 0, 'pattern_count': 0,
+                    'facade_file': len(self.base_model.facade_relations_on_file.keys()), 'total_file': 0}
+            for mc_name in ['#author', '#cmt', 'changeloc', '#issue', '#issue-cmt', 'issueLoc']:
+                for mc_key in ['average_val', 'un_average_val', 'average_rank', 'un_average_rank']:
                     temp[f"{mc_key}_{mc_name}"] = 0
-            for key, val in obj.items():
+            for key, val in self.file_stab_metric_all_pattern.items():
                 if key == "file_count":
+                    pattern_files = {"project": str(self.out_path).replace("\\", '/').rsplit('/')[-3],
+                                     "version": str(self.out_path).replace("\\", '/').rsplit('/')[-1],
+                                     "aff_files": ",".join(list(val)),
+                                     "aff_files_count": len(val)}
+                    FileCSV.write_dict_to_csv(f"E:/Graduate/datas/反模式/{out_for}数据/{pattern.ident}",
+                                              'total_pattern_files', [pattern_files], 'a', False)
+                    temp['pattern_file'] = len(val)
+                elif key == "pattern_count":
+                    temp['pattern_count'] = val
+                elif key == 'total_file':
                     temp[key] = val
                 else:
                     for mc_name, mc_val in val.items():
                         temp[f"{key}_{mc_name}"] = mc_val
-            FileCSV.write_dict_to_csv(f"E:\\test", pattern_name, [temp], 'a', False)
-        # 输出所有反模式结果
-        temp = {'project': str(self.out_path).replace("\\", '/').rsplit('/')[-1], 'pattern_file': 0,
-                'facade_file': len(self.base_model.facade_relations_on_file.keys()), 'total_file': 0}
-        for mc_name in ['#author', '#cmt', 'changeloc', '#issue', '#issue-cmt', 'issueLoc']:
-            for mc_key in ['average_val', 'un_average_val', 'average_rank', 'un_average_rank']:
-                temp[f"{mc_key}_{mc_name}"] = 0
-        for key, val in self.file_stab_metric_all_pattern.items():
-            if key == "file_count":
-                pattern_files = {"project": str(self.out_path).replace("\\", '/').rsplit('/')[-3],
-                                 "version": str(self.out_path).replace("\\", '/').rsplit('/')[-1],
-                                 "aff_files": ",".join(list(val)),
-                                 "aff_files_count": len(val)}
-                FileCSV.write_dict_to_csv(f"E:\\test", 'total_pattern_files', [pattern_files], 'a', False)
-                temp['pattern_file'] = len(val)
-            elif key == 'total_file':
-                temp[key] = val
-            else:
-                for mc_name, mc_val in val.items():
-                    temp[f"{key}_{mc_name}"] = mc_val
 
-        FileCSV.write_dict_to_csv(f"E:\\test", 'total_mc_metric', [temp], 'a', False)
+            FileCSV.write_dict_to_csv(f"E:/Graduate/datas/反模式/{out_for}数据/{pattern.ident}", 'total_mc_metric',
+                                      [temp],
+                                      'a', False)
+
+        output_mc("毕设")
         return self.match_result_union
 
     def output_res(self, pattern_type: str, match_set, match_set_union_relation, match_set_union_entity,
@@ -686,10 +714,10 @@ class Match:
         headers.extend(patterns)
         FileCSV.write_to_csv(output_path, 'file-pattern', headers, self.statistic_files)
         # 输出文件粒度详细信息
-        headers = ['filename']
-        headers.extend(['beSrc', 'beDest'])
-        headers.extend(styles)
-        FileCSV.write_to_csv(output_path, 'file-pattern-facade', headers, self.base_model.facade_relations_on_file)
+        # headers = ['filename']
+        # headers.extend(['beSrc', 'beDest'])
+        # headers.extend(styles)
+        # FileCSV.write_to_csv(output_path, 'file-pattern-facade', headers, self.base_model.facade_relations_on_file)
 
         # 输出包粒度统计
         headers = ['packagename']
@@ -718,7 +746,7 @@ class Match:
         res4 = []
         for target in targets:
             code_info_count, code_info_count_sum = CodeInfo(self.out_path, pattern_type,
-                                                            self.base_model.git_history.repo_path_accompany,
+                                                            self.base_model.generate_history.repo_path_accompany,
                                                             target).run()
             res.append(code_info_count)
             res2.append(code_info_count_sum)
