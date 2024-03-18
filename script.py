@@ -16,7 +16,7 @@ import sys
 import time
 
 if __name__ == '__main__':
-    Script('E:\\Graduate\\RefactoringMine\\utils-3.0.2-modify\\bin').run_command()
+    # Script('E:\\Graduate\\RefactoringMine\\utils-3.0.2-modify\\bin').run_command()
     out_dir = 'D:\\Honor\\match_res_new'
 
     def get_out_path(out_path: str, tail_path=''):
@@ -104,10 +104,23 @@ if __name__ == '__main__':
 
     # for new in new_paths:
     #     FileMove.file_move(new[1], f"{result_data[0]}\\{new[0]}", result_data[1])
-    patterns = ["FinalDel", "AccessibilityModify", "HiddenApi", "ParameterListModifyDep", "InheritExtension",
-                "ImplementExtension", "ReflectUse"]
+    patterns = ["FinalDel", "AccessibilityModify", "HiddenApi", "ParameterListModifyDep", "InheritExtension"
+        , "ReflectUse"]
+    styles = [
+        'del_native_class_final', 'del_native_method_final',
+        'native_class_access_modify', 'native_method_access_modify',
+        'call_native_hidden_method', 'use_native_hidden_variable',
+        'native_method_add_parameter',
+        'native_class_inherit_extensive_class',
+        'extensive_method_reflect_native_method', 'extensive_method_reflect_native_class']
+    pattern_ident = ["coupling-patterns", "anti-patterns", "gra-anti-patterns"]
+    for new in new_paths:
+        MetricFilter(
+            f"{new[1]}\\{pattern_ident[1]}\\res.json",
+            f"E:\\Graduate\\datas\\反模式\\投稿数据\\反模式分级\\"
+        ).handle_load_divide_mc(patterns, styles, new[0])
 
-
+    exit()
     # 整理开源耦合面数据
     FileMove.file_csv_aggr([new for new in graduate_paths], "facade_analysis/facade_base_info_count.csv",
                            f"E:\\Graduate\\datas\\耦合面\\毕设数据", "facade_size")
@@ -132,7 +145,6 @@ if __name__ == '__main__':
     #                        f"E:\\Graduate\\datas\\耦合面\\毕设数据", "facade_h.csv")
     # FileMove.file_csv_aggr([new for new in honor], "intrusive_count.csv",
     #                        f"E:\\Graduate\\datas\\耦合面\\毕设数据", "change_type_h.csv")
-    pattern_ident = ["coupling-patterns", "anti-patterns", "gra-anti-patterns"]
     for new in graduate_paths:
         MetricFilter(
             f"{new[1]}\\{pattern_ident[2]}\\res_metric_statistic.json",

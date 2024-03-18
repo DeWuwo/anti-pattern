@@ -11,12 +11,31 @@ class MetricFilter:
         self.file_path = file_path
         self.out_path = out_path
 
+    def load_total_anti_patterns(self):
+        res: dict = FileJson.read_base_json(self.file_path)['res']['values']
+        return res
+
     def load_metric_anti_patterns(self):
         dict_res = {}
         res = FileJson.read_base_json(self.file_path)['res']
         for item in res:
             dict_res.update(item)
         return dict_res
+
+    def handle_load_divide_mc(self, patterns: List[str], styles: List[str], proj: str):
+        res = self.load_total_anti_patterns()
+        mc_res = {"project": proj, "major": set(), "minor": set()}
+        for pattern in patterns:
+            method = getattr(self, f'handle_count_mc_{pattern}', None)
+            style_res = method(res[pattern], styles)
+            mc_res.update(style_res)
+            for key, val in style_res.items():
+                if "major" in key:
+                    mc_res["major"] = mc_res["major"] | val
+                else:
+                    mc_res["minor"] = mc_res["minor"] | val
+
+        FileCSV.write_dict_to_csv(self.out_path, "pattern_divide_mc", [mc_res], 'a', False)
 
     def handle_count(self, patterns: List[str], proj: str):
         res = self.load_metric_anti_patterns()
@@ -59,6 +78,31 @@ class MetricFilter:
                 else:
                     res.update({})
 
+        return res
+
+    def handle_count_mc_FinalDel(self, pattern_info: dict, styles):
+        res = {}
+        for key, val in pattern_info["res"].items():
+            if key not in styles:
+                continue
+            res[f"{key}_major"] = set()
+            res[f"{key}_minor"] = set()
+            for exa in val["res"]:
+                mc = exa["metrics"]
+                if "is_inherit" in mc.keys():
+                    m = {True: "major", False: "minor"}
+                    try:
+                        res[f'{key}_{m[len(mc["is_inherit"]) <= 0]}'].add(
+                            mc["stability"]["maintenance_cost"]["extensive"]["filename"])
+                    except Exception:
+                        pass
+                elif "is_override" in mc.keys():
+                    m = {True: "major", False: "minor"}
+                    try:
+                        res[f'{key}_{m[len(mc["is_override"]) <= 0]}'].add(
+                            mc["stability"]["maintenance_cost"]["extensive"]["filename"])
+                    except Exception:
+                        pass
         return res
 
     def handle_count_AccessibilityModify(self, pattern_info: dict):
@@ -104,6 +148,24 @@ class MetricFilter:
                     })
         return res
 
+    def handle_count_mc_AccessibilityModify(self, pattern_info: dict, styles):
+        res = {}
+        for key, val in pattern_info["res"].items():
+            if key not in styles:
+                continue
+            res[f"{key}_major"] = set()
+            res[f"{key}_minor"] = set()
+            for exa in val["res"]:
+                mc = exa["metrics"]
+                if "native_used_effectiveness" in mc.keys():
+                    m = {True: "major", False: "minor"}
+                    yx = sum([int(item) for _, item in mc["native_used_effectiveness"].items()])
+                    try:
+                        res[f'{key}_{m[yx <= 0]}'].add(mc["stability"]["maintenance_cost"]["extensive"]["filename"])
+                    except Exception:
+                        pass
+        return res
+
     def handle_count_HiddenApi(self, pattern_info: dict):
         res = {}
         for key, val in pattern_info.items():
@@ -120,6 +182,24 @@ class MetricFilter:
                     f"{key}_mix_acceptable": 0,
                     f"{key}_no_acceptable": 0
                 })
+        return res
+
+    def handle_count_mc_HiddenApi(self, pattern_info: dict, styles):
+        res = {}
+        for key, val in pattern_info["res"].items():
+            if key not in styles:
+                continue
+            res[f"{key}_major"] = set()
+            res[f"{key}_minor"] = set()
+            for exa in val["res"]:
+                mc = exa["metrics"]
+                if "acceptable_hidden" in mc.keys():
+                    m = {True: "major", False: "minor"}
+                    try:
+                        res[f'{key}_{m[False in mc["acceptable_hidden"]]}'].add(
+                            mc["stability"]["maintenance_cost"]["extensive"]["filename"])
+                    except Exception:
+                        pass
         return res
 
     def handle_count_ParameterListModifyDep(self, pattern_info: dict):
@@ -140,6 +220,24 @@ class MetricFilter:
                 })
         return res
 
+    def handle_count_mc_ParameterListModifyDep(self, pattern_info: dict, styles):
+        res = {}
+        for key, val in pattern_info["res"].items():
+            if key not in styles:
+                continue
+            res[f"{key}_major"] = set()
+            res[f"{key}_minor"] = set()
+            for exa in val["res"]:
+                mc = exa["metrics"]
+                if "native_used_frequency" in mc.keys():
+                    m = {True: "major", False: "minor"}
+                    try:
+                        res[f'{key}_{m[int(mc["native_used_frequency"]["used_by_extension"]) <= 0]}'].add(
+                            mc["stability"]["maintenance_cost"]["extensive"]["filename"])
+                    except Exception:
+                        pass
+        return res
+
     def handle_count_InheritExtension(self, pattern_info: dict):
         res = {}
         for key, val in pattern_info.items():
@@ -154,6 +252,24 @@ class MetricFilter:
                     f"{key}_is_inherit": 0,
                     f"{key}_no_inherit": 0
                 })
+        return res
+
+    def handle_count_mc_InheritExtension(self, pattern_info: dict, styles):
+        res = {}
+        for key, val in pattern_info["res"].items():
+            if key not in styles:
+                continue
+            res[f"{key}_major"] = set()
+            res[f"{key}_minor"] = set()
+            for exa in val["res"]:
+                mc = exa["metrics"]
+                if "is_inherit" in mc.keys():
+                    m = {True: "major", False: "minor"}
+                    try:
+                        res[f'{key}_{m[len(mc["is_inherit"]) == 0]}'].add(
+                            mc["stability"]["maintenance_cost"]["extensive"]["filename"])
+                    except Exception:
+                        pass
         return res
 
     def handle_count_ImplementExtension(self, pattern_info: dict):
@@ -190,9 +306,34 @@ class MetricFilter:
                 })
         return res
 
+    def handle_count_mc_ReflectUse(self, pattern_info: dict, styles):
+        res = {}
+        for key, val in pattern_info["res"].items():
+            if key not in styles:
+                continue
+            res[f"{key}_major"] = set()
+            res[f"{key}_minor"] = set()
+            for exa in val["res"]:
+                mc = exa["metrics"]
+                if "open_in_sdk" in mc.keys():
+                    m = {True: "major", False: "minor"}
+                    try:
+                        res[f'{key}_{m[len(mc["open_in_sdk"]["in_sdk"]) > 0]}'].add(
+                            mc["stability"]["maintenance_cost"]["extensive"]["filename"])
+                    except Exception:
+                        pass
+        return res
+
 
 if __name__ == '__main__':
-    patterns = ["FinalDel", "AccessibilityModify", "HiddenApi", "ParameterListModifyDep", "InheritExtension",
-                "ImplementExtension", "ReflectUse"]
-    MetricFilter("E:\\数据\ground_truth\\aospa-sapphire\\res_metric_statistic.json", "E:\\数据\\metric\\").handle_count(
-        patterns)
+    patterns = ["FinalDel", "AccessibilityModify", "HiddenApi", "ParameterListModifyDep", "InheritExtension"
+        , "ReflectUse"]
+    styles = [
+        'del_native_class_final', 'del_native_method_final',
+        'native_class_access_modify', 'native_method_access_modify',
+        'call_native_hidden_method', 'use_native_hidden_variable',
+        'native_method_add_parameter',
+        'native_class_inherit_extensive_class',
+        'extensive_method_reflect_native_method', 'extensive_method_reflect_native_class']
+    MetricFilter("E:/Graduate/datas/match_res_new/aospa/base/sapphire/anti-patterns/res.json", "E:\\test\\").handle_load_divide_mc(
+        patterns, styles, "test")
