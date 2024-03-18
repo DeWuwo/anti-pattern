@@ -120,7 +120,6 @@ if __name__ == '__main__':
             f"E:\\Graduate\\datas\\反模式\\投稿数据\\反模式分级\\"
         ).handle_load_divide_mc(patterns, styles, new[0])
 
-    exit()
     # 整理开源耦合面数据
     FileMove.file_csv_aggr([new for new in graduate_paths], "facade_analysis/facade_base_info_count.csv",
                            f"E:\\Graduate\\datas\\耦合面\\毕设数据", "facade_size")
