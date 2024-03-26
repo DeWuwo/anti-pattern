@@ -15,21 +15,21 @@ access_map = {'': '0', 'Private': '1', 'Protected': '2', 'Public': '3'}
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--repo_extensive', '-rpe', action='store', dest='repo_extensive',
-                        help='code path of honor')
+                        help='repo path of downstream')
     parser.add_argument('--repo_aosp', '-rpa', action='store', dest='repo_aosp',
-                        help='code path of android')
+                        help='repo path of upstream')
     parser.add_argument('--rel_extensive', '-rele', action='store', dest='rel_extensive',
-                        help='root json file of honor')
+                        help='root json file of downstream')
     parser.add_argument('--rel_aosp', '-rela', action='store', dest='rel_aosp',
-                        help='root json file of android')
+                        help='root json file of upstream')
     parser.add_argument('--commit_extensive', '-ce', action='store', dest='commit_extensive',
-                        help='commit of honor')
+                        help='commit of downstream')
     parser.add_argument('--commit_aosp', '-ca', action='store', dest='commit_aosp',
-                        help='commit of android')
+                        help='commit of upstream')
     parser.add_argument('--refactor_miner', '-ref', action='store', dest='refactor_miner',
                         help='root directory of refactor miner tool')
     parser.add_argument('--output', '-o', action='store', dest='output',
-                        help='root directory of out')
+                        help='root directory of output')
     args = parser.parse_args()
     dispatch(args)
 
@@ -79,15 +79,15 @@ def dispatch(args):
         mc.get_mc()
         pattern_match = Match(base_model, out_path, module_blame, repo_extensive)
         # match coupling pattern
-        coupling_pattern = CouplingPattern()
-        pattern_match.start_match_pattern(coupling_pattern)
+        # coupling_pattern = CouplingPattern()
+        # pattern_match.start_match_pattern(coupling_pattern)
 
         # match anti pattern
         special_anti_pattern = AntiPattern()
         pattern_match.start_match_pattern(special_anti_pattern)
         #
-        gra_anti_pattern = GraAntiPattern()
-        pattern_match.start_match_pattern(gra_anti_pattern)
+        # gra_anti_pattern = GraAntiPattern()
+        # pattern_match.start_match_pattern(gra_anti_pattern)
     except FileNotFoundError as e:
         print(e)
 
